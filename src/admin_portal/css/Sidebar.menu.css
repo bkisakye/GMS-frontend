@@ -1,0 +1,11 @@
+/* Sidebar.module.css */
+.sidebarOpen {
+    transform: translateX(0);
+    transition: transform 0.3s ease-in-out;
+  }
+  
+  .sidebarClosed {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+  }
+  
