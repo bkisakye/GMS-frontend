@@ -1,6 +1,6 @@
 import React, { Component } from "react";
-import { AiFillEdit } from "react-icons/ai";
 import { fetchWithAuth } from "../../../../utils/helpers";
+import { MultiSelect } from "react-multi-select-component";
 
 export default class Subgrantees extends Component {
   state = {
@@ -9,13 +9,15 @@ export default class Subgrantees extends Component {
     startDate: "",
     endDate: "",
     applicationDeadline: "",
-    category: "",
-    donor: "",
+    selectedGrantTypes: [],
+    selectedDonors: [],
+    selectedDistricts: [],
     amount: "",
     numberOfAwards: "",
     eligibilityDetails: "",
     grantTypes: [],
     donors: [],
+    districts: [],
     errorMessage: "",
     successMessage: "",
   };
@@ -29,6 +31,21 @@ export default class Subgrantees extends Component {
       const donorResponse = await fetchWithAuth("/api/grants/donors/");
       const donors = await donorResponse.json();
       this.setState({ donors });
+
+      const districtResponse = await fetchWithAuth(
+        "/api/subgrantees/districts/"
+      );
+      const districtData = await districtResponse.json();
+
+      if (
+        Array.isArray(districtData) &&
+        districtData.length > 0 &&
+        Array.isArray(districtData[0].districts)
+      ) {
+        this.setState({ districts: districtData[0].districts });
+      } else {
+        console.error("Invalid districts data format:", districtData);
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
       this.setState({ errorMessage: "Error fetching data. Please try again." });
@@ -38,6 +55,10 @@ export default class Subgrantees extends Component {
   handleChange = (e) => {
     const { name, value } = e.target;
     this.setState({ [name]: value });
+  };
+
+  handleMultiSelectChange = (selectedOptions) => {
+    this.setState({ selectedDistricts: selectedOptions });
   };
 
   handleSubmit = async (e) => {
@@ -50,6 +71,7 @@ export default class Subgrantees extends Component {
       applicationDeadline,
       category,
       donor,
+      selectedDistricts,
       amount,
       numberOfAwards,
       eligibilityDetails,
@@ -63,10 +85,13 @@ export default class Subgrantees extends Component {
       application_deadline: applicationDeadline,
       category,
       donor,
+      district: selectedDistricts.map((option) => option.value),
       amount,
       number_of_awards: numberOfAwards,
       eligibility_details: eligibilityDetails,
     };
+
+    console.log("grant data", grantData);
 
     try {
       const response = await fetchWithAuth("/api/grants/grants/", {
@@ -93,6 +118,7 @@ export default class Subgrantees extends Component {
         applicationDeadline: "",
         category: "",
         donor: "",
+        selectedDistricts: [],
         amount: "",
         numberOfAwards: "",
         eligibilityDetails: "",
@@ -113,16 +139,31 @@ export default class Subgrantees extends Component {
       startDate,
       endDate,
       applicationDeadline,
-      category,
-      donor,
+        category,
+        donor,
+      selectedDistricts,
+      grantTypes,
+      donors,
+      districts,
       amount,
       numberOfAwards,
       eligibilityDetails,
-      grantTypes,
-      donors,
       errorMessage,
       successMessage,
     } = this.state;
+
+    const grantTypeOptions = grantTypes.map((type) => ({
+      label: type.name,
+      value: type.id,
+    }));
+    const donorOptions = donors.map((donor) => ({
+      label: donor.name,
+      value: donor.id,
+    }));
+    const districtOptions = districts.map((district) => ({
+      label: district.name,
+      value: district.id,
+    }));
 
     return (
       <div
@@ -185,20 +226,15 @@ export default class Subgrantees extends Component {
                     className="col-lg-3 col-form-label"
                     style={{ fontWeight: "bold", marginBottom: "0.5rem" }}
                   >
-                    Name/Title:
+                    Name:
                   </label>
                   <div className="col-lg-9">
                     <input
                       type="text"
-                      className="form-control"
-                      placeholder="Grant Name/Title"
                       name="name"
                       value={name}
                       onChange={this.handleChange}
-                      style={{
-                        borderRadius: "0.25rem",
-                        border: "1px solid #ced4da",
-                      }}
+                      className="form-control"
                     />
                   </div>
                 </div>
@@ -208,22 +244,15 @@ export default class Subgrantees extends Component {
                     className="col-lg-3 col-form-label"
                     style={{ fontWeight: "bold", marginBottom: "0.5rem" }}
                   >
-                    Grant description:
+                    Description:
                   </label>
                   <div className="col-lg-9">
                     <textarea
-                      rows="7"
-                      cols="9"
-                      className="form-control"
-                      placeholder="Notes all about the subgrant"
                       name="description"
                       value={description}
                       onChange={this.handleChange}
-                      style={{
-                        borderRadius: "0.25rem",
-                        border: "1px solid #ced4da",
-                        resize: "vertical",
-                      }}
+                      className="form-control"
+                      rows="3"
                     />
                   </div>
                 </div>
@@ -233,39 +262,34 @@ export default class Subgrantees extends Component {
                     className="col-lg-3 col-form-label"
                     style={{ fontWeight: "bold", marginBottom: "0.5rem" }}
                   >
-                    Grant Period:
+                    Start Date:
                   </label>
                   <div className="col-lg-9">
-                    <div className="row">
-                      <div className="col-md-6">
-                        <label style={{ fontWeight: "bold" }}>Start Date</label>
-                        <input
-                          type="date"
-                          className="form-control"
-                          name="startDate"
-                          value={startDate}
-                          onChange={this.handleChange}
-                          style={{
-                            borderRadius: "0.25rem",
-                            border: "1px solid #ced4da",
-                          }}
-                        />
-                      </div>
-                      <div className="col-md-6">
-                        <label style={{ fontWeight: "bold" }}>End Date</label>
-                        <input
-                          type="date"
-                          className="form-control"
-                          name="endDate"
-                          value={endDate}
-                          onChange={this.handleChange}
-                          style={{
-                            borderRadius: "0.25rem",
-                            border: "1px solid #ced4da",
-                          }}
-                        />
-                      </div>
-                    </div>
+                    <input
+                      type="date"
+                      name="startDate"
+                      value={startDate}
+                      onChange={this.handleChange}
+                      className="form-control"
+                    />
+                  </div>
+                </div>
+
+                <div className="row mb-3" style={{ marginBottom: "1rem" }}>
+                  <label
+                    className="col-lg-3 col-form-label"
+                    style={{ fontWeight: "bold", marginBottom: "0.5rem" }}
+                  >
+                    End Date:
+                  </label>
+                  <div className="col-lg-9">
+                    <input
+                      type="date"
+                      name="endDate"
+                      value={endDate}
+                      onChange={this.handleChange}
+                      className="form-control"
+                    />
                   </div>
                 </div>
 
@@ -279,14 +303,10 @@ export default class Subgrantees extends Component {
                   <div className="col-lg-9">
                     <input
                       type="date"
-                      className="form-control"
                       name="applicationDeadline"
                       value={applicationDeadline}
                       onChange={this.handleChange}
-                      style={{
-                        borderRadius: "0.25rem",
-                        border: "1px solid #ced4da",
-                      }}
+                      className="form-control"
                     />
                   </div>
                 </div>
@@ -352,21 +372,33 @@ export default class Subgrantees extends Component {
                     className="col-lg-3 col-form-label"
                     style={{ fontWeight: "bold", marginBottom: "0.5rem" }}
                   >
+                    Districts:
+                  </label>
+                  <div className="col-lg-9">
+                    <MultiSelect
+                      options={districtOptions}
+                      value={selectedDistricts}
+                      onChange={this.handleMultiSelectChange}
+                      labelledBy="Select Districts"
+                    />
+                  </div>
+                </div>
+
+                <div className="row mb-3" style={{ marginBottom: "1rem" }}>
+                  <label
+                    className="col-lg-3 col-form-label"
+                    style={{ fontWeight: "bold", marginBottom: "0.5rem" }}
+                  >
                     Amount:
                   </label>
                   <div className="col-lg-9">
                     <input
                       type="number"
-                      step="0.01"
-                      className="form-control"
-                      placeholder="Amount"
                       name="amount"
                       value={amount}
                       onChange={this.handleChange}
-                      style={{
-                        borderRadius: "0.25rem",
-                        border: "1px solid #ced4da",
-                      }}
+                      className="form-control"
+                      min="0"
                     />
                   </div>
                 </div>
@@ -381,15 +413,11 @@ export default class Subgrantees extends Component {
                   <div className="col-lg-9">
                     <input
                       type="number"
-                      className="form-control"
-                      placeholder="Number of awards"
                       name="numberOfAwards"
                       value={numberOfAwards}
                       onChange={this.handleChange}
-                      style={{
-                        borderRadius: "0.25rem",
-                        border: "1px solid #ced4da",
-                      }}
+                      className="form-control"
+                      min="0"
                     />
                   </div>
                 </div>
@@ -403,30 +431,25 @@ export default class Subgrantees extends Component {
                   </label>
                   <div className="col-lg-9">
                     <textarea
-                      rows="4"
-                      cols="9"
-                      className="form-control"
-                      placeholder="Eligibility details"
                       name="eligibilityDetails"
                       value={eligibilityDetails}
                       onChange={this.handleChange}
-                      style={{
-                        borderRadius: "0.25rem",
-                        border: "1px solid #ced4da",
-                        resize: "vertical",
-                      }}
+                      className="form-control"
+                      rows="3"
                     />
                   </div>
                 </div>
 
-                <div className="form-group text-center">
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    style={{ borderRadius: "0.25rem" }}
-                  >
-                    Submit Grant
-                  </button>
+                <div className="row">
+                  <div className="col-lg-12 text-center">
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      style={{ width: "100%" }}
+                    >
+                      Submit
+                    </button>
+                  </div>
                 </div>
               </fieldset>
             </form>

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { fetchWithAuth } from "../../../utils/helpers";
-import { Accordion, Card, Form, Button } from "react-bootstrap";
+import { Accordion, Card, Form, Button, Modal } from "react-bootstrap";
+// import { useUser } from "../../../UserContext.js";
 
 const ApplicationPage = () => {
   const { grantName } = useParams();
@@ -9,7 +10,12 @@ const ApplicationPage = () => {
   const [answers, setAnswers] = useState({ answers: [] });
   const location = useLocation();
   const grantId = location.state?.grantId;
-  const [showModal, setShowModal] = useState(false)
+  const [showModal, setShowModal] = useState(false);
+  const [applicationId, setApplicationId] = useState(null);
+  const [files, setFiles] = useState({});
+  const[choicesData, setChoicesData] = useState({});
+  const user = JSON.parse(localStorage.getItem("user"));
+  const userId = user?.user_id;
 
   useEffect(() => {
     const fetchQuestionsAndResponses = async () => {
@@ -36,6 +42,7 @@ const ApplicationPage = () => {
 
         // Update state
         setAnswers({ answers: initialAnswers });
+        setApplicationId(responsesData.application_id);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -43,6 +50,30 @@ const ApplicationPage = () => {
 
     fetchQuestionsAndResponses();
   }, [grantId]);
+
+  useEffect(() => {
+    if (applicationId && userId) {
+      const fetchChoicesData = async () => {
+        try {
+          const choicesResponse = await fetchWithAuth(
+            `/api/grants/filtered-responses/?application_id=${applicationId}&user_id=${userId}`
+          );
+          const choicesData = await choicesResponse.json();
+
+          const choicesMap = choicesData.reduce((acc, item) => {
+            acc[item.question] = item.choices;
+            return acc;
+          }, {});
+
+          setChoicesData(choicesMap);
+        } catch (error) {
+          console.error("Error fetching choices data:", error);
+        }
+      };
+
+      fetchChoicesData();
+    }
+  }, [applicationId, userId]);
 
   const handleChange = (e, question, column = null, rowIndex = null) => {
     const { value, type, checked } = e.target;
@@ -143,31 +174,92 @@ const ApplicationPage = () => {
     }
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  console.log("Form data submitted:", answers);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    console.log("Form data submitted:", answers);
+
+    const method = answers.answers.length > 0 ? "PATCH" : "POST"; // Use PATCH if answers already exist
+
+    try {
+      const response = await fetchWithAuth(
+        `/api/grants/responses/${grantId}/`,
+        {
+          method: method,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(answers),
+        }
+      );
+
+      if (response.ok) {
+        console.log("Application submitted successfully!", response);
+        const responseData = await response.json();
+        setApplicationId(responseData.application_id);
+        setShowModal(true); // This will trigger the modal to open
+
+        console.log(
+          "Application ID after submission:",
+          responseData.application_id
+        );
+        console.log("User ID:", userId);
+      } else {
+        console.error("Error submitting application:", response);
+      }
+    } catch (error) {
+      console.error("Error submitting application:", error);
+    }
+  };
 
 
-  const method = answers.answers.length > 0 ? "PATCH" : "POST"; // Use PATCH if answers already exist
+
+
+
+
+const handleFileUpload = async () => {
+  if (!applicationId) return;
+
+  const formData = new FormData();
+  Object.keys(files).forEach((key) => {
+    const fileArray = Array.isArray(files[key]) ? files[key] : [files[key]];
+    fileArray.forEach((file) => formData.append("documents", file)); // Use 'documents' key
+  });
 
   try {
-    const response = await fetchWithAuth(`/api/grants/responses/${grantId}/`, {
-      method: method,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(answers),
-    });
+    const token = localStorage.getItem("accessToken");
+    const uploadResponse = await fetch(
+      `http://127.0.0.1:8000/api/grants/applications/${applicationId}/documents/`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      }
+    );
 
-    if (response.ok) {
-      console.log("Application submitted successfully!", response);
+    if (uploadResponse.ok) {
+      console.log("Files uploaded successfully!");
     } else {
-      console.error("Error submitting application:", response);
+      console.error("Error uploading files:", await uploadResponse.json()); // Print response body for debugging
     }
   } catch (error) {
-    console.error("Error submitting application:", error);
+    console.error("Error uploading files:", error);
   }
 };
+
+
+
+
+const handleFileChange = (event, choice) => {
+  const { files } = event.target;
+  setFiles((prevFiles) => ({
+    ...prevFiles,
+    [choice]: Array.from(files), // Convert FileList to Array
+  }));
+};
+
+
 
 
   const groupedQuestions = questions.reduce((acc, question) => {
@@ -267,7 +359,7 @@ const handleSubmit = async (e) => {
                                   type="checkbox"
                                   label={choice}
                                   value={choice}
-                                  checked={isChecked ? true : false}
+                                  checked={isChecked}
                                   onChange={(e) => handleChange(e, question)}
                                 />
                               );
@@ -281,16 +373,12 @@ const handleSubmit = async (e) => {
                                 key={index}
                                 type="radio"
                                 label={choice}
-                                name={question.id}
                                 value={choice}
                                 checked={
                                   answers.answers.find(
                                     (answer) =>
-                                      answer.question_id === question.id &&
-                                      answer.answer === choice
-                                  )
-                                    ? true
-                                    : false
+                                      answer.question_id === question.id
+                                  )?.answer === choice
                                 }
                                 onChange={(e) => handleChange(e, question)}
                               />
@@ -298,50 +386,51 @@ const handleSubmit = async (e) => {
                           </div>
                         )}
                         {question.question_type === "table" && (
-                          <table className="table table-bordered">
-                            <thead className="table-dark">
-                              <tr>
-                                {question.choices.map((column) => (
-                                  <th key={column}>{column}</th>
-                                ))}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {Array.from({
-                                length: question.number_of_rows,
-                              }).map((_, rowIndex) => (
-                                <tr key={rowIndex}>
-                                  {question.choices.map((column) => (
-                                    <td key={column}>
-                                      <Form.Control
-                                        type="text"
-                                        value={
-                                          answers.answers.find(
-                                            (answer) =>
-                                              answer.question_id ===
-                                                question.id &&
-                                              answer.choice_answers[rowIndex] &&
-                                              answer.choice_answers[rowIndex][
-                                                column
-                                              ]
-                                          )?.choice_answers[rowIndex][column] ||
-                                          ""
-                                        }
-                                        onChange={(e) =>
-                                          handleChange(
-                                            e,
-                                            question,
-                                            column,
-                                            rowIndex
-                                          )
-                                        }
-                                      />
-                                    </td>
+                          <div className="table-responsive">
+                            <table className="table table-bordered">
+                              <thead>
+                                <tr>
+                                  {question.choices.map((column, index) => (
+                                    <th key={index}>{column}</th>
                                   ))}
                                 </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                              </thead>
+                              <tbody>
+                                {Array.from({
+                                  length: question.number_of_rows,
+                                }).map((_, rowIndex) => (
+                                  <tr key={rowIndex}>
+                                    {question.choices.map(
+                                      (column, colIndex) => (
+                                        <td key={colIndex}>
+                                          <Form.Control
+                                            type="text"
+                                            value={
+                                              answers.answers.find(
+                                                (answer) =>
+                                                  answer.question_id ===
+                                                  question.id
+                                              )?.choice_answers[rowIndex]?.[
+                                                column
+                                              ] || ""
+                                            }
+                                            onChange={(e) =>
+                                              handleChange(
+                                                e,
+                                                question,
+                                                column,
+                                                rowIndex
+                                              )
+                                            }
+                                          />
+                                        </td>
+                                      )
+                                    )}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
                         )}
                       </Form.Group>
                     ))}
@@ -351,11 +440,59 @@ const handleSubmit = async (e) => {
             </Card>
           </Accordion>
         ))}
-        {/* <input type="file"  */}
-        <Button type="submit" variant="primary" style={submitButtonStyle}>
+        <Button
+          variant="primary"
+          type="submit"
+          style={submitButtonStyle}
+          onClick={() => {
+            if (applicationId && files.length > 0) {
+              handleFileUpload(applicationId, files);
+            }
+          }}
+        >
           Submit
         </Button>
       </Form>
+
+      <Modal
+        show={showModal}
+        onHide={() => setShowModal(false)}
+        onEnter={() => console.log("Choices Data:", choicesData)}
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Please Upload The Required Documents</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            {Object.keys(choicesData).length > 0 ? (
+              Object.keys(choicesData).map((questionId) => (
+                <div key={questionId}>
+                  {choicesData[questionId].map((choice, index) => (
+                    <Form.Group key={index} className="mb-3">
+                      <Form.Label>{choice}</Form.Label>
+                      <Form.Control
+                        type="file"
+                        multiple
+                        onChange={(e) => handleFileChange(e, choice)}
+                      />
+                    </Form.Group>
+                  ))}
+                </div>
+              ))
+            ) : (
+              <p>No choices available.</p>
+            )}
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowModal(false)}>
+            Close
+          </Button>
+          <Button variant="primary" onClick={handleFileUpload}>
+            Upload
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };
