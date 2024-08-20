@@ -115,6 +115,7 @@ class ReviewApplicationModal extends Component {
                     <option value="">Select status</option>
                     <option value="approved">Approve</option>
                     <option value="rejected">Reject</option>
+                    <option value='pending'>On Hold</option>
                   </select>
                 </div>
                 <div className="mb-3">
