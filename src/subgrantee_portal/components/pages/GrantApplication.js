@@ -131,7 +131,7 @@ const ApplicationPage = () => {
         }));
       }
     } else {
-      // Update existing answer
+      
       if (questionType === "table") {
         setAnswers((prevAnswers) => {
           const updatedAnswers = [...prevAnswers.answers];
@@ -196,7 +196,7 @@ const ApplicationPage = () => {
         console.log("Application submitted successfully!", response);
         const responseData = await response.json();
         setApplicationId(responseData.application_id);
-        setShowModal(true); // This will trigger the modal to open
+        setShowModal(true); 
 
         console.log(
           "Application ID after submission:",
@@ -255,7 +255,7 @@ const handleFileChange = (event, choice) => {
   const { files } = event.target;
   setFiles((prevFiles) => ({
     ...prevFiles,
-    [choice]: Array.from(files), // Convert FileList to Array
+    [choice]: Array.from(files), 
   }));
 };
 
