@@ -13,25 +13,25 @@ const ApplicationPage = () => {
   const [showModal, setShowModal] = useState(false);
   const [applicationId, setApplicationId] = useState(null);
   const [files, setFiles] = useState({});
-  const[choicesData, setChoicesData] = useState({});
+  const [choicesData, setChoicesData] = useState({});
+  const [isReadOnly, setIsReadOnly] = useState(false);
+  const [reviewStatus, setReviewStatus] = useState("");
   const user = JSON.parse(localStorage.getItem("user"));
   const userId = user?.user_id;
+  const [existingDocuments, setExistingDocuments] = useState([]);
 
   useEffect(() => {
     const fetchQuestionsAndResponses = async () => {
       try {
-        // Fetch questions
         const questionsResponse = await fetchWithAuth("/api/grants/questions/");
         const questionsData = await questionsResponse.json();
         setQuestions(questionsData);
 
-        // Fetch existing responses
         const responsesResponse = await fetchWithAuth(
           `/api/grants/responses/${grantId}/`
         );
         const responsesData = await responsesResponse.json();
 
-        // Initialize form with responses
         const initialAnswers = responsesData.map((response) => ({
           question_id: response.question.id,
           answer: response.answer,
@@ -40,7 +40,6 @@ const ApplicationPage = () => {
           number_of_rows: response.question.number_of_rows || 0,
         }));
 
-        // Update state
         setAnswers({ answers: initialAnswers });
         setApplicationId(responsesData.application_id);
       } catch (error) {
@@ -50,6 +49,30 @@ const ApplicationPage = () => {
 
     fetchQuestionsAndResponses();
   }, [grantId]);
+
+  useEffect(() => {
+    const fetchReviewStatus = async () => {
+      try {
+        const reviewResponse = await fetchWithAuth(
+          `/api/grants/reviews/?grant=${applicationId}`
+        );
+        const reviewData = await reviewResponse.json();
+        const status = reviewData.status || "";
+        setReviewStatus(status);
+        if (status === "negotiate") {
+          setIsReadOnly(false);
+        } else {
+          setIsReadOnly(true);
+        }
+      } catch (error) {
+        console.error("Error fetching review status:", error);
+      }
+    };
+
+    if (applicationId) {
+      fetchReviewStatus();
+    }
+  }, [applicationId]);
 
   useEffect(() => {
     if (applicationId && userId) {
@@ -75,7 +98,26 @@ const ApplicationPage = () => {
     }
   }, [applicationId, userId]);
 
+  useEffect(() => {
+    if (applicationId && userId) {
+      const fetchExistingDocuments = async () => {
+        try {
+          const existingDocsResponse = await fetch(
+            `http://127.0.0.1:8000/api/grants/applications/documents/?user_id=${userId}&application_id=${applicationId}`
+          );
+          const documentsData = await existingDocsResponse.json();
+          setExistingDocuments(documentsData);
+        } catch (error) {
+          console.error("Error fetching existing documents:", error);
+        }
+      };
+
+      fetchExistingDocuments();
+    }
+  }, [applicationId, userId]);
+
   const handleChange = (e, question, column = null, rowIndex = null) => {
+    if (isReadOnly) return;
     const { value, type, checked } = e.target;
     const questionId = question.id;
     const questionType = question.question_type;
@@ -131,7 +173,6 @@ const ApplicationPage = () => {
         }));
       }
     } else {
-      
       if (questionType === "table") {
         setAnswers((prevAnswers) => {
           const updatedAnswers = [...prevAnswers.answers];
@@ -196,7 +237,7 @@ const ApplicationPage = () => {
         console.log("Application submitted successfully!", response);
         const responseData = await response.json();
         setApplicationId(responseData.application_id);
-        setShowModal(true); 
+        setShowModal(true);
 
         console.log(
           "Application ID after submission:",
@@ -211,56 +252,46 @@ const ApplicationPage = () => {
     }
   };
 
+  const handleFileUpload = async () => {
+    if (!applicationId) return;
 
+    try {
+      const formData = new FormData();
+      Object.keys(files).forEach((key) => {
+        const fileArray = Array.isArray(files[key]) ? files[key] : [files[key]];
+        fileArray.forEach((file) => formData.append("documents", file));
+      });
 
-
-
-
-const handleFileUpload = async () => {
-  if (!applicationId) return;
-
-  const formData = new FormData();
-  Object.keys(files).forEach((key) => {
-    const fileArray = Array.isArray(files[key]) ? files[key] : [files[key]];
-    fileArray.forEach((file) => formData.append("documents", file)); // Use 'documents' key
-  });
-
-  try {
-    const token = localStorage.getItem("accessToken");
-    const uploadResponse = await fetch(
-      `http://127.0.0.1:8000/api/grants/applications/${applicationId}/documents/`,
-      {
-        method: "POST",
+      const method = existingDocuments.length > 0 ? "PATCH" : "POST";
+      const url = `http://127.0.0.1:8000/api/grants/applications/${applicationId}/documents/`;
+      const token = localStorage.getItem("accessToken");
+      const uploadResponse = await fetch(url, {
+        method: method,
         headers: {
           Authorization: `Bearer ${token}`,
         },
         body: formData,
+      });
+
+      if (uploadResponse.ok) {
+        console.log("Files uploaded successfully!");
+        setIsReadOnly(true);
+        setShowModal(false);
+      } else {
+        console.error("Error uploading files:", await uploadResponse.json());
       }
-    );
-
-    if (uploadResponse.ok) {
-      console.log("Files uploaded successfully!");
-    } else {
-      console.error("Error uploading files:", await uploadResponse.json()); // Print response body for debugging
+    } catch (error) {
+      console.error("Error handling file upload:", error);
     }
-  } catch (error) {
-    console.error("Error uploading files:", error);
-  }
-};
+  };
 
-
-
-
-const handleFileChange = (event, choice) => {
-  const { files } = event.target;
-  setFiles((prevFiles) => ({
-    ...prevFiles,
-    [choice]: Array.from(files), 
-  }));
-};
-
-
-
+  const handleFileChange = (event, choice) => {
+    const { files } = event.target;
+    setFiles((prevFiles) => ({
+      ...prevFiles,
+      [choice]: Array.from(files),
+    }));
+  };
 
   const groupedQuestions = questions.reduce((acc, question) => {
     const sectionTitle = question.section?.title || "Uncategorized";
@@ -319,6 +350,7 @@ const handleFileChange = (event, choice) => {
                             }
                             onChange={(e) => handleChange(e, question)}
                             rows={3}
+                            readOnly={isReadOnly}
                           />
                         )}
                         {question.question_type === "number" && (
@@ -330,6 +362,7 @@ const handleFileChange = (event, choice) => {
                               )?.answer || ""
                             }
                             onChange={(e) => handleChange(e, question)}
+                            readOnly={isReadOnly}
                           />
                         )}
                         {question.question_type === "date" && (
@@ -341,6 +374,7 @@ const handleFileChange = (event, choice) => {
                               )?.answer || ""
                             }
                             onChange={(e) => handleChange(e, question)}
+                            readOnly={isReadOnly}
                           />
                         )}
                         {question.question_type === "checkbox" && (
@@ -361,6 +395,7 @@ const handleFileChange = (event, choice) => {
                                   value={choice}
                                   checked={isChecked}
                                   onChange={(e) => handleChange(e, question)}
+                                  disabled={isReadOnly}
                                 />
                               );
                             })}
@@ -381,6 +416,7 @@ const handleFileChange = (event, choice) => {
                                   )?.answer === choice
                                 }
                                 onChange={(e) => handleChange(e, question)}
+                                disabled={isReadOnly}
                               />
                             ))}
                           </div>
@@ -422,6 +458,7 @@ const handleFileChange = (event, choice) => {
                                                 rowIndex
                                               )
                                             }
+                                            readOnly={isReadOnly}
                                           />
                                         </td>
                                       )
@@ -449,6 +486,7 @@ const handleFileChange = (event, choice) => {
               handleFileUpload(applicationId, files);
             }
           }}
+          disabled={isReadOnly}
         >
           Submit
         </Button>
@@ -488,7 +526,11 @@ const handleFileChange = (event, choice) => {
           <Button variant="secondary" onClick={() => setShowModal(false)}>
             Close
           </Button>
-          <Button variant="primary" onClick={handleFileUpload}>
+          <Button
+            variant="primary"
+            onClick={handleFileUpload}
+            // disabled={isReadOnly}
+          >
             Upload
           </Button>
         </Modal.Footer>
