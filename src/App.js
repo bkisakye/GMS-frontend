@@ -35,6 +35,9 @@ import Partnership from "./subgrantee_portal/components/pages/Partnership";
 import Implementation from "./subgrantee_portal/components/pages/Implementation";
 import Index from "./admin_portal/components/pages/grants/index";
 import SpecificQuestions from "./admin_portal/components/pages/grants/specificquestions";
+import Donors from "./admin_portal/components/pages/donors/donors";
+import Types from "./admin_portal/components/pages/grants/types";
+import Budget from "./subgrantee_portal/components/pages/Budget";
 
 function App() {
   return (
@@ -62,6 +65,8 @@ function App() {
           <Route path="grants_form" element={<GrantsForm />} />
           <Route path="index" element={<Index />} />
           <Route path="specificquestions" element={<SpecificQuestions />} />
+          <Route path="donors" element={<Donors />} />
+          <Route path="types" element={<Types />} />
         </Route>
 
         {/* Subgrantee routes */}
@@ -76,6 +81,7 @@ function App() {
           <Route index element={<LandingPage />} />
           <Route path="application/:grantName" element={<GrantApplication />} />
           <Route path="application" element={<GrantApplication />} />
+          <Route path="budget" element={<Budget />} />
           <Route path="profile" element={<ProfileCreation />}>
             <Route index element={<GeneralInfo />} />
             <Route path="generalinfo" element={<GeneralInfo />} />

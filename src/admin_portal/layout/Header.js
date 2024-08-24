@@ -1,29 +1,22 @@
 import React, { useEffect, useState } from "react";
 import Logout from "../../subgrantee_portal/components/login/Logout";
 import { fetchWithAuth } from "../../utils/helpers";
+import { Toast, ToastContainer } from "react-bootstrap";
 
 function Header({ toggleSidebar }) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
-  const [authToken, setAuthToken] = useState(
-    localStorage.getItem("accessToken")
-  );
-  const [refreshToken, setRefreshToken] = useState(
-    localStorage.getItem("refreshToken")
-  );
-  const [toastMessages, setToastMessages] = useState([]);
+  const [visibleNotifications, setVisibleNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
   const user = JSON.parse(localStorage.getItem("user"));
+  const authToken = localStorage.getItem("accessToken");
 
   const fetchNotificationCount = async () => {
     if (!authToken) return;
 
     try {
-      const response = await fetchWithAuth("/api/notifications/count/", {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
+      const response = await fetchWithAuth("/api/notifications/count/");
 
       if (response.ok) {
         const data = await response.json();
@@ -40,23 +33,12 @@ function Header({ toggleSidebar }) {
     if (!authToken) return;
 
     try {
-      const response = await fetchWithAuth("/api/notifications/unread/", {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
+      const response = await fetchWithAuth("/api/notifications/unread/");
 
       if (response.ok) {
         const data = await response.json();
         setNotifications(data);
-        setToastMessages((prevMessages) => [
-          ...prevMessages,
-          ...data.map((notification) => ({
-            id: notification.id,
-            message: notification.text,
-            timestamp: new Date(notification.timestamp).toLocaleTimeString(),
-          })),
-        ]);
+        setShowNotifications(true);
       } else {
         console.error("Failed to fetch notifications:", response.status);
       }
@@ -65,22 +47,11 @@ function Header({ toggleSidebar }) {
     }
   };
 
-  useEffect(() => {
-    fetchNotificationCount();
-    fetchNotifications();
-  }, [authToken, refreshToken]);
-
-  useEffect(() => {
-    const timers = toastMessages.map((toast) =>
-      setTimeout(() => {
-        setToastMessages((prevMessages) =>
-          prevMessages.filter((msg) => msg.id !== toast.id)
-        );
-      }, 5000)
+  const handleNotificationClose = (id) => {
+    setVisibleNotifications((prevNotifications) =>
+      prevNotifications.filter((notification) => notification.id !== id)
     );
-
-    return () => timers.forEach((timer) => clearTimeout(timer));
-  }, [toastMessages]);
+  };
 
   const handleNotificationsClick = () => {
     setNotificationsOpen(!notificationsOpen);
@@ -89,11 +60,10 @@ function Header({ toggleSidebar }) {
     }
   };
 
-  const closeToast = (id) => {
-    setToastMessages((prevMessages) =>
-      prevMessages.filter((msg) => msg.id !== id)
-    );
-  };
+  useEffect(() => {
+    fetchNotificationCount();
+    fetchNotifications();
+  }, [authToken]);
 
   return (
     <div className="navbar navbar-expand-lg navbar-light">
@@ -293,49 +263,34 @@ function Header({ toggleSidebar }) {
               </span>
             </a>
             <div className="dropdown-menu dropdown-menu-right">
-              <a href="#" className="dropdown-item">
-                <i className="icon-user"></i> My profile
+              <a href="/admin/profile" className="dropdown-item">
+                <i className="icon-user-plus" />
+                My profile
               </a>
-              <a href="#" className="dropdown-item">
-                <i className="icon-cog"></i> Settings
+              <a href="/admin/notifications" className="dropdown-item">
+                <i className="icon-bubbles4" />
+                Messages
               </a>
-              <a href="#" className="dropdown-item">
-                <i className="icon-switch2"></i> Logout
+              <a href="/admin/settings" className="dropdown-item">
+                <i className="icon-cog5" />
+                Settings
               </a>
+              <div className="dropdown-divider" />
+              <Logout />
             </div>
           </li>
         </ul>
       </div>
-      <div
-        className="toast-container position-fixed top-0 end-0 p-3"
-        style={{ zIndex: 1050 }}
-      >
-        {toastMessages.map((toast) => (
-          <div
-            key={toast.id}
-            className="toast show"
-            role="alert"
-            aria-live="assertive"
-            aria-atomic="true"
-            style={{ minWidth: "300px" }}
+      <ToastContainer>
+        {visibleNotifications.map((notification) => (
+          <Toast
+            key={notification.id}
+            onClose={() => handleNotificationClose(notification.id)}
           >
-            <div className="toast-header">
-              <strong className="mr-auto">Notification</strong>
-              <small>{toast.timestamp}</small>
-              <button
-                type="button"
-                className="ml-2 mb-1 close"
-                data-dismiss="toast"
-                aria-label="Close"
-                onClick={() => closeToast(toast.id)}
-              >
-                <span aria-hidden="true">&times;</span>
-              </button>
-            </div>
-            <div className="toast-body">{toast.message}</div>
-          </div>
+            <Toast.Body>{notification.text}</Toast.Body>
+          </Toast>
         ))}
-      </div>
+      </ToastContainer>
     </div>
   );
 }

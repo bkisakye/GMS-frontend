@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Button } from "react-bootstrap";
+import { Modal, Button, Card, Container, Row, Col } from "react-bootstrap";
 import { fetchWithAuth } from "../../../utils/helpers";
 import { useNavigate } from "react-router-dom";
 
@@ -23,13 +23,13 @@ const LandingPage = () => {
         // Get today's date in ISO format
         const today = new Date().toISOString().split("T")[0];
 
-        // Filter grants where application_deadline is in the future or is null
-        // and end_date is today or in the future
-        const filteredGrants = data.filter(
+        // Filter grants
+        const filteredGrants = data.results.filter(
           (grant) =>
             (!grant.application_deadline ||
               grant.application_deadline >= today) &&
-            grant.end_date >= today
+            grant.end_date >= today &&
+            grant.is_open
         );
 
         setGrantOpportunities(filteredGrants);
@@ -78,124 +78,73 @@ const LandingPage = () => {
 
   if (loading) {
     return (
-      <div className="text-center mt-5">
+      <Container className="text-center mt-5">
         <h3>Loading...</h3>
-      </div>
+      </Container>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center mt-5">
+      <Container className="text-center mt-5">
         <h3>Error: {error}</h3>
-      </div>
+      </Container>
     );
   }
 
   return (
-    <div
-      className="container mt-5"
-      style={{
-        backgroundColor: "#f8f9fa",
-        padding: "2rem",
-        borderRadius: "0.5rem",
-      }}
-    >
-      <div
-        style={{
-          textAlign: "center",
-          marginBottom: "3rem",
-          backgroundColor: "#e9ecef",
-          padding: "3rem 1rem",
-          borderRadius: "0.5rem",
-        }}
-      >
-        <h1
-          style={{ fontSize: "2.5rem", fontWeight: "bold", color: "#007bff" }}
-        >
+    <Container className="mt-5">
+      <div className="text-center mb-4">
+        <h1 className="display-4 text-primary">
           Discover Our Grant Opportunities
         </h1>
-        <p style={{ fontSize: "1.25rem", color: "#6c757d" }}>
+        <p className="lead text-muted">
           Explore and apply for grants that align with your mission.
         </p>
       </div>
 
-      <div className="row">
-        {grantOpportunities.map((grant) => (
-          <div key={grant.id} className="col-md-6 col-lg-4 mb-4">
-            <div
-              className="card"
-              style={{
-                borderColor: "#ced4da",
-                maxWidth: "28rem",
-                borderRadius: "0.5rem",
-                boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
-                transition: "transform 0.2s, box-shadow 0.2s",
-              }}
-            >
-              <div className="card-body" style={{ padding: "1.5rem" }}>
-                <h5 className="card-title" style={{ fontSize: "1.25rem" }}>
-                  {grant.name}
-                </h5>
-                <ul className="list-unstyled mb-4">
-                  <li>
+      <Row>
+        {grantOpportunities.length === 0 ? (
+          <Col className="text-center">
+            <p>No available grants at this time.</p>
+          </Col>
+        ) : (
+          grantOpportunities.map((grant) => (
+            <Col key={grant.id} md={6} lg={4} className="mb-4">
+              <Card className="h-100">
+                <Card.Body>
+                  <Card.Title>{grant.name}</Card.Title>
+                  <Card.Text>
                     <strong>Start Date:</strong> {grant.start_date}
-                  </li>
-                  <li>
+                    <br />
                     <strong>End Date:</strong> {grant.end_date}
-                  </li>
-                </ul>
-                <Button
-                  style={{
-                    fontSize: "1.1rem",
-                    borderRadius: "0.25rem",
-                    transition: "background-color 0.2s, transform 0.2s",
-                  }}
-                  variant="primary"
-                  className="mt-3"
-                  onClick={() => handleShow(grant)}
-                  onMouseOver={(e) =>
-                    (e.currentTarget.style.backgroundColor = "#0056b3")
-                  }
-                  onMouseOut={(e) =>
-                    (e.currentTarget.style.backgroundColor = "#007bff")
-                  }
-                >
-                  More Details
-                </Button>
-              </div>
-              <div
-                className="card-footer"
-                style={{ backgroundColor: "#007bff", color: "#fff" }}
-              >
-                Open
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+                  </Card.Text>
+                  <Button variant="primary" onClick={() => handleShow(grant)}>
+                    More Details
+                  </Button>
+                </Card.Body>
+                <Card.Footer className="text-white bg-primary">
+                  Open
+                </Card.Footer>
+              </Card>
+            </Col>
+          ))
+        )}
+      </Row>
 
       <Modal show={showModal} onHide={handleClose} centered>
-        <Modal.Header
-          closeButton
-          style={{
-            borderBottom: "2px solid #dee2e6",
-            backgroundColor: "#f8f9fa",
-          }}
-        >
-          <Modal.Title style={{ fontWeight: "bold", color: "#007bff" }}>
-            {selectedGrant?.name}
-          </Modal.Title>
+        <Modal.Header closeButton>
+          <Modal.Title>{selectedGrant?.name}</Modal.Title>
         </Modal.Header>
-        <Modal.Body style={{ backgroundColor: "#f8f9fa", padding: "2rem" }}>
+        <Modal.Body>
           <p>
             <strong>Description:</strong> {selectedGrant?.description}
           </p>
           <p>
-            <strong>Category:</strong> {selectedGrant?.category?.name}
+            <strong>Category:</strong> {selectedGrant?.category_detail?.name}
           </p>
           <p>
-            <strong>Donor:</strong> {selectedGrant?.donor?.name}
+            <strong>Donor:</strong> {selectedGrant?.donor_detail?.name}
           </p>
           <p>
             <strong>Amount:</strong> ${selectedGrant?.amount}
@@ -211,45 +160,16 @@ const LandingPage = () => {
             {selectedGrant?.application_deadline}
           </p>
         </Modal.Body>
-        <Modal.Footer
-          style={{ borderTop: "2px solid #dee2e6", backgroundColor: "#f8f9fa" }}
-        >
-          <Button
-            variant="secondary"
-            onClick={handleClose}
-            style={{
-              borderRadius: "0.25rem",
-              transition: "background-color 0.2s",
-            }}
-            onMouseOver={(e) =>
-              (e.currentTarget.style.backgroundColor = "#6c757d")
-            }
-            onMouseOut={(e) =>
-              (e.currentTarget.style.backgroundColor = "#e9ecef")
-            }
-          >
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleClose}>
             Close
           </Button>
-          <Button
-            variant="primary"
-            onClick={handleApplyNow}
-            disabled={loading}
-            style={{
-              borderRadius: "0.25rem",
-              transition: "background-color 0.2s",
-            }}
-            onMouseOver={(e) =>
-              (e.currentTarget.style.backgroundColor = "#0056b3")
-            }
-            onMouseOut={(e) =>
-              (e.currentTarget.style.backgroundColor = "#007bff")
-            }
-          >
+          <Button variant="primary" onClick={handleApplyNow} disabled={loading}>
             {loading ? "Checking..." : "Apply Now"}
           </Button>
         </Modal.Footer>
       </Modal>
-    </div>
+    </Container>
   );
 };
 

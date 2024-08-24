@@ -1,26 +1,28 @@
 import React, { Component } from "react";
-import { AiFillEye, AiFillSafetyCertificate, AiFillStar } from "react-icons/ai";
+import PropTypes from "prop-types"; // Import PropTypes for prop validation
+import { AiFillEye, AiFillStar } from "react-icons/ai";
 import ViewApplicationModal from "./ViewApplicationModal";
 import ReviewApplicationModal from "./ReviewApplicationModal";
 import { fetchWithAuth } from "../../../../utils/helpers";
 
 export default class GrantsApplication extends Component {
-  constructor(props) {
-    super(props);
+  static propTypes = {
+    currentUserId: PropTypes.number,
+  };
 
-    this.state = {
-      isViewModalOpen: false,
-      isModalOpen: false,
-      granteeId: null,
-      selectedApplicationId: null,
-      existingReviewId: null,
-      grantId: null,
-      subgranteeId: null,
-      applications: [],
-      loading: true,
-      error: null,
-    };
-  }
+  state = {
+    isViewModalOpen: false,
+    isModalOpen: false,
+    granteeId: null,
+    selectedApplicationId: null,
+    existingReviewId: null,
+    grantId: null,
+    subgranteeId: null,
+    applications: [],
+    loading: true,
+    error: null,
+    searchQuery: "", 
+  };
 
   handleOpenViewModal = (applicationId, grantId, subgranteeId) => {
     this.setState({
@@ -44,7 +46,7 @@ export default class GrantsApplication extends Component {
     const selectedApplication = this.state.applications.find(
       (app) => app.id === applicationId
     );
-    const existingReviewId = selectedApplication?.review?.id || null; // Get the existing review ID if available
+    const existingReviewId = selectedApplication?.review?.id || null;
     const grantId = selectedApplication?.grant?.id || null;
     const subgranteeId = selectedApplication?.subgrantee?.id || null;
 
@@ -69,9 +71,7 @@ export default class GrantsApplication extends Component {
 
   handleReviewSubmit = (reviewData) => {
     console.log("Review submitted:", reviewData);
-
     this.fetchApplications(); // Refresh applications if needed
-
     this.handleCloseModal();
   };
 
@@ -79,7 +79,11 @@ export default class GrantsApplication extends Component {
     this.fetchApplications();
   }
 
-  fetchApplications() {
+  handleSearchChange = (event) => {
+    this.setState({ searchQuery: event.target.value });
+  };
+
+  fetchApplications = () => {
     fetchWithAuth("/api/grants/grant-applications/")
       .then((response) => {
         if (response.ok) {
@@ -89,7 +93,21 @@ export default class GrantsApplication extends Component {
       })
       .then((data) => this.setState({ applications: data, loading: false }))
       .catch((error) => this.setState({ error, loading: false }));
-  }
+  };
+
+  getFilteredApplications = () => {
+    const { applications, searchQuery } = this.state;
+    const searchLower = searchQuery.toLowerCase();
+    return applications.filter((application) => {
+      return (
+        application.subgrantee?.organisation_name
+          .toLowerCase()
+          .includes(searchLower) ||
+        application.grant?.name.toLowerCase().includes(searchLower) ||
+        application.status.toLowerCase().includes(searchLower)
+      );
+    });
+  };
 
   render() {
     const {
@@ -97,14 +115,15 @@ export default class GrantsApplication extends Component {
       loading,
       isViewModalOpen,
       error,
-      applications,
       selectedApplicationId,
       grantId,
       subgranteeId,
       existingReviewId,
+      searchQuery,
     } = this.state;
 
     const currentUserId = this.props.currentUserId || 1;
+    const filteredApplications = this.getFilteredApplications();
 
     if (loading) return <div className="text-center">Loading...</div>;
     if (error)
@@ -112,11 +131,20 @@ export default class GrantsApplication extends Component {
 
     return (
       <div className="container py-4">
-        <div className="card">
-          <div className="card-header">
+        <div className="mb-3">
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Search by Subgrantee Name, Grant Name, or Status"
+            value={searchQuery}
+            onChange={this.handleSearchChange}
+          />
+        </div>
+        <div className="card shadow-sm">
+          <div className="card-header bg-primary text-white">
             <h5 className="mb-0">Grant Applications List</h5>
           </div>
-          <div className="card-body p-0">
+          <div className="card-body">
             <div className="table-responsive">
               <table className="table table-hover mb-0">
                 <thead className="table-light">
@@ -130,37 +158,46 @@ export default class GrantsApplication extends Component {
                   </tr>
                 </thead>
                 <tbody>
-                  {applications.map((application) => (
-                    <tr key={application.id}>
-                      <td>
-                        {application.subgrantee?.organisation_name || "N/A"}
-                      </td>
-                      <td>{application.grant?.name || "N/A"}</td>
-                      <td>{application.grant?.application_deadline}</td>
-                      <td>{application.grant?.donor?.name}</td>
-                      <td>{application.status}</td>
-                      <td className="text-nowrap">
-                        <button
-                          onClick={() =>
-                            this.handleOpenViewModal(
-                              application.id,
-                              application.grant?.id,
-                              application.subgrantee?.id
-                            )
-                          }
-                          className="btn btn-sm btn-outline-primary"
-                        >
-                          <AiFillEye />
-                        </button>
-                        <button
-                          onClick={() => this.handleOpenModal(application.id)}
-                          className="btn btn-sm btn-outline-secondary"
-                        >
-                          <AiFillStar />
-                        </button>
+                  {filteredApplications.length > 0 ? (
+                    filteredApplications.map((application) => (
+                      <tr key={application.id}>
+                        <td>
+                          {application.subgrantee?.organisation_name || "N/A"}
+                        </td>
+                        <td>{application.grant?.name || "N/A"}</td>
+                        <td>{application.grant?.application_deadline}</td>
+                        <td>{application.grant?.donor?.name || "N/A"}</td>
+                        <td>{application.status}</td>
+                        <td className="text-nowrap">
+                          <button
+                            onClick={() =>
+                              this.handleOpenViewModal(
+                                application.id,
+                                application.grant?.id,
+                                application.subgrantee?.id
+                              )
+                            }
+                            className="btn btn-sm btn-outline-primary me-2"
+                            title="View Application"
+                          >
+                            <AiFillEye />
+                          </button>
+                          <button
+                            onClick={() => this.handleOpenModal(application.id)}
+                            className="btn btn-sm btn-outline-secondary"
+                          >
+                            <AiFillStar />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="6" className="text-center">
+                        No applications found
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>

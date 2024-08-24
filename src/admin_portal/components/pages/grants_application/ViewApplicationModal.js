@@ -120,35 +120,34 @@ const ViewApplicationModal = ({ isOpen, onClose, applicationId }) => {
     }
   };
 
-const exportToPDF = () => {
-  if (contentRef.current && applicationData) {
-    const orgName =
-      applicationData[0]?.user?.organisation_name || "Organization";
-    const grantName = applicationData[0]?.grant?.name || "Grant";
-    const filename = `${orgName}-${grantName}.pdf`;
+  const exportToPDF = () => {
+    if (contentRef.current && applicationData) {
+      const orgName =
+        applicationData[0]?.user?.organisation_name || "Organization";
+      const grantName = applicationData[0]?.grant?.name || "Grant";
+      const filename = `${orgName}-${grantName}.pdf`;
 
-    html2canvas(contentRef.current).then((canvas) => {
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF();
-      const imgWidth = 210;
-      const pageHeight = 295;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
+      html2canvas(contentRef.current).then((canvas) => {
+        const imgData = canvas.toDataURL("image/png");
+        const pdf = new jsPDF();
+        const imgWidth = 210;
+        const pageHeight = 295;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        let heightLeft = imgHeight;
 
-      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft >= 0) {
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", 0, -heightLeft, imgWidth, imgHeight);
+        pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
         heightLeft -= pageHeight;
-      }
 
-      pdf.save(filename);
-    });
-  }
-};
+        while (heightLeft >= 0) {
+          pdf.addPage();
+          pdf.addImage(imgData, "PNG", 0, -heightLeft, imgWidth, imgHeight);
+          heightLeft -= pageHeight;
+        }
 
+        pdf.save(filename);
+      });
+    }
+  };
 
   return (
     <Modal show={isOpen} onHide={onClose} size="lg">
@@ -175,9 +174,6 @@ const exportToPDF = () => {
       <Modal.Footer>
         <Button variant="primary" onClick={exportToPDF}>
           Export as PDF
-        </Button>
-        <Button variant="secondary" onClick={onClose}>
-          Review
         </Button>
       </Modal.Footer>
     </Modal>

@@ -87,8 +87,8 @@ class ReviewApplicationModal extends Component {
         onClick={this.handleClickOutside}
       >
         <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content">
-            <div className="modal-header">
+          <div className="modal-content shadow-lg rounded">
+            <div className="modal-header border-bottom-0">
               <h5 className="modal-title">Review Grant Application</h5>
               <button
                 type="button"
@@ -115,7 +115,7 @@ class ReviewApplicationModal extends Component {
                     <option value="">Select status</option>
                     <option value="approved">Approve</option>
                     <option value="rejected">Reject</option>
-                    <option value='negotiate'>Negotiate</option>
+                    <option value="negotiate">Negotiate</option>
                   </select>
                 </div>
                 <div className="mb-3">
@@ -149,21 +149,13 @@ class ReviewApplicationModal extends Component {
                   ></textarea>
                 </div>
               </div>
-              <div className="modal-footer">
+              <div className="modal-footer border-top-0">
                 <button
                   type="submit"
                   className="btn btn-success"
                   disabled={submitting}
                 >
                   {submitting ? "Submitting..." : "Submit"}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={this.props.onClose}
-                  disabled={submitting}
-                >
-                  Cancel
                 </button>
               </div>
             </form>

@@ -60,12 +60,13 @@ export default class Sidemenu extends Component {
                 </li>
                 <li className={`nav-item nav-item-submenu ${activeSubMenu === 3 ? 'nav-item-expanded' : ''}`}>
                   <a href="#" className="nav-link" onClick={() => this.toggleSubMenu(3)}>
-                    <i className="icon-calendar2" /> <span>Grants Application</span>
+                    <i className="icon-calendar2" /> <span>Grants Management</span>
                   </a>
                   <ul className={`nav nav-group-sub ${activeSubMenu === 3 ? 'd-block' : 'd-none'}`}>
-                    <li className='nav-item'><Link to="index" className='nav-link'><i className='icon-star' />All Grants</Link></li>
-                    <li className='nav-item'><Link to="grants_form" className='nav-link'><i className='icon-star' />Add New Grant</Link></li>
-                    <li className="nav-item"><Link to="applications_list" className="nav-link"><i className="icon-star" /> Applications List</Link></li>
+                    <li className='nav-item'><Link to="index" className='nav-link'><i className='icon-star' />Grants</Link></li>
+                    <li className="nav-item"><Link to="applications_list" className="nav-link"><i className="icon-star" /> Applications</Link></li>
+                    <li className='nav-item'><Link to="donors" className='nav-link'><i className='icon-start' />Donors</Link></li>
+                    <li className='nav-item'><Link to="types" className='nav-link'><i className='icon-start' />Grant Types</Link></li>
                   </ul>
                 </li>
                 <li className={`nav-item nav-item-submenu ${activeSubMenu === 4 ? 'nav-item-expanded' : ''}`}>

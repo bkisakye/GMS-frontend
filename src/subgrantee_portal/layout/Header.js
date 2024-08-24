@@ -1,8 +1,8 @@
 import React, { Component } from "react";
 import Logout from "../components/login/Logout";
 import { fetchWithAuth } from "../../utils/helpers";
-import "bootstrap/dist/css/bootstrap.min.css"; // Import Bootstrap CSS
-import { Toast, ToastContainer } from "react-bootstrap"; // Import Toast components from react-bootstrap
+import "bootstrap/dist/css/bootstrap.min.css"; 
+import { Toast, ToastContainer } from "react-bootstrap"; 
 
 export default class Header extends Component {
   constructor(props) {
@@ -13,7 +13,7 @@ export default class Header extends Component {
       activeGrantsCount: 0,
       notificationsCount: 0,
       notifications: [],
-      visibleNotifications: [], // State for managing visible toasts
+      visibleNotifications: [], 
     };
   }
 
@@ -65,10 +65,9 @@ export default class Header extends Component {
   };
 
   showNotifications = (notifications) => {
-    // Update visible notifications
     this.setState({ visibleNotifications: notifications });
 
-    // Set timeout to hide notifications after 5 seconds
+    
     notifications.forEach((notification) => {
       setTimeout(() => {
         this.setState((prevState) => ({
@@ -76,12 +75,12 @@ export default class Header extends Component {
             (n) => n.id !== notification.id
           ),
         }));
-      }, 5000); // 5 seconds
+      }, 5000); 
     });
   };
 
   handleNotificationClick = (notification) => {
-    // Handle notification click if needed
+   
     console.log("Notification clicked:", notification);
   };
 
@@ -199,7 +198,7 @@ export default class Header extends Component {
           </div>
         </div>
 
-        {/* Toast Container */}
+       
         <ToastContainer position="top-end" className="p-3">
           {visibleNotifications.map((notification) => (
             <Toast

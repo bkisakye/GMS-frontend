@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { fetchWithAuth } from "../../../utils/helpers";
 import { Accordion, Card, Form, Button, Modal } from "react-bootstrap";
 // import { useUser } from "../../../UserContext.js";
@@ -19,6 +19,7 @@ const ApplicationPage = () => {
   const user = JSON.parse(localStorage.getItem("user"));
   const userId = user?.user_id;
   const [existingDocuments, setExistingDocuments] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchQuestionsAndResponses = async () => {
@@ -59,11 +60,7 @@ const ApplicationPage = () => {
         const reviewData = await reviewResponse.json();
         const status = reviewData.status || "";
         setReviewStatus(status);
-        if (status === "negotiate") {
-          setIsReadOnly(false);
-        } else {
-          setIsReadOnly(true);
-        }
+        setIsReadOnly(status !== "negotiate");
       } catch (error) {
         console.error("Error fetching review status:", error);
       }
@@ -117,7 +114,7 @@ const ApplicationPage = () => {
   }, [applicationId, userId]);
 
   const handleChange = (e, question, column = null, rowIndex = null) => {
-    if (isReadOnly) return;
+  
     const { value, type, checked } = e.target;
     const questionId = question.id;
     const questionType = question.question_type;
@@ -217,38 +214,47 @@ const ApplicationPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form data submitted:", answers);
+const confirmSubmit = window.confirm(
+  "By confirming, you agree to the terms of the agreement. Are you ready to submit the application?"
+);
 
-    const method = answers.answers.length > 0 ? "PATCH" : "POST"; // Use PATCH if answers already exist
+    
+    if (confirmSubmit) {
+      console.log("Form data submitted:", answers);
 
-    try {
-      const response = await fetchWithAuth(
-        `/api/grants/responses/${grantId}/`,
-        {
-          method: method,
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(answers),
-        }
-      );
+      const method = answers.answers.length > 0 ? "PATCH" : "POST"; // Use PATCH if answers already exist
 
-      if (response.ok) {
-        console.log("Application submitted successfully!", response);
-        const responseData = await response.json();
-        setApplicationId(responseData.application_id);
-        setShowModal(true);
-
-        console.log(
-          "Application ID after submission:",
-          responseData.application_id
+      try {
+        const response = await fetchWithAuth(
+          `/api/grants/responses/${grantId}/`,
+          {
+            method: method,
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(answers),
+          }
         );
-        console.log("User ID:", userId);
-      } else {
-        console.error("Error submitting application:", response);
+
+        if (response.ok) {
+          console.log("Application submitted successfully!", response);
+          const responseData = await response.json();
+          setApplicationId(responseData.application_id);
+          setShowModal(true);
+
+          console.log(
+            "Application ID after submission:",
+            responseData.application_id
+          );
+          console.log("User ID:", userId);
+        } else {
+          console.error("Error submitting application:", response);
+        }
+      } catch (error) {
+        console.error("Error submitting application:", error);
       }
-    } catch (error) {
-      console.error("Error submitting application:", error);
+    } else {
+      navigate(-1);
     }
   };
 
@@ -275,8 +281,6 @@ const ApplicationPage = () => {
 
       if (uploadResponse.ok) {
         console.log("Files uploaded successfully!");
-        setIsReadOnly(true);
-        setShowModal(false);
       } else {
         console.error("Error uploading files:", await uploadResponse.json());
       }
