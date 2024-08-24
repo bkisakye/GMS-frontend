@@ -11,7 +11,15 @@ const Budget = () => {
   const [categories, setCategories] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showModal, setShowModal] = useState(false);
-  const [grants, setGrants] = useState(null); // Renamed to grants, containing single grant object
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [grants, setGrants] = useState(null);
+  const [newItem, setNewItem] = useState({
+    grant_account: "",
+    category: "",
+    amount: "",
+    description: "",
+    fiscal_year: new Date().getFullYear(),
+  });
 
   const user = JSON.parse(localStorage.getItem("user"));
   const userId = user?.user_id;
@@ -48,8 +56,8 @@ const Budget = () => {
         );
         if (response.ok) {
           const data = await response.json();
-          console.log("Fetched grant:", data); // Log to check the data structure
-          setGrants(data); // Set the single grant object
+          console.log("Fetched grant:", data);
+          setGrants(data);
         } else {
           console.error("Failed to fetch grant");
         }
@@ -187,6 +195,48 @@ const Budget = () => {
     }
   };
 
+  const handleCreateItem = async () => {
+    const formattedData = {
+      grant_account: parseInt(newItem.grant_account),
+      category: parseInt(newItem.category),
+      amount: parseFloat(newItem.amount),
+      fiscal_year: parseInt(newItem.fiscal_year),
+      description: newItem.description,
+    };
+
+    try {
+      const response = await fetchWithAuth(
+        `/api/grants/budget_item/${userId}/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify(formattedData),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to create budget item: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      setBudgetItems([...budgetItems, result]);
+      setFilteredBudgetItems([...filteredBudgetItems, result]);
+      setShowCreateModal(false);
+      setNewItem({
+        grant_account: "",
+        category: "",
+        amount: "",
+        description: "",
+        fiscal_year: new Date().getFullYear(),
+      });
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
   return (
     <div className="container py-4">
       <h2 className="mb-4">Budget Items</h2>
@@ -198,6 +248,12 @@ const Budget = () => {
           value={searchQuery}
           onChange={handleSearchChange}
         />
+        <button
+          className="btn btn-primary ms-2"
+          onClick={() => setShowCreateModal(true)}
+        >
+          Add Budget Item
+        </button>
       </div>
       {filteredBudgetItems.length > 0 ? (
         <table className="table table-striped table-hover">
@@ -319,6 +375,81 @@ const Budget = () => {
         <Modal.Footer>
           <Button variant="primary" onClick={handleSaveEdit}>
             Save Changes
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={showCreateModal} onHide={() => setShowCreateModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Create Budget Item</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>Grant</Form.Label>
+              <Form.Control
+                as="select"
+                value={newItem.grant_account}
+                onChange={(e) =>
+                  setNewItem({ ...newItem, grant_account: e.target.value })
+                }
+              >
+                <option value="">Select a grant</option>
+                {grants && (
+                  <option key={grants.id} value={grants.id}>
+                    {grants.grant.name}
+                  </option>
+                )}
+              </Form.Control>
+
+              <Form.Label>Category</Form.Label>
+              <Form.Control
+                as="select"
+                value={newItem.category}
+                onChange={(e) =>
+                  setNewItem({ ...newItem, category: e.target.value })
+                }
+              >
+                <option value="">Select a category</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </Form.Control>
+
+              <Form.Label>Amount</Form.Label>
+              <Form.Control
+                type="number"
+                value={newItem.amount}
+                onChange={(e) =>
+                  setNewItem({ ...newItem, amount: e.target.value })
+                }
+              />
+
+              <Form.Label>Description</Form.Label>
+              <Form.Control
+                type="text"
+                value={newItem.description}
+                onChange={(e) =>
+                  setNewItem({ ...newItem, description: e.target.value })
+                }
+              />
+
+              <Form.Label>Fiscal Year</Form.Label>
+              <Form.Control
+                type="number"
+                value={newItem.fiscal_year}
+                onChange={(e) =>
+                  setNewItem({ ...newItem, fiscal_year: e.target.value })
+                }
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="primary" onClick={handleCreateItem}>
+            Create Budget Item
           </Button>
         </Modal.Footer>
       </Modal>
