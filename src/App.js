@@ -38,6 +38,7 @@ import SpecificQuestions from "./admin_portal/components/pages/grants/specificqu
 import Donors from "./admin_portal/components/pages/donors/donors";
 import Types from "./admin_portal/components/pages/grants/types";
 import Budget from "./subgrantee_portal/components/pages/Budget";
+import FundingAllocation from "./subgrantee_portal/components/pages/FundingAllocation";
 
 function App() {
   return (
@@ -82,6 +83,7 @@ function App() {
           <Route path="application/:grantName" element={<GrantApplication />} />
           <Route path="application" element={<GrantApplication />} />
           <Route path="budget" element={<Budget />} />
+          <Route path="funding-allocation" element={<FundingAllocation />} />
           <Route path="profile" element={<ProfileCreation />}>
             <Route index element={<GeneralInfo />} />
             <Route path="generalinfo" element={<GeneralInfo />} />
