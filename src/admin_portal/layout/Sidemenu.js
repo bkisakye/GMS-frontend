@@ -43,7 +43,7 @@ export default class Sidemenu extends Component {
             <div className="card card-sidebar-mobile">
               <ul className="nav nav-sidebar" data-nav-type="accordion">
                 <li className="nav-item">
-                  <Link to="/" className="nav-link active">
+                  <Link to="#" className="nav-link active">
                     <i className="icon-home4" />
                     <span>Dashboard</span>
                   </Link>

@@ -20,10 +20,10 @@ const LandingPage = () => {
         }
         const data = await response.json();
 
-        // Get today's date in ISO format
+        
         const today = new Date().toISOString().split("T")[0];
 
-        // Filter grants
+        
         const filteredGrants = data.results.filter(
           (grant) =>
             (!grant.application_deadline ||

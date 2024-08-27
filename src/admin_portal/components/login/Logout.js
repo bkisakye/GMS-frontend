@@ -7,7 +7,7 @@ const Logout = () => {
   const handleLogout = () => {
     localStorage.removeItem('isAuthenticated');
     // Update Context or State Management Store (if applicable)
-    navigate('/login'); // Redirect to login page
+    navigate('/admin-login'); // Redirect to login page
   };
 
   return (
