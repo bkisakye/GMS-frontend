@@ -74,9 +74,7 @@ export default class Sidemenu extends Component {
                     <i className="icon-briefcase3" /> <span>Reports</span>
                   </a>
                   <ul className={`nav nav-group-sub ${activeSubMenu === 4 ? 'd-block' : 'd-none'}`}>
-                    <li className="nav-item"><a href="/report1" className="nav-link">Report1</a></li>
-                    <li className="nav-item"><a href="/report1" className="nav-link">Report1</a></li>
-                    <li className="nav-item"><a href="/login" className="nav-link">login</a></li>
+                    <li className="nav-item"><a href="progress-reports" className="nav-link">Progress Reports</a></li>
                   </ul>
                 </li>
                 <li className={`nav-item nav-item-submenu ${activeSubMenu === 5 ? 'nav-item-expanded' : ''}`}>

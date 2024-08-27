@@ -40,6 +40,7 @@ import Types from "./admin_portal/components/pages/grants/types";
 import Budget from "./subgrantee_portal/components/pages/Budget";
 import FundingAllocation from "./subgrantee_portal/components/pages/FundingAllocation";
 import Accounts from "./subgrantee_portal/components/pages/Accounts";
+import ProgressReports from "./admin_portal/components/pages/reports/ProgressReports";
 
 function App() {
   return (
@@ -69,6 +70,7 @@ function App() {
           <Route path="specificquestions" element={<SpecificQuestions />} />
           <Route path="donors" element={<Donors />} />
           <Route path="types" element={<Types />} />
+          <Route path="progress-reports" element={<ProgressReports />} />
         </Route>
 
         {/* Subgrantee routes */}
