@@ -81,7 +81,9 @@ export default class Sidemenu extends Component {
                   <a href="#" className="nav-link" onClick={() => this.toggleSubMenu(5)}>
                     <i className="icon-medal-star" /> <span>Financials Management</span>
                   </a>
-                  <ul className={`nav nav-group-sub ${activeSubMenu === 5 ? 'd-block' : 'd-none'}`}></ul>
+                  <ul className={`nav nav-group-sub ${activeSubMenu === 5 ? 'd-block' : 'd-none'}`}>
+                    <li className='nav-item'><a href="grant-accounts" className='nav-link'>Grants Accounts</a></li>
+                  </ul>
                 </li>
                 <li className={`nav-item nav-item-submenu ${activeSubMenu === 6 ? 'nav-item-expanded' : ''}`}>
                   <a href="#" className="nav-link" onClick={() => this.toggleSubMenu(6)}>

@@ -100,7 +100,7 @@ const Accounts = () => {
       if (response.ok) {
         console.log("Progress report submitted successfully");
         handleCloseModal();
-        fetchGrantAccounts(); // Refresh the grant account data
+        fetchGrantAccounts(); 
       } else {
         console.error("Failed to submit progress report");
       }
