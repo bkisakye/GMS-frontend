@@ -1,9 +1,10 @@
 import React, { Component } from "react";
-import PropTypes from "prop-types"; // Import PropTypes for prop validation
+import PropTypes from "prop-types";
 import { AiFillEye, AiFillStar } from "react-icons/ai";
 import ViewApplicationModal from "./ViewApplicationModal";
 import ReviewApplicationModal from "./ReviewApplicationModal";
 import { fetchWithAuth } from "../../../../utils/helpers";
+import { Spinner, Button, Table, Form } from "react-bootstrap";
 
 export default class GrantsApplication extends Component {
   static propTypes = {
@@ -21,7 +22,7 @@ export default class GrantsApplication extends Component {
     applications: [],
     loading: true,
     error: null,
-    searchQuery: "", 
+    searchQuery: "",
   };
 
   handleOpenViewModal = (applicationId, grantId, subgranteeId) => {
@@ -125,36 +126,40 @@ export default class GrantsApplication extends Component {
     const currentUserId = this.props.currentUserId || 1;
     const filteredApplications = this.getFilteredApplications();
 
-    if (loading) return <div className="text-center">Loading...</div>;
+    if (loading)
+      return (
+        <div className="text-center">
+          <Spinner animation="border" role="status" />
+        </div>
+      );
     if (error)
       return <div className="alert alert-danger">Error: {error.message}</div>;
 
     return (
-      <div className="container py-4">
-        <div className="mb-3">
-          <input
+      <div className="container mt-4">
+        <Form.Group className="mb-4">
+          <Form.Control
             type="text"
-            className="form-control"
             placeholder="Search by Subgrantee Name, Grant Name, or Status"
             value={searchQuery}
             onChange={this.handleSearchChange}
           />
-        </div>
+        </Form.Group>
         <div className="card shadow-sm">
           <div className="card-header bg-primary text-white">
             <h5 className="mb-0">Grant Applications List</h5>
           </div>
           <div className="card-body">
             <div className="table-responsive">
-              <table className="table table-hover mb-0">
+              <Table striped bordered hover>
                 <thead className="table-light">
                   <tr>
-                    <th scope="col">Subgrantee Name</th>
-                    <th scope="col">Grant</th>
-                    <th scope="col">Application Deadline</th>
-                    <th scope="col">Donor</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Action</th>
+                    <th>Subgrantee Name</th>
+                    <th>Grant</th>
+                    <th>Application Deadline</th>
+                    <th>Donor</th>
+                    <th>Status</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -165,11 +170,15 @@ export default class GrantsApplication extends Component {
                           {application.subgrantee?.organisation_name || "N/A"}
                         </td>
                         <td>{application.grant?.name || "N/A"}</td>
-                        <td>{application.grant?.application_deadline}</td>
+                        <td>
+                          {application.grant?.application_deadline || "N/A"}
+                        </td>
                         <td>{application.grant?.donor?.name || "N/A"}</td>
                         <td>{application.status}</td>
                         <td className="text-nowrap">
-                          <button
+                          <Button
+                            variant="outline-primary"
+                            className="me-2"
                             onClick={() =>
                               this.handleOpenViewModal(
                                 application.id,
@@ -177,17 +186,17 @@ export default class GrantsApplication extends Component {
                                 application.subgrantee?.id
                               )
                             }
-                            className="btn btn-sm btn-outline-primary me-2"
                             title="View Application"
                           >
                             <AiFillEye />
-                          </button>
-                          <button
+                          </Button>
+                          <Button
+                            variant="outline-secondary"
                             onClick={() => this.handleOpenModal(application.id)}
-                            className="btn btn-sm btn-outline-secondary"
+                            title="Review Application"
                           >
                             <AiFillStar />
-                          </button>
+                          </Button>
                         </td>
                       </tr>
                     ))
@@ -199,7 +208,7 @@ export default class GrantsApplication extends Component {
                     </tr>
                   )}
                 </tbody>
-              </table>
+              </Table>
             </div>
           </div>
         </div>

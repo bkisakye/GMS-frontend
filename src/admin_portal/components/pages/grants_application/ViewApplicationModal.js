@@ -25,10 +25,14 @@ const ViewApplicationModal = ({ isOpen, onClose, applicationId }) => {
             ? response.json()
             : Promise.reject("Network response was not ok.")
         )
-        .then((application) => {
-          const grant_id = application.grant?.id || null;
-          const user_id = application.subgrantee?.id || null;
+        .then((data) => {
+          // Log the IDs for debugging
+          const grant_id = data[0]?.grant?.id || null;
+          const user_id = data[0]?.subgrantee?.id || null;
+          console.log("Fetched Grant ID:", grant_id);
+          console.log("Fetched User ID:", user_id);
 
+          // Fetch additional data if needed
           if (grant_id && user_id) {
             return fetchWithAuth(
               `/api/grants/transformed-data/?user_id=${user_id}&grant_id=${grant_id}`
@@ -43,7 +47,7 @@ const ViewApplicationModal = ({ isOpen, onClose, applicationId }) => {
             : Promise.reject("Failed to fetch transformed data.")
         )
         .then((data) => {
-          setApplicationData(data);
+          setApplicationData(data[0] || {});
           setLoading(false);
         })
         .catch((err) => {
@@ -60,7 +64,7 @@ const ViewApplicationModal = ({ isOpen, onClose, applicationId }) => {
     switch (question_type) {
       case "text":
         return (
-          <Card className="mb-3">
+          <Card className="mb-3" key={text}>
             <Card.Header>{text}</Card.Header>
             <Card.Body>{answer}</Card.Body>
           </Card>
@@ -68,13 +72,14 @@ const ViewApplicationModal = ({ isOpen, onClose, applicationId }) => {
 
       case "checkbox":
         return (
-          <Card className="mb-3">
+          <Card className="mb-3" key={text}>
             <Card.Header>{text}</Card.Header>
             <Card.Body>
               <ul>
-                {choices.map((choice, index) => (
-                  <li key={index}>{choice.check}</li>
-                ))}
+                {choices &&
+                  choices.map((choice, index) => (
+                    <li key={index}>{choice.check}</li>
+                  ))}
               </ul>
             </Card.Body>
           </Card>
@@ -82,36 +87,17 @@ const ViewApplicationModal = ({ isOpen, onClose, applicationId }) => {
 
       case "radio":
         return (
-          <Card className="mb-3">
+          <Card className="mb-3" key={text}>
             <Card.Header>{text}</Card.Header>
             <Card.Body>{answer}</Card.Body>
           </Card>
         );
 
-      case "table":
+      case "number":
         return (
-          <Card className="mb-3">
+          <Card className="mb-3" key={text}>
             <Card.Header>{text}</Card.Header>
-            <Card.Body>
-              <table className="table">
-                <thead>
-                  <tr>
-                    {Object.keys(choices[0]).map((key, index) => (
-                      <th key={index}>{key}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {choices.map((row, index) => (
-                    <tr key={index}>
-                      {Object.values(row).map((value, idx) => (
-                        <td key={idx}>{value}</td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </Card.Body>
+            <Card.Body>{answer}</Card.Body>
           </Card>
         );
 
@@ -122,9 +108,8 @@ const ViewApplicationModal = ({ isOpen, onClose, applicationId }) => {
 
   const exportToPDF = () => {
     if (contentRef.current && applicationData) {
-      const orgName =
-        applicationData[0]?.user?.organisation_name || "Organization";
-      const grantName = applicationData[0]?.grant?.name || "Grant";
+      const orgName = applicationData.user?.organisation_name || "Organization";
+      const grantName = applicationData.grant?.name || "Grant";
       const filename = `${orgName}-${grantName}.pdf`;
 
       html2canvas(contentRef.current).then((canvas) => {
@@ -162,7 +147,7 @@ const ViewApplicationModal = ({ isOpen, onClose, applicationId }) => {
         ) : error ? (
           <Alert variant="danger">{error}</Alert>
         ) : (
-          applicationData?.[0]?.transformed_data?.grant?.responses.map(
+          applicationData.transformed_data?.grant?.responses?.map(
             (question, index) => (
               <Accordion defaultActiveKey="0" key={index}>
                 <Card>{renderQuestion(question)}</Card>
