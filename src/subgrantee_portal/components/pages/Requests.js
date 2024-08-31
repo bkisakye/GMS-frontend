@@ -291,7 +291,27 @@ const Requests = () => {
               </>
             )}
 
-
+            {selectedRequestType === "modification" && (
+              <>
+                <Form.Group controlId="grant_account">
+                  <Form.Label>Grant Account</Form.Label>
+                  <Form.Control
+                    as="select"
+                    name="grant_account"
+                    value={formData.grant_account}
+                    onChange={handleInputChange}
+                    required
+                  >
+                    <option value="">Select a grant account</option>
+                    {grantAccounts.map((account) => (
+                      <option key={account.id} value={account.id}>
+                        {account.grant.name}
+                      </option>
+                    ))}
+                  </Form.Control>
+                </Form.Group>
+              </>
+            )}
 
             {error && <Alert variant="danger">{error}</Alert>}
 

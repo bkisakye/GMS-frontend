@@ -43,7 +43,7 @@ import Accounts from "./subgrantee_portal/components/pages/Accounts";
 import ProgressReports from "./admin_portal/components/pages/reports/ProgressReports";
 import GrantAccounts from "./admin_portal/components/pages/grant_accounts/Accounts";
 import Requests from "./subgrantee_portal/components/pages/Requests";
-// import GrantCloseOut from "./admin_portal/components/pages/requests/GrantCloseOut";
+import GrantCloseOut from "./admin_portal/components/pages/requests/GrantCloseOut";
 
 function App() {
   return (
@@ -75,7 +75,7 @@ function App() {
           <Route path="types" element={<Types />} />
           <Route path="progress-reports" element={<ProgressReports />} />
           <Route path="grant-accounts" element={<GrantAccounts />} />
-          {/* <Route path="closeout-requests" element={<GrantCloseOut />} /> */}
+          <Route path="closeout-requests" element={<GrantCloseOut />} />
         </Route>
 
         {/* Subgrantee routes */}
