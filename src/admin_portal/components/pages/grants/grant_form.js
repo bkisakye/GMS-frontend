@@ -54,6 +54,8 @@ const Subgrantees = () => {
     grantTypes: [],
     donors: [],
     districts: [],
+    kpis: [],
+    reporting_time: "",
     errorMessage: "",
     successMessage: "",
   });
@@ -179,7 +181,9 @@ const Subgrantees = () => {
       selectedDistricts,
       amount,
       numberOfAwards,
+      kpis,
       eligibilityDetails,
+      reporting_time,
     } = formData;
 
     const grantData = {
@@ -189,11 +193,13 @@ const Subgrantees = () => {
       end_date: endDate,
       application_deadline: applicationDeadline,
       category,
+      kpis,
       donor,
       district: selectedDistricts.map((option) => option.value),
       amount,
       number_of_awards: numberOfAwards,
       eligibility_details: eligibilityDetails,
+      reporting_time,
     };
 
     console.log("grant data", grantData);
@@ -222,17 +228,21 @@ const Subgrantees = () => {
         endDate: "",
         applicationDeadline: "",
         category: "",
+        kpis: [],
         donor: "",
         selectedDistricts: [],
         amount: "",
         numberOfAwards: "",
         eligibilityDetails: "",
+        reporting_time: "",
         grantTypes: formData.grantTypes,
         donors: formData.donors,
         districts: formData.districts,
         successMessage: "Grant created successfully!",
         errorMessage: "",
       });
+
+      window.location.reload();
     } catch (error) {
       console.error("Error creating grant:", error);
       setFormData((prevState) => ({
@@ -253,6 +263,8 @@ const Subgrantees = () => {
     selectedDistricts,
     grantTypes,
     donors,
+    kpis,
+    reporting_time,
     districts,
     amount,
     numberOfAwards,
@@ -275,6 +287,13 @@ const Subgrantees = () => {
     label: district.name,
     value: district.id,
   }));
+
+    const reportingTimeOptions = [
+      { value: "monthly", label: "Monthly" },
+      { value: "quarterly", label: "Quarterly" },
+      { value: "annually", label: "Annually" },
+      { value: "weekly", label: "Weekly" },
+    ];
 
   return (
     <div className="container" style={containerStyle}>
@@ -442,6 +461,35 @@ const Subgrantees = () => {
                     placeholder="Enter number of awards"
                   />
                 </div>
+              </div>
+              <div className="mb-3">
+                <label className="form-label fw-bold">Reporting Time:</label>
+                <select
+                  name="reporting_time"
+                  value={reporting_time}
+                  onChange={handleChange}
+                  className="form-select"
+                >
+                  <option value="">Select Reporting Time</option>
+                  {reportingTimeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="mb-3">
+                <label className="form-label" style={labelStyle}>
+                  Key Performance Indicators:
+                </label>
+                <textarea
+                  name="kpis"
+                  value={kpis}
+                  onChange={handleChange}
+                  className="form-control"
+                  rows="3"
+                  placeholder="Enter Key Performance Indicators"
+                />
               </div>
               <div className="mb-3">
                 <label className="form-label" style={labelStyle}>

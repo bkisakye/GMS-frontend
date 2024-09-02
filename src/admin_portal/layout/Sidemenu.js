@@ -67,7 +67,7 @@ export default class Sidemenu extends Component {
                     <li className="nav-item"><Link to="applications_list" className="nav-link"><i className="icon-star" /> Applications</Link></li>
                     <li className='nav-item'><Link to="donors" className='nav-link'><i className='icon-start' />Donors</Link></li>
                     <li className='nav-item'><Link to="types" className='nav-link'><i className='icon-start' />Grant Types</Link></li>
-                    <li className='nav-item'><Link to="closeout-requests" className='nav-link'><i className='icon-start' />GrantCloseOut Requests</Link></li>
+                    <li className='nav-item'><Link to="closeout-requests" className='nav-link'><i className='icon-start' />Requests</Link></li>
                   </ul>
                 </li>
                 <li className={`nav-item nav-item-submenu ${activeSubMenu === 4 ? 'nav-item-expanded' : ''}`}>

@@ -13,11 +13,12 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faFilePdf,
   faFileAlt,
-  faSpinner,
   faDownload,
+  faEye,
 } from "@fortawesome/free-solid-svg-icons";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+// import "./ViewApplicationModal.css"; // Assuming you create a CSS file for custom styles
 
 const ViewApplicationModal = ({ isOpen, onClose, applicationId }) => {
   const [applicationData, setApplicationData] = useState(null);
@@ -79,53 +80,35 @@ const ViewApplicationModal = ({ isOpen, onClose, applicationId }) => {
 
     switch (question_type) {
       case "text":
+      case "number":
+      case "radio":
         return (
-          <Card className="mb-3" key={text}>
+          <Card className="mb-3 shadow-sm" key={text}>
             <Card.Header className="bg-primary text-white">
               <FontAwesomeIcon icon={faFileAlt} className="me-2" />
               {text}
             </Card.Header>
-            <Card.Body>{answer}</Card.Body>
+            <Card.Body className="bg-white">
+              <p className="mb-0">{answer}</p>
+            </Card.Body>
           </Card>
         );
 
       case "checkbox":
         return (
-          <Card className="mb-3" key={text}>
+          <Card className="mb-3 shadow-sm" key={text}>
             <Card.Header className="bg-primary text-white">
               <FontAwesomeIcon icon={faFileAlt} className="me-2" />
               {text}
             </Card.Header>
-            <Card.Body>
-              <ul>
+            <Card.Body className="bg-white">
+              <ul className="mb-0">
                 {choices &&
                   choices.map((choice, index) => (
                     <li key={index}>{choice.check}</li>
                   ))}
               </ul>
             </Card.Body>
-          </Card>
-        );
-
-      case "radio":
-        return (
-          <Card className="mb-3" key={text}>
-            <Card.Header className="bg-primary text-white">
-              <FontAwesomeIcon icon={faFileAlt} className="me-2" />
-              {text}
-            </Card.Header>
-            <Card.Body>{answer}</Card.Body>
-          </Card>
-        );
-
-      case "number":
-        return (
-          <Card className="mb-3" key={text}>
-            <Card.Header className="bg-primary text-white">
-              <FontAwesomeIcon icon={faFileAlt} className="me-2" />
-              {text}
-            </Card.Header>
-            <Card.Body>{answer}</Card.Body>
           </Card>
         );
 
@@ -136,22 +119,34 @@ const ViewApplicationModal = ({ isOpen, onClose, applicationId }) => {
 
   const renderDocuments = () => {
     return (
-      <Card className="mb-3">
+      <Card className="mb-3 shadow-sm">
         <Card.Header className="bg-secondary text-white">
           <FontAwesomeIcon icon={faFilePdf} className="me-2" />
           Associated Documents
         </Card.Header>
-        <Card.Body>
+        <Card.Body className="bg-white">
           <ListGroup>
-            {documents.map((doc, index) => (
-              <ListGroup.Item
-                key={index}
-                action
-                onClick={() => setSelectedDocument(doc)}
-              >
-                {doc.documents.split("/").pop()}
-              </ListGroup.Item>
-            ))}
+            {documents.map((doc, index) => {
+              const fileName = doc.documents.split("/").pop();
+              const documentUrl = `http://localhost:8000${doc.documents}`;
+              return (
+                <ListGroup.Item
+                  key={index}
+                  className="d-flex justify-content-between align-items-center"
+                >
+                  <span>{fileName}</span>
+                  <a
+                    href={documentUrl}
+                    download={fileName}
+                    className="btn btn-sm btn-outline-primary"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <FontAwesomeIcon icon={faEye} className="me-2" />
+                    Preview
+                  </a>
+                </ListGroup.Item>
+              );
+            })}
           </ListGroup>
         </Card.Body>
       </Card>
@@ -163,21 +158,10 @@ const ViewApplicationModal = ({ isOpen, onClose, applicationId }) => {
 
     const fileName = selectedDocument.documents.split("/").pop();
     const fileExtension = fileName.split(".").pop().toLowerCase();
-
-    // Construct the correct URL for the document
     const documentUrl = `http://localhost:8000${selectedDocument.documents}`;
 
     switch (fileExtension) {
       case "pdf":
-      // return (
-      //   <iframe
-      //     src={documentUrl}
-      //     title={fileName}
-      //     width="100%"
-      //     height="500px"
-      //     style={{ border: "none" }}
-      //   />
-      // );
       case "jpg":
       case "jpeg":
       case "png":
@@ -230,14 +214,14 @@ const ViewApplicationModal = ({ isOpen, onClose, applicationId }) => {
   };
 
   return (
-    <Modal show={isOpen} onHide={onClose} size="lg">
-      <Modal.Header closeButton>
+    <Modal show={isOpen} onHide={onClose} size="lg" centered>
+      <Modal.Header closeButton className="bg-dark text-white">
         <Modal.Title>Application Details</Modal.Title>
       </Modal.Header>
       <Modal.Body ref={contentRef} className="bg-light p-4">
         {loading ? (
           <div className="text-center">
-            <FontAwesomeIcon icon={faSpinner} spin size="3x" />
+            <Spinner animation="border" variant="primary" />
           </div>
         ) : error ? (
           <Alert variant="danger">{error}</Alert>
@@ -252,7 +236,7 @@ const ViewApplicationModal = ({ isOpen, onClose, applicationId }) => {
             )}
             {renderDocuments()}
             {selectedDocument && (
-              <Card className="mt-3">
+              <Card className="mt-3 shadow-sm">
                 <Card.Header className="bg-info text-white">
                   <FontAwesomeIcon icon={faFileAlt} className="me-2" />
                   Document Preview
@@ -263,10 +247,10 @@ const ViewApplicationModal = ({ isOpen, onClose, applicationId }) => {
           </>
         )}
       </Modal.Body>
-      <Modal.Footer>
+      <Modal.Footer className="bg-light">
         <Button variant="primary" onClick={exportToPDF}>
           <FontAwesomeIcon icon={faFilePdf} className="me-2" />
-          Export as PDF
+          Export 
         </Button>
       </Modal.Footer>
     </Modal>
