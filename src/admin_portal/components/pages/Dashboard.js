@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css'; 
 import '@fortawesome/fontawesome-free/css/all.min.css'; 
-import './Dashboard.css'; 
 import { fetchWithAuth } from '../../../utils/helpers';
 
 const Dashboard = () => {
@@ -11,6 +10,8 @@ const Dashboard = () => {
   const [rejectedCount, setRejectedCount] = useState(0);
   const [subgranteeCount, setSubgranteeCount] = useState(0);
   const [activeSubgranteeCount, setActiveSubgranteeCount] = useState(0);
+  const [complianceCheck, setComplianceCheck] = useState(0);
+  const [disbursementAmount, setDisbursementAmount] = useState(0);
 
  useEffect(() => {
  
@@ -67,6 +68,25 @@ const Dashboard = () => {
      })
      .catch((error) => {
        console.error("Error fetching active subgrantee count:", error);
+     })
+   
+   fetchWithAuth(`/api/grants/signed-applications-percentage/`)
+     .then((response) => response.json())
+     .then((data) => {
+       setComplianceCheck(data.signed_percentage);
+       console.log("Compliance Check:", data.signed_percentage);
+     })
+     .catch((error) => {
+       console.error("Error fetching compliance check", error);
+     })
+   
+   fetchWithAuth(`/api/grants/total-disbursements/`)
+     .then((response) => response.json())
+     .then((data) => {
+       setDisbursementAmount(data.total_disbursements);
+     })
+     .catch((error) => {
+       console.error("Error fetching disbursements:", error);
      })
    
  }, []);
@@ -167,7 +187,7 @@ const Dashboard = () => {
             <div className="card card-body">
               <div className="media">
                 <div className="media-body">
-                  <h3 className="font-weight-semibold mb-0">95%</h3>
+                <h3 className="font-weight-semibold mb-0">{complianceCheck}%</h3>
                   <span className="text-uppercase font-size-sm text-muted">Compliance Rate</span>
                 </div>
                 <div className="ml-3 align-self-center">
@@ -181,7 +201,7 @@ const Dashboard = () => {
             <div className="card card-body">
             <div className="media">
                 <div className="media-body">
-                    <h3 className="font-weight-semibold mb-0">$3M</h3>
+                <h3 className="font-weight-semibold mb-0">${disbursementAmount}M</h3>
                     <span className="text-uppercase font-size-sm text-muted">Funds Disbursed</span>
                 </div>
                 <div className="ml-3 align-self-center">

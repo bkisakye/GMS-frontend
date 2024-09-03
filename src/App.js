@@ -63,7 +63,7 @@ function App() {
           }
         >
           <Route index element={<Dashboard />} />
-          {/* <Route path="add_grant" element={<GrantsForm />} /> */}
+          <Route path="" element={<Dashboard />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="subgrantees_list" element={<Subgrantees />} />
           <Route path="grants_list" element={<Grants />} />

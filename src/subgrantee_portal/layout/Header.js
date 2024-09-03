@@ -1,8 +1,8 @@
 import React, { Component } from "react";
 import Logout from "../components/login/Logout";
 import { fetchWithAuth } from "../../utils/helpers";
-import "bootstrap/dist/css/bootstrap.min.css"; 
-import { Toast, ToastContainer } from "react-bootstrap"; 
+import "bootstrap/dist/css/bootstrap.min.css";
+import { Toast, ToastContainer } from "react-bootstrap";
 
 export default class Header extends Component {
   constructor(props) {
@@ -13,7 +13,7 @@ export default class Header extends Component {
       activeGrantsCount: 0,
       notificationsCount: 0,
       notifications: [],
-      visibleNotifications: [], 
+      visibleNotifications: [],
     };
   }
 
@@ -67,7 +67,6 @@ export default class Header extends Component {
   showNotifications = (notifications) => {
     this.setState({ visibleNotifications: notifications });
 
-    
     notifications.forEach((notification) => {
       setTimeout(() => {
         this.setState((prevState) => ({
@@ -75,12 +74,11 @@ export default class Header extends Component {
             (n) => n.id !== notification.id
           ),
         }));
-      }, 5000); 
+      }, 5000);
     });
   };
 
   handleNotificationClick = (notification) => {
-   
     console.log("Notification clicked:", notification);
   };
 
@@ -97,113 +95,119 @@ export default class Header extends Component {
 
     return (
       <div>
-        <div className="navbar navbar-expand-lg navbar-light navbar-static">
-          <div className="navbar-header navbar-light d-none d-md-flex align-items-md-center">
-            <div className="navbar-brand navbar-brand-md">
-              <a
-                href="https://hrmis.mrcuganda.org/admin"
-                className="d-inline-block"
-              >
-                <h4 className="font-weight-bold text-purple">
-                  Grants Opportunities
-                </h4>
-              </a>
-            </div>
-            <div className="navbar-brand navbar-brand-xs">
-              <a
-                href="https://hrmis.mrcuganda.org/admin"
-                className="d-inline-block"
-              >
-                <img
-                  src="https://hrmis.mrcuganda.org/global_assets/images/logo_icon_light.png"
-                  alt="Logo"
-                />
-              </a>
-            </div>
-          </div>
-          <div className="d-flex flex-1 d-md-none">
-            <div className="navbar-brand mr-auto">
-              <h4 className="font-weight-bold text-black">GMS ADMIN PORTAL</h4>
-            </div>
+        <nav className="navbar navbar-expand-lg navbar-light bg-light border-bottom shadow-sm">
+          <div className="container-fluid">
+            <a
+              className="navbar-brand d-flex align-items-center"
+              href="/dashboard"
+            >
+              <img
+                src="https://hrmis.mrcuganda.org/global_assets/images/logo_icon_light.png"
+                alt="Logo"
+                className="me-2"
+                style={{ height: "34px" }}
+              />
+              <h4 className="mb-0 text-primary">Grants Opportunities</h4>
+            </a>
+
             <button
               className="navbar-toggler"
               type="button"
-              data-toggle="collapse"
-              data-target="#navbar-mobile"
+              data-bs-toggle="collapse"
+              data-bs-target="#navbarSupportedContent"
+              aria-controls="navbarSupportedContent"
+              aria-expanded="false"
+              aria-label="Toggle navigation"
             >
-              <i className="icon-tree5" />
+              <span className="navbar-toggler-icon"></span>
             </button>
-            <button
-              className="navbar-toggler sidebar-mobile-main-toggle"
-              type="button"
-              onClick={this.toggleSidebar}
-            >
-              <i className="icon-paragraph-justify3" />
-            </button>
-          </div>
-          <div className="collapse navbar-collapse" id="navbar-mobile">
-            <ul className="navbar-nav">
-              {/* Add any additional navigation items here */}
-            </ul>
-            <span className="badge bg-pink-400 badge-pill ml-md-3 mr-md-auto">
-              {activeGrantsCount === 0 ? "Loading..." : activeGrantsCount}
-            </span>
-            <ul className="navbar-nav pull-right">
-              <li className="nav-item">
-                <a
-                  href="#"
-                  className="navbar-nav-link"
-                  onClick={() => this.fetchNotifications()}
-                >
-                  <i className="icon-bell2" />
-                  <span className="badge badge-warning badge-pill">
-                    {notificationsCount || 0}
-                  </span>
-                </a>
-              </li>
-              <li>
-                <a href="/root" target="_blank" className="navbar-nav-link">
-                  <i className="icon-help" />
-                </a>
-              </li>
-              <li className="nav-item dropdown dropdown-user">
-                <a
-                  href="/test"
-                  className="navbar-nav-link d-flex align-items-center dropdown-toggle"
-                  data-toggle="dropdown"
-                >
-                  <img
-                    src="global_assets/images/placeholders/placeholder.jpg"
-                    className="rounded-circle mr-2"
-                    height={34}
-                    alt="User"
-                  />
-                  <span>{user.organisation_name || "User"}</span>
-                </a>
-                <div className="dropdown-menu dropdown-menu-right">
-                  <a href="/profile" className="dropdown-item">
-                    <i className="icon-user-plus" /> My profile
-                  </a>
-                  <div className="dropdown-divider" />
-                  <a href="#" className="dropdown-item">
-                    <i className="icon-cog5" /> Account settings
-                  </a>
-                  <a className="dropdown-item" href="#">
-                    <i className="icon-switch2" />
-                    <Logout />
-                  </a>
-                </div>
-              </li>
-            </ul>
-          </div>
-        </div>
 
-       
+            <div
+              className="collapse navbar-collapse"
+              id="navbarSupportedContent"
+            >
+              <ul className="navbar-nav me-auto mb-2 mb-lg-0">
+                {/* Additional navigation items can be added here */}
+              </ul>
+              <span className="badge bg-primary badge-pill me-3">
+                {activeGrantsCount === 0
+                  ? "Loading..."
+                  : `${activeGrantsCount} Active Grants`}
+              </span>
+
+              <ul className="navbar-nav">
+                <li className="nav-item">
+                  <a
+                    href="#"
+                    className="nav-link position-relative"
+                    onClick={() => this.fetchNotifications()}
+                  >
+                    <i className="icon-bell2" style={{ fontSize: "18px" }}></i>
+                    {notificationsCount > 0 && (
+                      <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        {notificationsCount}
+                      </span>
+                    )}
+                  </a>
+                </li>
+                <li className="nav-item">
+                  <a href="/help" className="nav-link">
+                    <i className="icon-help" style={{ fontSize: "18px" }}></i>
+                  </a>
+                </li>
+                <li className="nav-item dropdown">
+                  <a
+                    className="nav-link dropdown-toggle d-flex align-items-center"
+                    href="#"
+                    id="navbarDropdown"
+                    role="button"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false"
+                  >
+                    <img
+                      src="global_assets/images/placeholders/placeholder.jpg"
+                      className="rounded-circle me-2"
+                      height={34}
+                      alt="User"
+                    />
+                    <span>{user.organisation_name || "User"}</span>
+                  </a>
+                  <ul
+                    className="dropdown-menu dropdown-menu-end"
+                    aria-labelledby="navbarDropdown"
+                  >
+                    <li>
+                      <a className="dropdown-item" href="/profile">
+                        <i className="icon-user-plus me-2"></i> My profile
+                      </a>
+                    </li>
+                    <li>
+                      <a className="dropdown-item" href="/settings">
+                        <i className="icon-cog5 me-2"></i> Account settings
+                      </a>
+                    </li>
+                    <li>
+                      <hr className="dropdown-divider" />
+                    </li>
+                    <li>
+                      <a className="dropdown-item" href="#">
+                        <i className="icon-switch2 me-2"></i>
+                        <Logout />
+                      </a>
+                    </li>
+                  </ul>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </nav>
+
         <ToastContainer position="top-end" className="p-3">
           {visibleNotifications.map((notification) => (
             <Toast
               key={notification.id}
               onClose={() => this.handleNotificationClick(notification)}
+              bg="light"
             >
               <Toast.Header>
                 <strong className="me-auto">{notification.type}</strong>
