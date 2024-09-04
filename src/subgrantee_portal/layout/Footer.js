@@ -4,27 +4,41 @@ import "bootstrap/dist/css/bootstrap.min.css";
 export default class Footer extends Component {
   render() {
     return (
-      <footer className="navbar navbar-expand-lg navbar-light bg-light">
+      <footer className="bg-white py-3 border-top">
         <div className="container-fluid">
-          <span className="navbar-text">
-            © 2024{" "}
-            <a href="/test" className="text-primary">
-              Subgrants Management System
-            </a>{" "}
-            - Baylor Foundation
-          </span>
-          <ul className="navbar-nav ml-auto">
-            <li className="nav-item">
-              <a href="test" className="nav-link" target="_blank">
-                <i className="icon-lifebuoy mr-2" /> Support
-              </a>
-            </li>
-            <li className="nav-item">
-              <a href="test" className="nav-link" target="_blank">
-                <i className="icon-file-text2 mr-2" /> Docs
-              </a>
-            </li>
-          </ul>
+          <div className="row align-items-center">
+            <div className="col-md-6">
+              <span className="text-muted">
+                © 2024{" "}
+                <a href="/test" className="text-primary text-decoration-none">
+                  Subgrants Management System
+                </a>{" "}
+                - Baylor Foundation
+              </span>
+            </div>
+            <div className="col-md-6">
+              <ul className="nav justify-content-end">
+                <li className="nav-item">
+                  <a
+                    href="test"
+                    className="nav-link text-muted"
+                    target="_blank"
+                  >
+                    <i className="bi bi-life-preserver me-2"></i>Support
+                  </a>
+                </li>
+                <li className="nav-item">
+                  <a
+                    href="test"
+                    className="nav-link text-muted"
+                    target="_blank"
+                  >
+                    <i className="bi bi-file-text me-2"></i>Docs
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
         </div>
       </footer>
     );

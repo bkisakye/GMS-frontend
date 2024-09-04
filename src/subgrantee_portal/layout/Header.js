@@ -95,7 +95,7 @@ export default class Header extends Component {
 
     return (
       <div>
-        <nav className="navbar navbar-expand-lg navbar-light bg-light border-bottom shadow-sm">
+        <nav className="navbar navbar-expand-lg navbar-light bg-white">
           <div className="container-fluid">
             <a
               className="navbar-brand d-flex align-items-center"
@@ -107,7 +107,9 @@ export default class Header extends Component {
                 className="me-2"
                 style={{ height: "34px" }}
               />
-              <h4 className="mb-0 text-primary">Grants Opportunities</h4>
+              <h4 className="mb-0 text-primary fw-bold">
+                Grants Opportunities
+              </h4>
             </a>
 
             <button
@@ -126,17 +128,15 @@ export default class Header extends Component {
               className="collapse navbar-collapse"
               id="navbarSupportedContent"
             >
-              <ul className="navbar-nav me-auto mb-2 mb-lg-0">
-                {/* Additional navigation items can be added here */}
-              </ul>
-              <span className="badge bg-primary badge-pill me-3">
-                {activeGrantsCount === 0
-                  ? "Loading..."
-                  : `${activeGrantsCount} Active Grants`}
-              </span>
-
-              <ul className="navbar-nav">
-                <li className="nav-item">
+              <ul className="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
+                <li className="nav-item me-3">
+                  <span className="badge bg-primary rounded-pill">
+                    {activeGrantsCount === 0
+                      ? "Loading..."
+                      : `${activeGrantsCount} Active Grants`}
+                  </span>
+                </li>
+                <li className="nav-item me-3">
                   <a
                     href="#"
                     className="nav-link position-relative"
@@ -150,7 +150,7 @@ export default class Header extends Component {
                     )}
                   </a>
                 </li>
-                <li className="nav-item">
+                <li className="nav-item me-3">
                   <a href="/help" className="nav-link">
                     <i className="icon-help" style={{ fontSize: "18px" }}></i>
                   </a>
@@ -168,6 +168,7 @@ export default class Header extends Component {
                       src="global_assets/images/placeholders/placeholder.jpg"
                       className="rounded-circle me-2"
                       height={34}
+                      width={34}
                       alt="User"
                     />
                     <span>{user.organisation_name || "User"}</span>
@@ -178,12 +179,13 @@ export default class Header extends Component {
                   >
                     <li>
                       <a className="dropdown-item" href="/profile">
-                        <i className="icon-user-plus me-2"></i> My profile
+                        <i className="bi bi-person-fill me-2"></i> My profile
                       </a>
                     </li>
                     <li>
                       <a className="dropdown-item" href="/settings">
-                        <i className="icon-cog5 me-2"></i> Account settings
+                        <i className="bi bi-gear-fill me-2"></i> Account
+                        settings
                       </a>
                     </li>
                     <li>
@@ -191,7 +193,7 @@ export default class Header extends Component {
                     </li>
                     <li>
                       <a className="dropdown-item" href="#">
-                        <i className="icon-switch2 me-2"></i>
+                        <i className="bi bi-box-arrow-right me-2"></i>
                         <Logout />
                       </a>
                     </li>

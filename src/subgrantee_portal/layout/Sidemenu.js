@@ -4,46 +4,39 @@ import { Home, FileText, BarChart2, Settings } from "lucide-react";
 
 const Sidemenu = () => {
   return (
-    <div
-      className="d-flex flex-column bg-light border-end vh-100"
-      style={{ width: "250px" }}
-    >
+    <div className="bg-white h-100 border-end" style={{ width: "250px" }}>
       <div className="list-group list-group-flush">
         <NavLink
-          to="/dashboard"
-          className="list-group-item list-group-item-action d-flex align-items-center"
-          activeClassName="active"
-          style={{ padding: "15px 20px" }}
+          to="/"
+          className="list-group-item list-group-item-action border-0 py-3"
+          activeClassName="active bg-light"
         >
-          <Home size={18} className="me-3" />
-          Dashboard
+          <Home size={18} className="me-3 text-primary" />
+          <span className="fw-medium">Dashboard</span>
         </NavLink>
         <NavLink
           to="/grants"
-          className="list-group-item list-group-item-action d-flex align-items-center"
-          activeClassName="active"
-          style={{ padding: "15px 20px" }}
+          className="list-group-item list-group-item-action border-0 py-3"
+          activeClassName="active bg-light"
         >
-          <FileText size={18} className="me-3" />
-          My Grants
+          <FileText size={18} className="me-3 text-primary" />
+          <span className="fw-medium">My Grants</span>
         </NavLink>
         <NavLink
           to="/reports"
-          className="list-group-item list-group-item-action d-flex align-items-center"
-          activeClassName="active"
-          style={{ padding: "15px 20px" }}
+          className="list-group-item list-group-item-action border-0 py-3"
+          activeClassName="active bg-light"
         >
-          <BarChart2 size={18} className="me-3" />
-          Reports
+          <BarChart2 size={18} className="me-3 text-primary" />
+          <span className="fw-medium">Reports</span>
         </NavLink>
         <NavLink
           to="/settings"
-          className="list-group-item list-group-item-action d-flex align-items-center"
-          activeClassName="active"
-          style={{ padding: "15px 20px" }}
+          className="list-group-item list-group-item-action border-0 py-3"
+          activeClassName="active bg-light"
         >
-          <Settings size={18} className="me-3" />
-          Settings
+          <Settings size={18} className="me-3 text-primary" />
+          <span className="fw-medium">Settings</span>
         </NavLink>
       </div>
     </div>
