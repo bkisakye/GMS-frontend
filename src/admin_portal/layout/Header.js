@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 import Logout from "../../subgrantee_portal/components/login/Logout";
 import { fetchWithAuth } from "../../utils/helpers";
 import { Toast, ToastContainer } from "react-bootstrap";
@@ -11,6 +12,7 @@ function Header({ toggleSidebar }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const user = JSON.parse(localStorage.getItem("user"));
   const authToken = localStorage.getItem("accessToken");
+  const navigate = useNavigate(); // Initialize the navigate function
 
   const fetchNotificationCount = async () => {
     if (!authToken) return;
@@ -55,6 +57,48 @@ function Header({ toggleSidebar }) {
     setNotificationsOpen(!notificationsOpen);
     if (!notificationsOpen) {
       fetchNotifications();
+    }
+  };
+
+  const handleNotificationClick = async (notification) => {
+      console.log("Notification Category:", notification.notification_category);
+  try {
+    if (notification.notification_category === "new_subgrantee") {
+      navigate('/admin/subgrantee-registration-request');
+    } else if (notification.notification_category === "new grant") {
+      navigate("/admin/grant-requests");
+    } else {
+      console.error(
+        "Unknown notification category:",
+        notification.notification_category
+      );
+    }
+  } catch (error) {
+    console.error("Navigation error:", error);
+  }
+    try {
+      const response = await fetchWithAuth(
+        `/api/notifications/${notification.id}/read/`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        setNotifications((prevNotifications) =>
+          prevNotifications.map((notif) =>
+            notif.id === notification.id ? { ...notif, is_read: true } : notif
+          )
+        );
+        fetchNotificationCount(); 
+      } else {
+        console.error("Failed to mark notification as read:", response.status);
+      }
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
     }
   };
 
@@ -128,7 +172,11 @@ function Header({ toggleSidebar }) {
               <div className="dropdown-menu-body">
                 {notifications.length > 0 ? (
                   notifications.map((notification) => (
-                    <a key={notification.id} className="dropdown-item">
+                    <a
+                      key={notification.id}
+                      className="dropdown-item"
+                      onClick={() => handleNotificationClick(notification)}
+                    >
                       <div className="media">
                         <img
                           src="global_assets/images/placeholders/placeholder.jpg"
@@ -155,12 +203,6 @@ function Header({ toggleSidebar }) {
                 )}
               </div>
               <div className="dropdown-divider"></div>
-              <a
-                className="dropdown-item text-center"
-                href="/admin/notifications"
-              >
-                View all notifications
-              </a>
             </div>
           </li>
           <li className="nav-item dropdown">
