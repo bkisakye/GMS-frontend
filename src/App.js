@@ -46,6 +46,7 @@ import ProgressReports from "./admin_portal/components/pages/reports/ProgressRep
 import GrantAccounts from "./admin_portal/components/pages/grant_accounts/Accounts";
 import Requests from "./subgrantee_portal/components/pages/Requests";
 import GrantCloseOut from "./admin_portal/components/pages/requests/GrantCloseOut";
+import SubgranteeReg from "./admin_portal/components/pages/requests/SubgranteeReg";
 
 function App() {
   return (
@@ -66,6 +67,7 @@ function App() {
         >
           <Route index element={<Dashboard />} />
           <Route path="" element={<Dashboard />} />
+          <Route path="subgrantee-registration-request" element={<SubgranteeReg />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="subgrantees_list" element={<Subgrantees />} />
           <Route path="grants_list" element={<Grants />} />

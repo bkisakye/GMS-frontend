@@ -2,7 +2,8 @@ import React, { Component } from "react";
 import Logout from "../components/login/Logout";
 import { fetchWithAuth } from "../../utils/helpers";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { Toast, ToastContainer } from "react-bootstrap";
+import { Toast, ToastContainer } from "react-bootstrap";import { toast } from "react-toastify";
+
 
 export default class Header extends Component {
   constructor(props) {
@@ -65,16 +66,10 @@ export default class Header extends Component {
   };
 
   showNotifications = (notifications) => {
-    this.setState({ visibleNotifications: notifications });
-
     notifications.forEach((notification) => {
-      setTimeout(() => {
-        this.setState((prevState) => ({
-          visibleNotifications: prevState.visibleNotifications.filter(
-            (n) => n.id !== notification.id
-          ),
-        }));
-      }, 5000);
+      toast.info(notification.text, {
+        onClick: () => this.handleNotificationClick(notification),
+      });
     });
   };
 
