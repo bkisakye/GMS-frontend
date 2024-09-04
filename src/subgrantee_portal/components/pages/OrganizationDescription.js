@@ -79,6 +79,7 @@ const CapacityForm = () => {
   };
 
   const handleSubmit = async (e) => {
+    e.preventDefault();
     console.log("Form Data:", formData);
     const response = await fetchWithAuth("/api/subgrantees/profiles/", {
       method: "PUT",
@@ -89,7 +90,7 @@ const CapacityForm = () => {
     });
     if (response.ok) {
       console.log("Profile updated successfully");
-      navigate("/financial");
+      navigate('/profile/financial');
     } else {
       console.error("Failed to update profile");
     }

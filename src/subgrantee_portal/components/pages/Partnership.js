@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { fetchWithAuth } from "../../../utils/helpers";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const PartnershipAndSubgrants = () => {
  const [formData, setFormData] = useState({
@@ -44,6 +45,7 @@ const PartnershipAndSubgrants = () => {
   };
 
   const handleSubmit = async (e) => {
+     e.preventDefault();
     console.log("Form Data:", formData);
     const response = await fetchWithAuth("/api/subgrantees/profiles/", {
       method: "PUT",
@@ -53,12 +55,13 @@ const PartnershipAndSubgrants = () => {
       body: JSON.stringify(formData),
     });
     if (response.ok) {
-      console.log("Profile updated successfully");
-      navigate("/technicalskills");
+      toast.success("Your Profile updated successfully");
+      navigate("/");
     } else {
-      console.error("Failed to update profile");
+      
+      toast.error("Failed to update profile");
     }
-    e.preventDefault();
+   
   };
 
   const formStyle = {

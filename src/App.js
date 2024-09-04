@@ -6,6 +6,8 @@ import {
   Route,
   RouterProvider,
 } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import SubgranteeLayout from "./subgrantee_portal/layout/SubgranteeLayout";
 import AdminLayout from "./admin_portal/layout/AdminLayout";
 import ProtectedRoute from "./subgrantee_portal/AuthenticatedRoute";
@@ -127,6 +129,7 @@ function App() {
           {/* Define more subgrantee routes as needed */}
         </Route>
       </Routes>
+      <ToastContainer />
     </BrowserRouter>
   );
 }

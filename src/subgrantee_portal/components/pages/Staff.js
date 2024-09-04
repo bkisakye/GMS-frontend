@@ -94,6 +94,7 @@ const Staff = () => {
   };
 
   const handleSubmit = async (e) => {
+    e.preventDefault();
     console.log("Form Data:", formData);
     const response = await fetchWithAuth("/api/subgrantees/profiles/", {
       method: "PUT",
@@ -104,11 +105,11 @@ const Staff = () => {
     });
     if (response.ok) {
       console.log("Profile updated successfully");
-      navigate("/implementation");
+      navigate('/profile/implementation');
     } else {
       console.error("Failed to update profile");
     }
-    e.preventDefault();
+    
   };
 
   return (

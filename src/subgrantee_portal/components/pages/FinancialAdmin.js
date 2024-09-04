@@ -124,6 +124,7 @@ const handleChange = (e) => {
 
 
   const handleSubmit = async (e) => {
+    e.preventDefault();
     console.log("Form Data:", formData);
     const response = await fetchWithAuth("/api/subgrantees/profiles/", {
       method: "PUT",
@@ -134,7 +135,7 @@ const handleChange = (e) => {
     });
     if (response.ok) {
       console.log("Profile updated successfully");
-      navigate("/technicalskills");
+      navigate('/profile/technicalskills');
     } else {
       console.error("Failed to update profile");
     }

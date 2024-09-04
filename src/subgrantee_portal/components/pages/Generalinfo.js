@@ -55,16 +55,14 @@ const buttonStyle = {
   gridColumn: "1 / span 2", // Span across both columns
 };
 
-
-
 const SubgranteeForm = () => {
   const [formData, setFormData] = useState({
     organisation_name: "",
     organisation_address: "",
     contact_person: "",
     secondary_contact: "",
-    district: "",
-    category: "",
+    district: null,
+    category: null,
     acronym: "",
     website: "",
     executive_director_name: "",
@@ -96,6 +94,8 @@ const SubgranteeForm = () => {
         setFormData((prevData) => ({
           ...prevData,
           ...profileData,
+          district: profileData.district || null,
+          category: profileData.category || null,
         }));
 
         // Fetch districts
@@ -105,7 +105,6 @@ const SubgranteeForm = () => {
         const districtData = await districtResponse.json();
         console.log("Fetched Districts Data:", districtData);
 
-        // Access the nested districts array
         if (
           Array.isArray(districtData) &&
           districtData.length > 0 &&
@@ -118,27 +117,52 @@ const SubgranteeForm = () => {
 
         // Fetch categories
         const categoryResponse = await fetchWithAuth(
-          "/api/subgrantees/category/"
+          `/api/grants/grant-types/`
         );
         const categoryData = await categoryResponse.json();
-        setCategories(categoryData);
+        console.log("Fetched Categories Data:", categoryData);
+
+        if (Array.isArray(categoryData)) {
+          setCategories(categoryData);
+        } else {
+          console.error("Invalid categories data format:", categoryData);
+        }
       } catch (error) {
-        console.error("Error:", error);
+        console.error("Failed to fetch data:", error);
       }
     };
-
     fetchData();
   }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === "checkbox" ? checked : value,
-    });
+
+    if (name === "category") {
+      const selectedCategory = categories.find(
+        (cat) => cat.id === parseInt(value)
+      );
+      setFormData((prevData) => ({
+        ...prevData,
+        category: selectedCategory || null,
+      }));
+    } else if (name === "district") {
+      const selectedDistrict = districts.find(
+        (dist) => dist.id === parseInt(value)
+      );
+      setFormData((prevData) => ({
+        ...prevData,
+        district: selectedDistrict || null,
+      }));
+    } else {
+      setFormData((prevData) => ({
+        ...prevData,
+        [name]: type === "checkbox" ? checked : value,
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
+    e.preventDefault();
     console.log("Form Data:", formData);
     const response = await fetchWithAuth("/api/subgrantees/profiles/", {
       method: "PUT",
@@ -149,7 +173,7 @@ const SubgranteeForm = () => {
     });
     if (response.ok) {
       console.log("Profile updated successfully");
-      navigate('/organizationdescription')
+      navigate('/profile/organizationdescription');
     } else {
       console.error("Failed to update profile");
     }
@@ -236,14 +260,11 @@ const SubgranteeForm = () => {
           <select
             id="district"
             name="district"
-            value={formData.district.id}
+            value={formData.district?.id || ""}
             onChange={handleChange}
             style={inputStyle}
           >
-            <option value={formData.district.id} key={formData.district.id}>
-              {formData.district.name}
-            </option>
-            {/* Add more options here with the current one excluded */}
+            <option value="">Select a district</option>
             {districts.map((district) => (
               <option key={district.id} value={district.id}>
                 {district.name}
@@ -259,13 +280,11 @@ const SubgranteeForm = () => {
           <select
             id="category"
             name="category"
-            value={formData.category.id}
+            value={formData.category?.id || ""}
             onChange={handleChange}
             style={inputStyle}
           >
-            <option value={formData.category.id} key={formData.category.id}>
-              {formData.category.name}
-            </option>
+            <option value="">Select a category</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
                 {category.name}

@@ -92,6 +92,7 @@ const TechnicalSkills = () => {
   };
 
   const handleSubmit = async (e) => {
+    e.preventDefault();
     console.log("Form Data:", formData);
     const response = await fetchWithAuth("/api/subgrantees/profiles/", {
       method: "PUT",
@@ -102,11 +103,11 @@ const TechnicalSkills = () => {
     });
     if (response.ok) {
       console.log("Profile updated successfully");
-      navigate("/staff");
+      navigate('/profile/staff');
     } else {
       console.error("Failed to update profile");
     }
-    e.preventDefault();
+    
   };
 
   return (
