@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Button, Card, Container, Row, Col } from "react-bootstrap";
+import {
+  Modal,
+  Button,
+  Card,
+  Container,
+  Row,
+  Col,
+  Badge,
+} from "react-bootstrap";
 import { fetchWithAuth } from "../../../utils/helpers";
 import { useNavigate } from "react-router-dom";
 
@@ -20,10 +28,8 @@ const LandingPage = () => {
         }
         const data = await response.json();
 
-        
         const today = new Date().toISOString().split("T")[0];
 
-        
         const filteredGrants = data.results.filter(
           (grant) =>
             (!grant.application_deadline ||
@@ -111,20 +117,24 @@ const LandingPage = () => {
         ) : (
           grantOpportunities.map((grant) => (
             <Col key={grant.id} md={6} lg={4} className="mb-4">
-              <Card className="h-100">
+              <Card className="h-100 shadow-sm">
+                <Card.Header className="bg-primary text-white text-center">
+                  <h5 className="mb-0">{grant.name}</h5>
+                </Card.Header>
                 <Card.Body>
-                  <Card.Title>{grant.name}</Card.Title>
                   <Card.Text>
-                    <strong>Start Date:</strong> {grant.start_date}
-                    <br />
-                    <strong>End Date:</strong> {grant.end_date}
+                    {grant.description}
                   </Card.Text>
-                  <Button variant="primary" onClick={() => handleShow(grant)}>
+                  <Button
+                    variant="outline-primary"
+                    className="w-100"
+                    onClick={() => handleShow(grant)}
+                  >
                     More Details
                   </Button>
                 </Card.Body>
-                <Card.Footer className="text-white bg-primary">
-                  Open
+                <Card.Footer className="text-center">
+                  <Badge bg="success">Open</Badge>
                 </Card.Footer>
               </Card>
             </Col>
@@ -132,38 +142,48 @@ const LandingPage = () => {
         )}
       </Row>
 
+      {/* Modal for grant details */}
       <Modal show={showModal} onHide={handleClose} centered>
         <Modal.Header closeButton>
           <Modal.Title>{selectedGrant?.name}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p>
-            <strong>Description:</strong> {selectedGrant?.description}
+          <p className="mb-2">
+            <strong>Description:</strong>{" "}
+            <span className="text-muted">{selectedGrant?.description}</span>
           </p>
-          <p>
-            <strong>Category:</strong> {selectedGrant?.category_detail?.name}
+          <p className="mb-2">
+            <strong>Category:</strong>{" "}
+            <span className="text-muted">
+              {selectedGrant?.category_detail?.name}
+            </span>
           </p>
-          <p>
-            <strong>Donor:</strong> {selectedGrant?.donor_detail?.name}
+          <p className="mb-2">
+            <strong>Donor:</strong>{" "}
+            <span className="text-muted">
+              {selectedGrant?.donor_detail?.name}
+            </span>
           </p>
-          <p>
-            <strong>Amount:</strong> ${selectedGrant?.amount}
+          <p className="mb-2">
+            <strong>Amount:</strong>{" "}
+            <span className="text-muted">${selectedGrant?.amount}</span>
           </p>
-          <p>
-            <strong>Start Date:</strong> {selectedGrant?.start_date}
+          <p className="mb-2">
+            <strong>Start Date:</strong>{" "}
+            <span className="text-muted">{selectedGrant?.start_date}</span>
           </p>
-          <p>
-            <strong>End Date:</strong> {selectedGrant?.end_date}
+          <p className="mb-2">
+            <strong>End Date:</strong>{" "}
+            <span className="text-muted">{selectedGrant?.end_date}</span>
           </p>
-          <p>
+          <p className="mb-2">
             <strong>Application Deadline:</strong>{" "}
-            {selectedGrant?.application_deadline}
+            <span className="text-muted">
+              {selectedGrant?.application_deadline}
+            </span>
           </p>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={handleClose}>
-            Close
-          </Button>
           <Button variant="primary" onClick={handleApplyNow} disabled={loading}>
             {loading ? "Checking..." : "Apply Now"}
           </Button>
