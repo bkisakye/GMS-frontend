@@ -1,5 +1,6 @@
 import React, { Component } from "react";
-import { fetchWithAuth } from "../../../../utils/helpers"; // Ensure this path is correct
+import { fetchWithAuth } from "../../../../utils/helpers";
+import { toast } from "react-toastify";
 
 class ReviewApplicationModal extends Component {
   constructor(props) {
@@ -22,7 +23,7 @@ class ReviewApplicationModal extends Component {
   handleSubmit = async (e) => {
     e.preventDefault();
     const { score, status, comments } = this.state;
-    const { applicationId, reviewId, reviewerId } = this.props; // Ensure applicationId, reviewId, and reviewerId are passed as props
+    const { applicationId, reviewId, reviewerId } = this.props;
 
     if (!score || !status) {
       this.setState({ error: "Please fill out all required fields." });
@@ -36,7 +37,7 @@ class ReviewApplicationModal extends Component {
       status,
       comments,
       application: applicationId,
-      reviewer: reviewerId, // Add the reviewer ID here
+      reviewer: reviewerId,
     };
 
     const url = reviewId
@@ -44,28 +45,28 @@ class ReviewApplicationModal extends Component {
       : `/api/grants/reviews/`;
     const method = reviewId ? "PUT" : "POST";
 
-    console.log("Review Data:", reviewData);
-    console.log("Request URL:", url);
+    try {
+      const response = await fetchWithAuth(url, {
+        method: method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(reviewData),
+      });
 
-    await fetchWithAuth(url, {
-      method: method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(reviewData),
-    })
-      .then(async (response) => {
-        if (response.ok) {
-          return response.json();
-        } else {
-          const errorData = await response.json().catch(() => null);
-          throw new Error(errorData?.detail || "Failed to submit review.");
-        }
-      })
-      .then((data) => {
-        this.props.onSubmit(data);
-        this.props.onClose();
-      })
-      .catch((error) => this.setState({ error: error.message }))
-      .finally(() => this.setState({ submitting: false }));
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData?.detail || "Failed to submit review.");
+      }
+
+      const data = await response.json();
+      toast.success("Grant Application Reviewed Successfully");
+      this.props.onSubmit(data);
+      this.props.onClose();
+    } catch (error) {
+      this.setState({ error: error.message });
+      toast.error(error.message);
+    } finally {
+      this.setState({ submitting: false });
+    }
   };
 
   handleChange = (e) => {

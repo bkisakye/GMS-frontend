@@ -187,7 +187,7 @@ const Header = () => {
           tabIndex="-1"
           style={{ display: "block" }}
         >
-          <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-dialog modal-dialog-top">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">Unread Notifications</h5>

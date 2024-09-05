@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { fetchWithAuth } from "../../../utils/helpers";
 import { Accordion, Card, Form, Button, Modal } from "react-bootstrap";
-// import { useUser } from "../../../UserContext.js";
+import { toast } from "react-toastify";
 
 const ApplicationPage = () => {
   const { grantName } = useParams();
@@ -238,6 +238,7 @@ const confirmSubmit = window.confirm(
 
         if (response.ok) {
           console.log("Application submitted successfully!", response);
+          toast.success("Your application has been saved please proceed to upload necessary documents inorder to submit")
           const responseData = await response.json();
           setApplicationId(responseData.application_id);
           setShowModal(true);
@@ -252,6 +253,7 @@ const confirmSubmit = window.confirm(
         }
       } catch (error) {
         console.error("Error submitting application:", error);
+        toast.error("An error occurred while submitting your application. Please try again later.")
       }
     } else {
       navigate(-1);
@@ -281,11 +283,14 @@ const confirmSubmit = window.confirm(
 
       if (uploadResponse.ok) {
         console.log("Files uploaded successfully!");
+        toast.success("Your Application has been submitted successfully");
+        navigate("/");
       } else {
         console.error("Error uploading files:", await uploadResponse.json());
       }
     } catch (error) {
       console.error("Error handling file upload:", error);
+      toast.error("Failed to submit ypur application, please try again!")
     }
   };
 

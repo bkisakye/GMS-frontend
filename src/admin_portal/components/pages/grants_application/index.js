@@ -85,7 +85,7 @@ export default class GrantsApplication extends Component {
   };
 
   fetchApplications = () => {
-    fetchWithAuth("/api/grants/grant-applications/")
+    fetchWithAuth("/api/grants/all-applications/")
       .then((response) => {
         if (response.ok) {
           return response.json();
@@ -173,7 +173,7 @@ export default class GrantsApplication extends Component {
                         <td>
                           {application.grant?.application_deadline || "N/A"}
                         </td>
-                        <td>{application.grant?.donor?.name || "N/A"}</td>
+                        <td>{application.grant?.donor_detail?.name || "N/A"}</td>
                         <td>{application.status}</td>
                         <td className="text-nowrap">
                           <Button

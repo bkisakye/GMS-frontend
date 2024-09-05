@@ -3,6 +3,7 @@ import { fetchWithAuth } from "../../../../utils/helpers";
 import { MultiSelect } from "react-multi-select-component";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { toast } from "react-toastify";
 
 const containerStyle = {
   maxWidth: "800px",
@@ -56,8 +57,7 @@ const Subgrantees = () => {
     districts: [],
     kpis: [],
     reporting_time: "",
-    errorMessage: "",
-    successMessage: "",
+
   });
 
   const navigate = useNavigate();
@@ -88,7 +88,7 @@ const Subgrantees = () => {
           console.error("Invalid grantTypes data format:", grantTypeData);
           setFormData((prevState) => ({
             ...prevState,
-            errorMessage: "Invalid grant types data format.",
+           
           }));
         }
 
@@ -110,7 +110,7 @@ const Subgrantees = () => {
           console.error("Invalid donor data format:", donorData);
           setFormData((prevState) => ({
             ...prevState,
-            errorMessage: "Invalid donor data format.",
+            
           }));
         }
 
@@ -141,14 +141,13 @@ const Subgrantees = () => {
           console.error("Invalid districts data format:", districtData);
           setFormData((prevState) => ({
             ...prevState,
-            errorMessage: "Invalid districts data format.",
+            
           }));
         }
       } catch (error) {
         console.error("Error fetching data:", error);
         setFormData((prevState) => ({
           ...prevState,
-          errorMessage: "Error fetching data. Please try again.",
         }));
       }
     };
@@ -168,89 +167,86 @@ const Subgrantees = () => {
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const {
-      name,
-      description,
-      startDate,
-      endDate,
-      applicationDeadline,
-      category,
-      donor,
-      selectedDistricts,
-      amount,
-      numberOfAwards,
-      kpis,
-      eligibilityDetails,
-      reporting_time,
-    } = formData;
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  const {
+    name,
+    description,
+    startDate,
+    endDate,
+    applicationDeadline,
+    category,
+    donor,
+    selectedDistricts,
+    amount,
+    numberOfAwards,
+    kpis,
+    eligibilityDetails,
+    reporting_time,
+  } = formData;
 
-    const grantData = {
-      name,
-      description,
-      start_date: startDate,
-      end_date: endDate,
-      application_deadline: applicationDeadline,
-      category,
-      kpis,
-      donor,
-      district: selectedDistricts.map((option) => option.value),
-      amount,
-      number_of_awards: numberOfAwards,
-      eligibility_details: eligibilityDetails,
-      reporting_time,
-    };
-
-    console.log("grant data", grantData);
-
-    try {
-      const response = await fetchWithAuth("/api/grants/grants/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify(grantData),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Error details:", errorData);
-        throw new Error("Network response was not ok");
-      }
-
-      const result = await response.json();
-      console.log("Grant created successfully:", result);
-      setFormData({
-        name: "",
-        description: "",
-        startDate: "",
-        endDate: "",
-        applicationDeadline: "",
-        category: "",
-        kpis: [],
-        donor: "",
-        selectedDistricts: [],
-        amount: "",
-        numberOfAwards: "",
-        eligibilityDetails: "",
-        reporting_time: "",
-        grantTypes: formData.grantTypes,
-        donors: formData.donors,
-        districts: formData.districts,
-        successMessage: "Grant created successfully!",
-        errorMessage: "",
-      });
-
-      window.location.reload();
-    } catch (error) {
-      console.error("Error creating grant:", error);
-      setFormData((prevState) => ({
-        ...prevState,
-        errorMessage: "Error creating grant. Please try again.",
-      }));
-    }
+  const grantData = {
+    name,
+    description,
+    start_date: startDate,
+    end_date: endDate,
+    application_deadline: applicationDeadline,
+    category,
+    kpis,
+    donor,
+    district: selectedDistricts.map((option) => option.value),
+    amount,
+    number_of_awards: numberOfAwards,
+    eligibility_details: eligibilityDetails,
+    reporting_time,
   };
+
+  console.log("grant data", grantData);
+
+  try {
+    const response = await fetchWithAuth("/api/grants/grants/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify(grantData),
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Error details:", errorData);
+      throw new Error("Network response was not ok");
+    }
+
+    const result = await response.json();
+    console.log("Grant created successfully:", result);
+    toast.success("Grant created successfully!");
+    setFormData({
+      name: "",
+      description: "",
+      startDate: "",
+      endDate: "",
+      applicationDeadline: "",
+      category: "",
+      kpis: [],
+      donor: "",
+      selectedDistricts: [],
+      amount: "",
+      numberOfAwards: "",
+      eligibilityDetails: "",
+      reporting_time: "",
+      grantTypes: formData.grantTypes,
+      donors: formData.donors,
+      districts: formData.districts,
+    });
+
+    window.location.reload();
+  } catch (error) {
+    console.error("Error creating grant:", error);
+    toast.error("Unable to create grant. Please try again later.");
+  }
+};
+
 
   const {
     name,
@@ -269,7 +265,6 @@ const Subgrantees = () => {
     amount,
     numberOfAwards,
     eligibilityDetails,
-    errorMessage,
     successMessage,
   } = formData;
 
@@ -302,12 +297,6 @@ const Subgrantees = () => {
           <h5 className="mb-0">Add a New Grant</h5>
         </div>
         <div className="card-body" style={cardBodyStyle}>
-          {errorMessage && (
-            <div className="alert alert-danger">{errorMessage}</div>
-          )}
-          {successMessage && (
-            <div className="alert alert-success">{successMessage}</div>
-          )}
           <form onSubmit={handleSubmit}>
             <fieldset
               style={{

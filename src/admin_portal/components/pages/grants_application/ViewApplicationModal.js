@@ -18,7 +18,6 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-// import "./ViewApplicationModal.css"; // Assuming you create a CSS file for custom styles
 
 const ViewApplicationModal = ({ isOpen, onClose, applicationId }) => {
   const [applicationData, setApplicationData] = useState(null);
@@ -31,7 +30,9 @@ const ViewApplicationModal = ({ isOpen, onClose, applicationId }) => {
   useEffect(() => {
     if (applicationId) {
       Promise.all([
-        fetchWithAuth(`/api/grants/grant-applications/${applicationId}/`),
+        fetchWithAuth(
+          `/api/grants/grant-applications/${applicationId}/specific/`
+        ),
         fetchWithAuth(
           `/api/grants/applications/${applicationId}/documents/list/`
         ),
@@ -46,8 +47,8 @@ const ViewApplicationModal = ({ isOpen, onClose, applicationId }) => {
           ]);
         })
         .then(([applicationData, documentsData]) => {
-          const grant_id = applicationData[0]?.grant?.id || null;
-          const user_id = applicationData[0]?.subgrantee?.id || null;
+          const grant_id = applicationData.grant?.id || null;
+          const user_id = applicationData.subgrantee?.id || null;
 
           if (grant_id && user_id) {
             return fetchWithAuth(
@@ -84,7 +85,7 @@ const ViewApplicationModal = ({ isOpen, onClose, applicationId }) => {
       case "radio":
         return (
           <Card className="mb-3 shadow-sm" key={text}>
-            <Card.Header className="bg-primary text-white">
+            <Card.Header className="bg-secondary text-white">
               <FontAwesomeIcon icon={faFileAlt} className="me-2" />
               {text}
             </Card.Header>
@@ -97,7 +98,7 @@ const ViewApplicationModal = ({ isOpen, onClose, applicationId }) => {
       case "checkbox":
         return (
           <Card className="mb-3 shadow-sm" key={text}>
-            <Card.Header className="bg-primary text-white">
+            <Card.Header className="bg-secondary text-white">
               <FontAwesomeIcon icon={faFileAlt} className="me-2" />
               {text}
             </Card.Header>
@@ -173,7 +174,7 @@ const ViewApplicationModal = ({ isOpen, onClose, applicationId }) => {
               href={documentUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn btn-outline-primary"
+              className="btn btn-outline-secondary"
             >
               <FontAwesomeIcon icon={faDownload} className="me-2" />
               Download {fileName}
@@ -215,7 +216,7 @@ const ViewApplicationModal = ({ isOpen, onClose, applicationId }) => {
 
   return (
     <Modal show={isOpen} onHide={onClose} size="lg" centered>
-      <Modal.Header closeButton className="bg-dark text-white">
+      <Modal.Header closeButton className="bg-light text-black">
         <Modal.Title>Application Details</Modal.Title>
       </Modal.Header>
       <Modal.Body ref={contentRef} className="bg-light p-4">
@@ -250,7 +251,7 @@ const ViewApplicationModal = ({ isOpen, onClose, applicationId }) => {
       <Modal.Footer className="bg-light">
         <Button variant="primary" onClick={exportToPDF}>
           <FontAwesomeIcon icon={faFilePdf} className="me-2" />
-          Export 
+          Export
         </Button>
       </Modal.Footer>
     </Modal>

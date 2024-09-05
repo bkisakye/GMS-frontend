@@ -65,8 +65,8 @@ function Header({ toggleSidebar }) {
   try {
     if (notification.notification_category === "new_subgrantee") {
       navigate('/admin/subgrantee-registration-request');
-    } else if (notification.notification_category === "new grant") {
-      navigate("/admin/grant-requests");
+    } else if (notification.notification_category === "grant_application") {
+      navigate('/admin/applications_list');
     } else {
       console.error(
         "Unknown notification category:",
