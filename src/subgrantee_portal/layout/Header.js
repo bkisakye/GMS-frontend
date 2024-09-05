@@ -1,19 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { Toast, ToastContainer } from "react-bootstrap";
 import { fetchWithAuth } from "../../utils/helpers";
 import Logout from "../components/login/Logout";
-import "bootstrap/dist/css/bootstrap.min.css";
-import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { useNavigate } from "react-router-dom";
 
 const Header = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeGrantsCount, setActiveGrantsCount] = useState(0);
   const [notificationsCount, setNotificationsCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
-  const [visibleNotifications, setVisibleNotifications] = useState([]);
+  const [unreadNotifications, setUnreadNotifications] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false); // Modal state
 
-  const navigate = useNavigate(); // Use navigate hook
+  const navigate = useNavigate();
 
   const fetchGrants = async () => {
     try {
@@ -36,7 +34,7 @@ const Header = () => {
       }
       const data = await response.json();
       setNotifications(data);
-      setVisibleNotifications(data);
+      setUnreadNotifications(data.filter((notif) => !notif.is_read)); // Only unread notifications
     } catch (error) {
       console.error("Error fetching notifications:", error);
     }
@@ -55,43 +53,64 @@ const Header = () => {
     }
   };
 
-  const handleNotificationClick = async (notification) => {
-    console.log("Notification Category:", notification.notification_category);
-    try {
-      if (notification.notification_category === "new_subgrantee") {
-        navigate("/admin/subgrantee-registration-request");
-      } else if (notification.notification_category === "new grant") {
-        navigate("/admin/grant-requests");
-      } else {
+const handleNotificationClick = async (notification) => {
+  try {
+    // Check notification category and navigate accordingly
+    switch (notification.notification_category) {
+      case "new_grant":
+        navigate('/'); // Redirect to home or grants list
+        break;
+      case "grant_update":
+        navigate("/admin/grant-updates"); // Example path for grant updates
+        break;
+      case "reminder":
+        navigate("/reminders"); // Redirect to reminders page
+        break;
+      case "profile_update":
+        navigate("/profile"); // Redirect to profile page
+        break;
+      default:
         console.error(
           "Unknown notification category:",
           notification.notification_category
         );
-      }
-
-      const response = await fetchWithAuth(
-        `/api/notifications/${notification.id}/read/`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.ok) {
-        setNotifications((prevNotifications) =>
-          prevNotifications.map((notif) =>
-            notif.id === notification.id ? { ...notif, is_read: true } : notif
-          )
-        );
-        fetchNotificationsCount(); // Ensure fetchNotificationsCount is called after state update
-      } else {
-        console.error("Failed to mark notification as read:", response.status);
-      }
-    } catch (error) {
-      console.error("Error marking notification as read:", error);
+        break;
     }
+
+    // Close the modal after navigation
+    toggleModal();
+
+    // Mark notification as read
+    const response = await fetchWithAuth(
+      `/api/notifications/${notification.id}/read/`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (response.ok) {
+      // Update local state to mark notification as read
+      setNotifications((prevNotifications) =>
+        prevNotifications.map((notif) =>
+          notif.id === notification.id ? { ...notif, is_read: true } : notif
+        )
+      );
+      // Fetch the updated notifications count
+      fetchNotificationsCount();
+    } else {
+      console.error("Failed to mark notification as read:", response.status);
+    }
+  } catch (error) {
+    console.error("Error handling notification click:", error);
+  }
+};
+
+
+  const toggleModal = () => {
+    setIsModalOpen(!isModalOpen);
   };
 
   useEffect(() => {
@@ -144,7 +163,7 @@ const Header = () => {
                 <a
                   href="#"
                   className="nav-link position-relative"
-                  onClick={() => fetchNotifications()}
+                  onClick={toggleModal} // Toggle modal on click
                 >
                   <i className="icon-bell2" style={{ fontSize: "18px" }}></i>
                   {notificationsCount > 0 && (
@@ -153,47 +172,6 @@ const Header = () => {
                     </span>
                   )}
                 </a>
-                <div
-                  className="dropdown-menu dropdown-menu-right"
-                  aria-labelledby="notificationsDropdown"
-                >
-                  <h6 className="dropdown-header">Notifications</h6>
-                  <div className="dropdown-divider"></div>
-                  <div className="dropdown-menu-body">
-                    {visibleNotifications.length > 0 ? (
-                      visibleNotifications.map((notification) => (
-                        <a
-                          key={notification.id}
-                          className="dropdown-item"
-                          onClick={() => handleNotificationClick(notification)}
-                        >
-                          <div className="media">
-                            <img
-                              src="global_assets/images/placeholders/placeholder.jpg"
-                              className="me-3 rounded-circle"
-                              width="36"
-                              height="36"
-                              alt="Notification"
-                            />
-                            <div className="media-body">
-                              <h6 className="mt-0 font-weight-bold">
-                                {notification.text}
-                              </h6>
-                              <small className="text-muted">
-                                {new Date(
-                                  notification.timestamp
-                                ).toLocaleTimeString()}
-                              </small>
-                            </div>
-                          </div>
-                        </a>
-                      ))
-                    ) : (
-                      <a className="dropdown-item">No notifications</a>
-                    )}
-                  </div>
-                  <div className="dropdown-divider"></div>
-                </div>
               </li>
               <li className="nav-item me-3">
                 <a href="/help" className="nav-link">
@@ -248,21 +226,53 @@ const Header = () => {
         </div>
       </nav>
 
-      <ToastContainer position="top-end" className="p-3">
-        {visibleNotifications.map((notification) => (
-          <Toast
-            key={notification.id}
-            onClose={() => handleNotificationClick(notification)}
-            bg="light"
-          >
-            <Toast.Header>
-              <strong className="me-auto">{notification.type}</strong>
-              <small>{new Date(notification.timestamp).toLocaleString()}</small>
-            </Toast.Header>
-            <Toast.Body>{notification.text}</Toast.Body>
-          </Toast>
-        ))}
-      </ToastContainer>
+      {/* Modal for Notifications */}
+      {isModalOpen && (
+        <div
+          className="modal fade show"
+          tabIndex="-1"
+          style={{ display: "block" }}
+        >
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Unread Notifications</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  aria-label="Close"
+                  onClick={toggleModal}
+                ></button>
+              </div>
+              <div className="modal-body">
+                {unreadNotifications.length > 0 ? (
+                  unreadNotifications.map((notification) => (
+                    <div
+                      key={notification.id}
+                      className="card mb-3 notification-item"
+                      style={{ cursor: "pointer" }}
+                      onClick={() => handleNotificationClick(notification)}
+                    >
+                      <div className="card-body">
+                        <h5 className="card-title">{notification.text}</h5>
+                        <p className="card-text">
+                          <small className="text-muted">
+                            {new Date(
+                              notification.timestamp
+                            ).toLocaleTimeString()}
+                          </small>
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p>No unread notifications</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
