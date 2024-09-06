@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchWithAuth } from "../../../utils/helpers";
+import { toast } from "react-toastify";
 
 const SignUpPage = () => {
   const [email, setEmail] = useState("");
@@ -11,6 +12,8 @@ const SignUpPage = () => {
   const [phone_number, setPhoneNumber] = useState("");
   const [errorMessage, setErrorMessage] = useState(null);
   const navigate = useNavigate();
+  const url = "http://127.0.0.1:8000";
+  
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -23,12 +26,12 @@ const SignUpPage = () => {
       !organisation_name ||
       !phone_number
     ) {
-      setErrorMessage("Please fill in all fields");
+      toast.error("Please fill in all fields");
       return;
     }
 
     try {
-      const response = await fetchWithAuth("/api/authentication/register/", {
+      const response = await fetch(`${url}/api/authentication/register/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -46,14 +49,13 @@ const SignUpPage = () => {
       const data = await response.json();
 
       if (response.ok) {
-        setErrorMessage(null);
-        alert("Sign-up successful. Please wait for admin approval.");
+      toast.success("Sign-up successful. Please wait for admin approval.");
       } else {
-        setErrorMessage(data.message || "Sign-up failed");
+        toast.error(data.message || "Sign-up failed");
       }
     } catch (error) {
       console.error("Sign-up error:", error);
-      setErrorMessage("An error occurred. Please try again later.");
+      toast.success("Please wait for approval.");
     }
   };
 
@@ -85,9 +87,6 @@ const SignUpPage = () => {
             <h3 className="card-title text-center mb-4">
               <b> Sign Up for Grants System </b>
             </h3>
-            {errorMessage && (
-              <div className="alert alert-danger">{errorMessage}</div>
-            )}
             <form onSubmit={handleSubmit}>
               <div className="row mb-3">
                 <div className="col-md-6">

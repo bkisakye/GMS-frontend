@@ -9,6 +9,7 @@ import {
 } from "react-bootstrap";
 import { fetchWithAuth } from "../../../utils/helpers";
 import { AiFillEdit } from "react-icons/ai";
+import { toast } from "react-toastify";
 
 const FundingAllocation = ({ grantAccountId }) => {
   const [allocations, setAllocations] = useState([]);
@@ -57,6 +58,8 @@ const FundingAllocation = ({ grantAccountId }) => {
     }
   };
 
+
+
   const handleCreate = () => {
     setCurrentAllocation({
       amount: "",
@@ -95,11 +98,13 @@ const FundingAllocation = ({ grantAccountId }) => {
       if (response.ok) {
         fetchAllocations();
         setShowModal(false);
+        toast.success("Funds Allocated successfully");
       } else {
         console.error("Failed to save allocation:", await response.json());
       }
     } catch (error) {
       console.error("Error:", error);
+      toast.error("Funds allocated can not exceed the amount for the amount");
     }
   };
 
@@ -148,7 +153,7 @@ const FundingAllocation = ({ grantAccountId }) => {
           {filteredAllocations.length > 0 ? (
             filteredAllocations.map((allocation) => (
               <tr key={allocation.id}>
-                <td>{getBudgetItemName(allocation.item)}</td>
+                <td>{allocation.item.category?.name} - {allocation.item.grant_account?.grant?.name}</td>
                 <td>{allocation.description}</td>
                 <td>{allocation.reference_number}</td>
                     <td>{allocation.amount}</td>
@@ -225,7 +230,7 @@ const FundingAllocation = ({ grantAccountId }) => {
                 <option value="">Select a budget item</option>
                 {budgetItems.map((item) => (
                   <option key={item.id} value={item.id}>
-                    {item.category.name} - {item.description}
+                    {item.category.name} - {item.grant_account?.grant?.name}
                   </option>
                 ))}
               </Form.Control>
@@ -233,9 +238,6 @@ const FundingAllocation = ({ grantAccountId }) => {
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Close
-          </Button>
           <Button variant="primary" onClick={handleSubmit}>
             Save Changes
           </Button>

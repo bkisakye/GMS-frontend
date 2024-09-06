@@ -201,8 +201,8 @@ const Accounts = () => {
                     {account.grant?.name}
                   </td>
                   <td>{account.budget_total?.budget_total}</td>
-                  <td>{disbursement.disbursement_amount || "N/A"}</td>
-                  <td>{disbursement.budget_balance || "N/A"}</td>
+                  <td>{disbursement.disbursement_amount }</td>
+                  <td>{disbursement.budget_balance }</td>
                   <td>{getStatusBadge(account.disbursed)}</td>
                   <td>
                     {account.disbursed !== "fully_disbursed" && (

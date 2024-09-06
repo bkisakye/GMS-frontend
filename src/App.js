@@ -39,7 +39,7 @@ import Index from "./admin_portal/components/pages/grants/index";
 import SpecificQuestions from "./admin_portal/components/pages/grants/specificquestions";
 import Donors from "./admin_portal/components/pages/donors/donors";
 import Types from "./admin_portal/components/pages/grants/types";
-import Budget from "./subgrantee_portal/components/pages/Budget";
+// import Budget from "./subgrantee_portal/components/pages/Budget";
 import FundingAllocation from "./subgrantee_portal/components/pages/FundingAllocation";
 import Accounts from "./subgrantee_portal/components/pages/Accounts";
 import ProgressReports from "./admin_portal/components/pages/reports/ProgressReports";
@@ -47,6 +47,7 @@ import GrantAccounts from "./admin_portal/components/pages/grant_accounts/Accoun
 import Requests from "./subgrantee_portal/components/pages/Requests";
 import GrantCloseOut from "./admin_portal/components/pages/requests/GrantCloseOut";
 import SubgranteeReg from "./admin_portal/components/pages/requests/SubgranteeReg";
+import Budgetcategory from "./subgrantee_portal/components/pages/Budgetcategory";
 
 function App() {
   return (
@@ -94,7 +95,7 @@ function App() {
           <Route index element={<LandingPage />} />
           <Route path="application/:grantName" element={<GrantApplication />} />
           <Route path="application" element={<GrantApplication />} />
-          <Route path="budget" element={<Budget />} />
+          <Route path="budget" element={<Budgetcategory />} />
           <Route path="funding-allocation" element={<FundingAllocation />} />
           <Route path="grant-accounts" element={<Accounts />} />
           <Route path="requests" element={<Requests />} />

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../UserContext.js";
 import { fetchWithAuth, removeTrailingSlash } from "../../../utils/helpers.js";
+import { toast } from "react-toastify";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -15,7 +16,7 @@ const LoginPage = () => {
     event.preventDefault();
 
     if (!email || !password) {
-      setErrorMessage("Please enter both email and password");
+      toast.error("Please enter both email and password");
       return;
     }
 
@@ -47,11 +48,11 @@ const LoginPage = () => {
 
         navigate("/");
       } else {
-        setErrorMessage(data.error || "Invalid credentials");
+        toast.error(data.error || "Invalid credentials");
       }
     } catch (error) {
       console.error("Login error:", error);
-      setErrorMessage("An error occurred. Please try again later.");
+      toast.error("Your have not yet been approved. Please wait for approval");
     }
   };
 
@@ -86,9 +87,6 @@ const LoginPage = () => {
               </h3>
             </div>
             <div className="row">
-              {errorMessage && (
-                <div className="alert alert-danger">{errorMessage}</div>
-              )}
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
                   <label htmlFor="email" className="form-label">

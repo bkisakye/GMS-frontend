@@ -10,6 +10,8 @@ import {
 } from "react-bootstrap";
 import { fetchWithAuth } from "../../../utils/helpers";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+
 
 const LandingPage = () => {
   const [grantOpportunities, setGrantOpportunities] = useState([]);
@@ -18,6 +20,8 @@ const LandingPage = () => {
   const [selectedGrant, setSelectedGrant] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("user"));
+  const userId = user?.user_id;
 
   useEffect(() => {
     const fetchGrantOpportunities = async () => {
@@ -60,12 +64,12 @@ const LandingPage = () => {
     setLoading(true);
     try {
       const profileResponse = await fetchWithAuth(
-        "/api/subgrantees/check-profile/"
+        `/api/subgrantees/check-profile/${userId}/`
       );
       const profileData = await profileResponse.json();
 
       if (!profileData.has_profile) {
-        alert("Please complete your profile before applying for a grant.");
+        toast.error("Please complete your profile before applying for a grant.");
         navigate("/profile");
         return;
       }
@@ -76,7 +80,7 @@ const LandingPage = () => {
       navigate(`/application/${grantName}`, { state: { grantId } });
     } catch (error) {
       console.error("Error handling application:", error);
-      alert("There was an error processing your request. Please try again.");
+      
     } finally {
       setLoading(false);
     }

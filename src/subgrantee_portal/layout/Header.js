@@ -60,9 +60,60 @@ const Header = () => {
     }
   };
 
-  const handleNotificationClick = async (notification) => {
-    // Similar logic as before
-  };
+const handleNotificationClick = async (notification) => {
+  try {
+    switch (notification.notification_category) {
+      case "new_grant":
+        navigate("/"); 
+        break;
+      case "grant_review":
+        navigate('/budget'); 
+        break;
+      case "reminder":
+        navigate("/reminders"); 
+        break;
+      case "profile_update":
+        navigate("/profile"); 
+        break;
+      default:
+        console.error(
+          "Unknown notification category:",
+          notification.notification_category
+        );
+        break;
+    }
+
+    // Close the modal after navigation
+    toggleModal();
+
+    // Mark notification as read
+    const response = await fetchWithAuth(
+      `/api/notifications/${notification.id}/read/`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (response.ok) {
+      // Update local state to mark notification as read
+      setNotifications((prevNotifications) =>
+        prevNotifications.map((notif) =>
+          notif.id === notification.id ? { ...notif, is_read: true } : notif
+        )
+      );
+      // Fetch the updated notifications count
+      fetchNotificationsCount();
+    } else {
+      console.error("Failed to mark notification as read:", response.status);
+    }
+  } catch (error) {
+    console.error("Error handling notification click:", error);
+  }
+};
+
 
   const toggleModal = () => {
     setIsModalOpen(!isModalOpen);
