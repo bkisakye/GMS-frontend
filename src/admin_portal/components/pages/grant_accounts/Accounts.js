@@ -13,6 +13,7 @@ import {
 } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMoneyBillWave } from "@fortawesome/free-solid-svg-icons";
+import { toast } from "react-toastify";
 
 const Accounts = () => {
   const [accounts, setAccounts] = useState([]);
@@ -83,16 +84,16 @@ const Accounts = () => {
 
   const handleDisburse = async () => {
     if (disbursementAmount <= 0) {
-      setError("Disbursement amount must be positive.");
+      toast.error("Disbursement amount must be positive.");
       return;
     }
 
     if (parseFloat(disbursementAmount) > budgetTotal) {
-      setError("Disbursement amount cannot exceed the available budget.");
+      toast.error("Disbursement amount cannot exceed the available budget.");
       return;
     }
 
-    setError(""); // Clear previous errors
+     // Clear previous errors
     setIsSubmitting(true); // Show loading state
 
     try {
@@ -124,28 +125,30 @@ const Accounts = () => {
       }
 
       if (!response.ok) {
-        let errorMessage =
-          "An error occurred while processing the disbursement.";
+        
+          toast.error("An error occurred while processing the disbursement.");
         const contentType = response.headers.get("Content-Type");
 
         if (contentType && contentType.includes("application/json")) {
           const errorData = await response.json();
-          errorMessage = errorData.detail || errorMessage;
+          toast.error(errorData.detail );
         } else {
           const errorText = await response.text();
-          errorMessage = "An unexpected error occurred. Please try again.";
+          toast.error("An unexpected error occurred. Please try again.");
           console.error("Server responded with HTML:", errorText);
         }
 
-        throw new Error(errorMessage);
+        throw new Error;
       }
 
       setDisbursementAmount("");
       setShowModal(false);
-      await fetchAccountsAndDisbursements(); // Refetch accounts and disbursements
+      await fetchAccountsAndDisbursements(); 
+      toast.success("Disbursement successful!");
     } catch (error) {
       console.error("Error handling disbursement:", error);
-      setError(error.message); // Display error to the user
+      
+      toast.error("An error occurred while processing the disbursement.");
     } finally {
       setIsSubmitting(false); // Hide loading state
     }
@@ -226,7 +229,6 @@ const Accounts = () => {
         show={showModal}
         onHide={() => {
           setShowModal(false);
-          setError(""); // Clear any existing errors when closing the modal
         }}
       >
         <Modal.Header closeButton>
@@ -234,7 +236,6 @@ const Accounts = () => {
         </Modal.Header>
         <Modal.Body>
           <Form>
-            {error && <Alert variant="danger">{error}</Alert>}
             <Form.Group className="mb-3">
               <Form.Label>Disbursement Amount</Form.Label>
               <Form.Control

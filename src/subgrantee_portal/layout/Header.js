@@ -69,8 +69,8 @@ const handleNotificationClick = async (notification) => {
       case "grant_review":
         navigate('/budget'); 
         break;
-      case "reminder":
-        navigate("/reminders"); 
+      case "disbursement_received":
+        navigate('/funding-allocation'); 
         break;
       case "profile_update":
         navigate("/profile"); 
