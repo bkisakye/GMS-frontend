@@ -8,6 +8,7 @@ import {
   FormControl,
   Modal,
   Form,
+  FormGroup,
 } from "react-bootstrap";
 import { toast } from "react-toastify";
 
@@ -17,6 +18,7 @@ const ProgressReports = () => {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
   const [reviewComments, setReviewComments] = useState("");
+  const [reviewerStatus, setReviewerStatus] = useState("");
 
   useEffect(() => {
     fetchReports();
@@ -44,6 +46,7 @@ const ProgressReports = () => {
   const handleReviewClick = (report) => {
     setSelectedReport(report);
     setReviewComments("");
+    setReviewerStatus("");
     setShowReviewModal(true);
   };
 
@@ -58,6 +61,7 @@ const ProgressReports = () => {
           },
           body: JSON.stringify({
             review_comments: reviewComments,
+            reviewer_status: reviewerStatus,
           }),
         }
       );
@@ -152,6 +156,18 @@ const ProgressReports = () => {
           <Modal.Title>Review Progress Report</Modal.Title>
         </Modal.Header>
         <Modal.Body>
+          <FormGroup>
+            <Form.Label>Review Status</Form.Label>
+            <Form.Control
+              as="select"
+              value={reviewerStatus}
+              onChange={(e) => setReviewerStatus(e.target.value)}
+            >
+              <option value="">Select Status</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </Form.Control>
+          </FormGroup>
           <Form.Group>
             <Form.Label>Review Comments</Form.Label>
             <Form.Control
