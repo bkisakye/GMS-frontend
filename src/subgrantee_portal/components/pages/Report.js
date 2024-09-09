@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { fetchWithAuth } from "../../../utils/helpers";
-import { BsBarChartFill } from "react-icons/bs"; // For progress report
-import { FaFileInvoiceDollar } from "react-icons/fa"; // For financial report
+import { BsBarChartFill } from "react-icons/bs"; 
+import { FaFileInvoiceDollar } from "react-icons/fa"; 
 import {
   Spinner,
   Table,
@@ -18,13 +18,26 @@ const Report = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [kpis, setKpis] = useState([]);
-  const [showProgressModal, setShowProgressModal] = useState(false); // Progress modal state
-  const [showFinancialModal, setShowFinancialModal] = useState(false); // Financial modal state
-  const [progressReport, setProgressReport] = useState(null); // Progress report data
-  const [financialReport, setFinancialReport] = useState(null); // Financial report data
-  const [modalLoading, setModalLoading] = useState(false); // Loading state for both modals
+  const [showProgressModal, setShowProgressModal] = useState(false); 
+  const [showFinancialModal, setShowFinancialModal] = useState(false); 
+  const [progressReport, setProgressReport] = useState(null); 
+  const [financialReport, setFinancialReport] = useState(null); 
+  const [modalLoading, setModalLoading] = useState(false); 
   const user = JSON.parse(localStorage.getItem("user"));
   const userId = user?.user_id;
+    const totalAllocated =
+      financialReport?.budget_summary?.total_allocated || 0;
+    const remainingAmount =
+      financialReport?.budget_summary?.remaining_amount || 0;
+    const totalBudget = totalAllocated + remainingAmount;
+    const expenditurePercentage = (totalAllocated / totalBudget) * 100;
+    const remainingPercentage = (remainingAmount / totalBudget) * 100;
+      const statusClass = financialReport?.budget_summary?.is_over_budget
+        ? "danger"
+        : "success";
+      const statusText = financialReport?.budget_summary?.is_over_budget
+        ? "Over Budget"
+        : "On Budget";
 
   useEffect(() => {
     fetchGrantAccounts();
@@ -67,7 +80,7 @@ const Report = () => {
       if (response.ok) {
         const data = await response.json();
         setProgressReport(data);
-        setShowProgressModal(true); // Open progress modal
+        setShowProgressModal(true); 
       } else {
         console.error("Failed to fetch progress report");
       }
@@ -87,7 +100,7 @@ const Report = () => {
       if (response.ok) {
         const data = await response.json();
         setFinancialReport(data);
-        setShowFinancialModal(true); // Open financial modal
+        setShowFinancialModal(true); 
       } else {
         console.error("Failed to fetch financial report");
       }
@@ -167,7 +180,7 @@ const Report = () => {
                   <Button
                     variant="primary"
                     className="me-2"
-                    onClick={() => handleProgressReportClick(grantAccount.id)} // Pass the grantAccountId to the function
+                    onClick={() => handleProgressReportClick(grantAccount.id)}
                   >
                     <BsBarChartFill />
                   </Button>
@@ -178,7 +191,7 @@ const Report = () => {
                 >
                   <Button
                     variant="success"
-                    onClick={() => handleFinancialReportClick(grantAccount.id)} // Pass the grantAccountId to the function
+                    onClick={() => handleFinancialReportClick(grantAccount.id)}
                   >
                     <FaFileInvoiceDollar />
                   </Button>
@@ -195,97 +208,231 @@ const Report = () => {
         </tbody>
       </Table>
 
-      {/* Modal for displaying progress report */}
-      <Modal show={showProgressModal} onHide={handleCloseProgressModal}>
-        <Modal.Header closeButton>
-          <Modal.Title>Progress Report</Modal.Title>
+      <Modal
+        show={showProgressModal}
+        onHide={handleCloseProgressModal}
+        centered
+        size="lg"
+        className="progress-report-modal"
+      >
+        <Modal.Header closeButton className="bg-primary text-white">
+          <Modal.Title>
+            <i className="bi bi-bar-chart-fill me-2"></i>
+            Progress Report
+          </Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body className="p-4">
           {modalLoading ? (
-            <Spinner animation="border" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </Spinner>
+            <div
+              className="d-flex justify-content-center align-items-center"
+              style={{ height: "200px" }}
+            >
+              <Spinner
+                animation="border"
+                role="status"
+                variant="primary"
+                style={{ width: "3rem", height: "3rem" }}
+              >
+                <span className="visually-hidden">Loading...</span>
+              </Spinner>
+            </div>
           ) : progressReport ? (
-            <div>
-              <p>
-                <strong>Report Date:</strong>{" "}
-                {new Date(progressReport.report_date).toLocaleDateString()}
-              </p>
-              <p>
-                <strong>Completed KPIs:</strong>{" "}
-                {progressReport.completed_pkis.join(", ")}
-              </p>
-              <p>
-                <strong>Status:</strong> {progressReport.status}
-              </p>
-              <p>
-                <strong>Progress Percentage:</strong>{" "}
-                {progressReport.progress_percentage}%
-              </p>
-              <p>
-                <strong>Review Status:</strong> {progressReport.review_status}
-              </p>
-              <p>
-                <strong>Review Comments:</strong>{" "}
-                {progressReport.review_comments}
-              </p>
-              <p>
-                <strong>Reviewer:</strong> {progressReport.reviewer}
-              </p>
-              <p>
-                <strong>Last Updated:</strong>{" "}
-                {new Date(progressReport.last_updated).toLocaleDateString()}
-              </p>
+            <div className="table-responsive">
+              <table className="table table-bordered table-hover">
+                <tbody>
+                  <tr>
+                    <th>Report Date</th>
+                    <td>
+                      {new Date(
+                        progressReport.report_date
+                      ).toLocaleDateString()}
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Completed KPIs</th>
+                    <td>{progressReport.completed_pkis.join(", ")}</td>
+                  </tr>
+                  <tr>
+                    <th>Status</th>
+                    <td>
+                      <span
+                        className={`badge bg-${
+                          progressReport.status === "Completed"
+                            ? "success"
+                            : "warning"
+                        }`}
+                      >
+                        {progressReport.status}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Progress Percentage</th>
+                    <td>
+                      <div className="progress" style={{ height: "20px" }}>
+                        <div
+                          className="progress-bar progress-bar-striped progress-bar-animated"
+                          role="progressbar"
+                          style={{
+                            width: `${progressReport.progress_percentage}%`,
+                          }}
+                          aria-valuenow={progressReport.progress_percentage}
+                          aria-valuemin="0"
+                          aria-valuemax="100"
+                        >
+                          {progressReport.progress_percentage}%
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Review Status</th>
+                    <td>
+                      <span
+                        className={`badge bg-${
+                          progressReport.review_status === "Approved"
+                            ? "success"
+                            : "info"
+                        }`}
+                      >
+                        {progressReport.review_status}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Review Comments</th>
+                    <td>
+                      {progressReport.review_comments || "No comments provided"}
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Reviewer</th>
+                    <td>{progressReport.reviewer}</td>
+                  </tr>
+                  <tr>
+                    <th>Last Updated</th>
+                    <td>
+                      {new Date(
+                        progressReport.last_updated
+                      ).toLocaleDateString()}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           ) : (
-            <p>No progress report found.</p>
+            <div
+              className="alert alert-info d-flex align-items-center"
+              role="alert"
+            >
+              <i className="bi bi-info-circle-fill me-2"></i>
+              No progress report found.
+            </div>
           )}
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseProgressModal}>
-            Close
-          </Button>
-        </Modal.Footer>
+        <Modal.Footer></Modal.Footer>
       </Modal>
 
-      {/* Modal for displaying financial report */}
-      <Modal show={showFinancialModal} onHide={handleCloseFinancialModal}>
-        <Modal.Header closeButton>
-          <Modal.Title>Financial Report</Modal.Title>
+      <Modal
+        show={showFinancialModal}
+        onHide={handleCloseFinancialModal}
+        centered
+        size="lg"
+        className="financial-report-modal"
+      >
+        <Modal.Header closeButton className="bg-success text-white">
+          <Modal.Title>
+            <i className="bi bi-cash-coin me-2"></i>
+            Financial Report
+          </Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body className="p-4">
           {modalLoading ? (
-            <Spinner animation="border" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </Spinner>
+            <div
+              className="d-flex justify-content-center align-items-center"
+              style={{ height: "200px" }}
+            >
+              <Spinner
+                animation="border"
+                role="status"
+                variant="success"
+                style={{ width: "3rem", height: "3rem" }}
+              >
+                <span className="visually-hidden">Loading...</span>
+              </Spinner>
+            </div>
           ) : financialReport ? (
-            <div>
-              <p>
-                <strong>Report Date:</strong>{" "}
-                {new Date(financialReport.report_date).toLocaleDateString()}
-              </p>
-              <p>
-                <strong>Total Expenditure:</strong>{" "}
-                {financialReport.total_expenditure}
-              </p>
-              <p>
-                <strong>Remaining Balance:</strong>{" "}
-                {financialReport.remaining_balance}
-              </p>
-              <p>
-                <strong>Status:</strong> {financialReport.status}
-              </p>
-              {/* Add other financial report fields here */}
+            <div className="table-responsive">
+              <table className="table table-bordered table-hover">
+                <tbody>
+                  <tr>
+                    <th>Report Date</th>
+                    <td>
+                      {new Date(
+                        financialReport.report_date
+                      ).toLocaleDateString()}
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Status</th>
+                    <td>
+                      <span className={`badge bg-${statusClass}`}>
+                        {statusText}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Total Expenditure</th>
+                    <td className="fs-4">
+                      ${financialReport.budget_summary?.total_allocated}
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Remaining Balance</th>
+                    <td className="fs-4">
+                      ${financialReport.budget_summary?.remaining_amount}
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Budget Overview</th>
+                    <td>
+                      <div className="progress" style={{ height: "25px" }}>
+                        <div
+                          className="progress-bar bg-success"
+                          role="progressbar"
+                          style={{ width: `${expenditurePercentage}%` }}
+                          aria-valuenow={expenditurePercentage}
+                          aria-valuemin="0"
+                          aria-valuemax="100"
+                        >
+                          Expenditure
+                        </div>
+                        <div
+                          className="progress-bar bg-info"
+                          role="progressbar"
+                          style={{ width: `${remainingPercentage}%` }}
+                          aria-valuenow={remainingPercentage}
+                          aria-valuemin="0"
+                          aria-valuemax="100"
+                        >
+                          Remaining
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           ) : (
-            <p>No financial report found.</p>
+            <div
+              className="alert alert-info d-flex align-items-center"
+              role="alert"
+            >
+              <i className="bi bi-info-circle-fill me-2"></i>
+              No financial report found.
+            </div>
           )}
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseFinancialModal}>
-            Close
-          </Button>
-        </Modal.Footer>
       </Modal>
     </div>
   );

@@ -357,7 +357,7 @@ const GrantCloseOut = () => {
               <p>
                 <strong>Status:</strong> {getStatus(selectedRequest) || "N/A"}
               </p>
-              <p>
+              {/* <p>
                 <strong>Progress:</strong>{" "}
                 {getProgressPercentage(selectedRequest)}
               </p>
@@ -378,7 +378,7 @@ const GrantCloseOut = () => {
                   <h5>Modification Details:</h5>
                   {getModificationDetails(selectedRequest)}
                 </div>
-              )}
+              )} */}
             </div>
           )}
         </Modal.Body>
@@ -407,7 +407,6 @@ const GrantCloseOut = () => {
                 <option value="">Select Status</option>
                 <option value="approved">Approved</option>
                 <option value="rejected">Rejected</option>
-               
               </Form.Control>
             </Form.Group>
             <Form.Group className="mb-3">
@@ -423,9 +422,6 @@ const GrantCloseOut = () => {
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowReviewModal(false)}>
-            Cancel
-          </Button>
           <Button variant="primary" onClick={handleReviewSubmit}>
             Submit Review
           </Button>
@@ -441,94 +437,77 @@ const GrantCloseOut = () => {
         className="reports-modal"
       >
         <Modal.Header closeButton>
-          <Modal.Title className="modal-title">
+          <Modal.Title className="fs-4 fw-bold text-primary">
             Financial and Progress Reports
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <div className="mb-4">
-            <h5 className="mb-3 section-title">Financial Report</h5>
+            <h5 className="mb-3 fs-5 fw-semibold text-secondary">
+              Financial Report
+            </h5>
             {financialReport ? (
               <div>
-                <div className="report-item">
-                  <span className="report-label">Grant Account:</span>
-                  <span className="report-value">
-                    {financialReport.grant_account}
-                  </span>
-                </div>
-                <div className="report-item">
-                  <span className="report-label">Report Date:</span>
-                  <span className="report-value">
-                    {format(
-                      new Date(financialReport.report_date),
-                      "MMM d, yyyy"
-                    )}
-                  </span>
-                </div>
-                <div className="report-item">
-                  <span className="report-label">Fiscal Year:</span>
-                  <span className="report-value">
-                    {financialReport.fiscal_year}
-                  </span>
-                </div>
-                <div className="report-item">
-                  <span className="report-label">Total Budget:</span>
-                  <span className="report-value">
-                    {financialReport.budget_summary.total_budget}
-                  </span>
-                </div>
-                <div className="report-item">
-                  <span className="report-label">Allocated Amount:</span>
-                  <span className="report-value">
-                    {financialReport.budget_summary.total_allocated}
-                  </span>
-                </div>
-                <div className="report-item">
-                  <span className="report-label">Total Budgeted:</span>
-                  <span className="report-value">
-                    {financialReport.budget_summary.total_budgeted}
-                  </span>
-                </div>
-                <div className="report-item">
-                  <span className="report-label">Balance:</span>
-                  <span className="report-value">
-                    {financialReport.budget_summary.remaining_amount}
-                  </span>
-                </div>
+                {Object.entries({
+                  "Grant Account": financialReport.grant_account,
+                  "Report Date": format(
+                    new Date(financialReport.report_date),
+                    "MMM d, yyyy"
+                  ),
+                  "Fiscal Year": financialReport.fiscal_year,
+                  "Total Budget": financialReport.budget_summary.total_budget,
+                  "Allocated Amount":
+                    financialReport.budget_summary.total_allocated,
+                  // "Total Budgeted":
+                  //   financialReport.budget_summary.total_budgeted,
+                  // Balance: financialReport.budget_summary.remaining_amount,
+                  "Balance":
+                  financialReport.budget_summary.remaining_amount,
+                }).map(([label, value], index) => (
+                  <div
+                    key={index}
+                    className="d-flex justify-content-between py-2 border-bottom"
+                  >
+                    <span className="fw-medium">{label}:</span>
+                    <span>{value}</span>
+                  </div>
+                ))}
               </div>
             ) : (
-              <p className="no-report">No financial report available.</p>
+              <p className="text-center text-muted">
+                No financial report available.
+              </p>
             )}
-            <hr className="report-divider" />
-            <h5 className="mt-4 mb-3 section-title">Progress Report</h5>
+            <hr className="my-4" />
+            <h5 className="mt-4 mb-3 fs-5 fw-semibold text-secondary">
+              Progress Report
+            </h5>
             {progressReport ? (
               <div>
-                <div className="report-item">
-                  <span className="report-label">Report Date:</span>
-                  <span className="report-value">
-                    {format(
-                      new Date(progressReport.report_date),
-                      "MMM d, yyyy"
-                    )}
-                  </span>
-                </div>
-                <div className="report-item">
-                  <span className="report-label">Progress:</span>
-                  <span className="report-value">
-                    {progressReport.progress_percentage}%
-                  </span>
-                </div>
-                <div className="report-item">
-                  <span className="report-label">Progress Status:</span>
-                  <span className="report-value">{progressReport.status}</span>
-                </div>
+                {Object.entries({
+                  "Report Date": format(
+                    new Date(progressReport.report_date),
+                    "MMM d, yyyy"
+                  ),
+                  Progress: `${progressReport.progress_percentage}%`,
+                  "Progress Status": progressReport.status,
+                }).map(([label, value], index) => (
+                  <div
+                    key={index}
+                    className="d-flex justify-content-between py-2 border-bottom"
+                  >
+                    <span className="fw-medium">{label}:</span>
+                    <span>{value}</span>
+                  </div>
+                ))}
               </div>
             ) : (
-              <p className="no-report">No progress report available.</p>
+              <p className="text-center text-muted">
+                No progress report available.
+              </p>
             )}
           </div>
         </Modal.Body>
-        <Modal.Footer></Modal.Footer>
       </Modal>
     </div>
   );

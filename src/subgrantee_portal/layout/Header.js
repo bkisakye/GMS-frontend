@@ -83,10 +83,10 @@ const handleNotificationClick = async (notification) => {
         break;
     }
 
-    // Close the modal after navigation
+   
     toggleModal();
 
-    // Mark notification as read
+   
     const response = await fetchWithAuth(
       `/api/notifications/${notification.id}/read/`,
       {
@@ -98,13 +98,11 @@ const handleNotificationClick = async (notification) => {
     );
 
     if (response.ok) {
-      // Update local state to mark notification as read
       setNotifications((prevNotifications) =>
         prevNotifications.map((notif) =>
           notif.id === notification.id ? { ...notif, is_read: true } : notif
         )
       );
-      // Fetch the updated notifications count
       fetchNotificationsCount();
     } else {
       console.error("Failed to mark notification as read:", response.status);

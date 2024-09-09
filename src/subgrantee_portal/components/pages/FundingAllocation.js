@@ -6,6 +6,8 @@ import {
   Form,
   InputGroup,
   FormControl,
+  Tooltip,
+  OverlayTrigger,
 } from "react-bootstrap";
 import { fetchWithAuth } from "../../../utils/helpers";
 import { AiFillEdit } from "react-icons/ai";
@@ -58,7 +60,13 @@ const FundingAllocation = ({ grantAccountId }) => {
     }
   };
 
-
+const getBudgetItemDetails = (itemId) => {
+  const item = budgetItems.find((item) => item.id === itemId);
+  if (item) {
+    return `${item.category.name} - ${item.grant_account?.grant?.name}`;
+  }
+  return "Unknown";
+};
 
   const handleCreate = () => {
     setCurrentAllocation({
@@ -75,38 +83,43 @@ const FundingAllocation = ({ grantAccountId }) => {
     setShowModal(true);
   };
 
-  const handleSubmit = async () => {
-    try {
-      const method = currentAllocation.id ? "PATCH" : "POST";
-      const url = currentAllocation.id
-        ? `/api/grants/funding/${userId}/allocations/${currentAllocation.id}/`
-        : `/api/grants/funding/${userId}/allocations/`;
+const handleSubmit = async () => {
+  try {
+    const method = currentAllocation.id ? "PATCH" : "POST";
+    const url = currentAllocation.id
+      ? `/api/grants/funding/${userId}/allocations/${currentAllocation.id}/`
+      : `/api/grants/funding/${userId}/allocations/`;
 
-      const payload = {
-        ...currentAllocation,
-        user: userId, // Add the user field here
-      };
+    const payload = {
+      ...currentAllocation,
+      user: userId,
+      item: currentAllocation.item, 
+    };
 
-      const response = await fetchWithAuth(url, {
-        method: method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+    const response = await fetchWithAuth(url, {
+      method: method,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
 
-      if (response.ok) {
-        fetchAllocations();
-        setShowModal(false);
-        toast.success("Funds Allocated successfully");
-      } else {
-        console.error("Failed to save allocation:", await response.json());
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      toast.error("Funds allocated can not exceed the amount for the amount");
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Failed to save allocation:", errorData);
+      toast.error("Funds allocation failed");
+      return; 
     }
-  };
+
+    fetchAllocations(); 
+    setShowModal(false);
+    toast.success("Funds allocated successfully");
+  } catch (error) {
+    console.error("Error:", error);
+    toast.error("Funds allocation failed");
+  }
+};
+
 
   const getBudgetItemName = (itemId) => {
     const item = budgetItems.find((item) => item.id === itemId);
@@ -153,19 +166,24 @@ const FundingAllocation = ({ grantAccountId }) => {
           {filteredAllocations.length > 0 ? (
             filteredAllocations.map((allocation) => (
               <tr key={allocation.id}>
-                <td>{allocation.item.category?.name} - {allocation.item.grant_account?.grant?.name}</td>
+                <td>{getBudgetItemDetails(allocation.item)}</td>
                 <td>{allocation.description}</td>
                 <td>{allocation.reference_number}</td>
-                    <td>{allocation.amount}</td>
-                    <td>{allocation.allocation_date}</td>
-               
+                <td>{allocation.amount}</td>
+                <td>{allocation.allocation_date}</td>
+
                 <td>
-                  <Button
-                    variant="warning"
-                    onClick={() => handleEdit(allocation)}
+                  <OverlayTrigger
+                    placement="top"
+                    overlay={<Tooltip>Edit Allocation</Tooltip>}
                   >
-                    <AiFillEdit />
-                  </Button>
+                    <Button
+                      variant="warning"
+                      onClick={() => handleEdit(allocation)}
+                    >
+                      <AiFillEdit />
+                    </Button>
+                  </OverlayTrigger>
                 </td>
               </tr>
             ))

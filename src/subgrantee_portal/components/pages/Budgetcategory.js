@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { fetchWithAuth } from "../../../utils/helpers";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { Eye, PlusCircle, Trash } from "react-bootstrap-icons"; // Updated to use Bootstrap Icons
-import { Form } from "react-bootstrap";
+import { Eye, PlusCircle, Trash } from "react-bootstrap-icons"; 
+import { Form, OverlayTrigger } from "react-bootstrap";
 import { toast } from "react-toastify";
+import { Tooltip } from "react-bootstrap";
 
 const BudgetCategory = () => {
   const [categories, setCategories] = useState([]);
@@ -48,7 +49,7 @@ const fetchGrants = async () => {
       setGrants(data);
       console.log("Array of grants:", data);
     } else if (data.grant) {
-      setGrants([data]); // Keep the full object, since it contains `grant_account.id`
+      setGrants([data]); 
     } else {
       console.error("Unexpected data format:", data);
       setError("Failed to load grants.");
@@ -113,7 +114,6 @@ toast.success("Budget Category added successfully!");
         if (response.ok) {
           const data = await response.json();
           setBudgetItems(data);
-          // setIsItemListModalOpen(true);
           console.log("Budget Items:", data);
           console.log("cartegoryId:", selectedCategory);
         } else {
@@ -236,24 +236,39 @@ toast.error("Budget item exceeds the grant's total budget");
                 <td>{category.name}</td>
                 <td>{category.description}</td>
                 <td>
-                  <button
-                    onClick={() => toggleBudgetItemModal(category.id)}
-                    className="btn btn-success btn-sm me-2"
+                  <OverlayTrigger
+                    placement="top"
+                    overlay={<Tooltip>Add Budget Item</Tooltip>}
                   >
-                    <PlusCircle />
-                  </button>
-                  <button
-                    onClick={() => toggleItemListModal(category.id)}
-                    className="btn btn-secondary btn-sm me-2"
+                    <button
+                      onClick={() => toggleBudgetItemModal(category.id)}
+                      className="btn btn-success btn-sm me-2"
+                    >
+                      <PlusCircle />
+                    </button>
+                  </OverlayTrigger>
+                  <OverlayTrigger
+                    placement="top"
+                    overlay={<Tooltip>View Budget Items</Tooltip>}
                   >
-                    <Eye />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(category.id)}
-                    className="btn btn-danger btn-sm me-2"
+                    <button
+                      onClick={() => toggleItemListModal(category.id)}
+                      className="btn btn-secondary btn-sm me-2"
+                    >
+                      <Eye />
+                    </button>
+                  </OverlayTrigger>
+                  <OverlayTrigger
+                    placement="top"
+                    overlay={<Tooltip>Delete Budget Category</Tooltip>}
                   >
-                    <Trash />
-                  </button>
+                    <button
+                      onClick={() => handleDelete(category.id)}
+                      className="btn btn-danger btn-sm me-2"
+                    >
+                      <Trash />
+                    </button>
+                  </OverlayTrigger>
                 </td>
               </tr>
             ))
@@ -349,7 +364,6 @@ toast.error("Budget item exceeds the grant's total budget");
                       <th>Grant</th>
                       <th>Amount</th>
                       <th>Description</th>
-                      
                     </tr>
                   </thead>
                   <tbody>
@@ -393,14 +407,14 @@ toast.error("Budget item exceeds the grant's total budget");
                     <Form.Control
                       as="select"
                       value={selectedGrant}
-                      onChange={(e) => setSelectedGrant(e.target.value)} // Save the grant_account.id
+                      onChange={(e) => setSelectedGrant(e.target.value)} 
                       required
                     >
                       <option value="">Select a grant</option>
                       {grants &&
                         grants.map((grantObj) => (
                           <option key={grantObj.id} value={grantObj.id}>
-                            {grantObj.grant.name} {/* Display grant name */}
+                            {grantObj.grant.name} 
                           </option>
                         ))}
                     </Form.Control>
