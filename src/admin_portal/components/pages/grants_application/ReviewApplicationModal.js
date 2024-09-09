@@ -127,7 +127,7 @@ class ReviewApplicationModal extends Component {
                     name="score"
                     id="score"
                     type="number"
-                    placeholder="Score"
+                    placeholder="Score(0-10)"
                     className="form-control"
                     value={score}
                     onChange={this.handleChange}
