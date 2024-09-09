@@ -8,6 +8,7 @@ import {
   FormControl,
 } from "react-bootstrap";
 import { fetchWithAuth } from "../../../utils/helpers";
+import { toast } from "react-toastify";
 
 const Requests = () => {
   const [requests, setRequests] = useState([]);
@@ -107,11 +108,14 @@ const Requests = () => {
 
       const data = await response.json();
       console.log("Request submitted successfully:", data);
+      toast.success("Request submitted successfully");
+      window.location.reload();
       setShowModal(false);
+      
       // Optionally, refresh the requests list here
     } catch (error) {
       console.error("Error submitting request:", error);
-      setError("Failed to submit request. Please try again later.");
+      toast.error("Failed to submit request. Please try again later.");
     }
   };
 
@@ -312,8 +316,6 @@ const Requests = () => {
                 </Form.Group>
               </>
             )}
-
-            {error && <Alert variant="danger">{error}</Alert>}
 
             <Button variant="primary" type="submit">
               Submit

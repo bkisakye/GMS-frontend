@@ -9,6 +9,7 @@ import {
   Modal,
   Form,
 } from "react-bootstrap";
+import { toast } from "react-toastify";
 
 const ProgressReports = () => {
   const [reports, setReports] = useState([]);
@@ -63,6 +64,7 @@ const ProgressReports = () => {
 
       if (response.ok) {
         const data = await response.json();
+        toast.success("Report reviewed successfully!");
         setShowReviewModal(false);
         setReports((prevReports) =>
           prevReports.map((report) =>
@@ -77,9 +79,11 @@ const ProgressReports = () => {
         );
       } else {
         console.error("Error reviewing report:", response.statusText);
+        toast.error("Error reviewing report.");
       }
     } catch (error) {
       console.error("Error reviewing report:", error);
+      toast.error("Error reviewing report.");
     }
   };
 

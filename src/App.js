@@ -48,6 +48,7 @@ import Requests from "./subgrantee_portal/components/pages/Requests";
 import GrantCloseOut from "./admin_portal/components/pages/requests/GrantCloseOut";
 import SubgranteeReg from "./admin_portal/components/pages/requests/SubgranteeReg";
 import Budgetcategory from "./subgrantee_portal/components/pages/Budgetcategory";
+import Report from "./subgrantee_portal/components/pages/Report";
 
 function App() {
   return (
@@ -99,6 +100,7 @@ function App() {
           <Route path="funding-allocation" element={<FundingAllocation />} />
           <Route path="grant-accounts" element={<Accounts />} />
           <Route path="requests" element={<Requests />} />
+          <Route path="reports" element={<Report />} />
           <Route path="profile" element={<ProfileCreation />}>
             <Route index element={<GeneralInfo />} />
             <Route path="generalinfo" element={<GeneralInfo />} />

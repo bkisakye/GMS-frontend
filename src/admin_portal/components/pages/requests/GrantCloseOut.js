@@ -6,6 +6,7 @@ import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import { BsClipboard2 } from "react-icons/bs";
 import { format } from "date-fns";
+import { toast } from "react-toastify";
 
 const GrantCloseOut = () => {
   const [requests, setRequests] = useState([]);
@@ -13,10 +14,12 @@ const GrantCloseOut = () => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
+  const user = JSON.parse(localStorage.getItem("user"));
+  const userId = user?.user_id;
   const [reviewData, setReviewData] = useState({
     comments: "",
     status: "",
-    reviewer: "",
+    reviewer: userId,
   });
   const [showReportsModal, setShowReportsModal] = useState(false);
   const [financialReport, setFinancialReport] = useState(null);
@@ -227,8 +230,9 @@ const GrantCloseOut = () => {
         }
       );
       if (response.ok) {
-        alert("Review submitted successfully!");
+        toast.success("Review submitted successfully!");
         setShowReviewModal(false);
+        window.location.reload();
         console.log("Review Data:", reviewData);
       } else {
         console.error("Error submitting review:", response.statusText);
@@ -378,8 +382,7 @@ const GrantCloseOut = () => {
             </div>
           )}
         </Modal.Body>
-        <Modal.Footer>
-        </Modal.Footer>
+        <Modal.Footer></Modal.Footer>
       </Modal>
 
       {/* Review Modal */}
@@ -394,6 +397,20 @@ const GrantCloseOut = () => {
         <Modal.Body>
           <Form>
             <Form.Group className="mb-3">
+              <Form.Label>Status</Form.Label>
+              <Form.Control
+                as="select"
+                name="status"
+                value={reviewData.status}
+                onChange={handleReviewChange}
+              >
+                <option value="">Select Status</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+               
+              </Form.Control>
+            </Form.Group>
+            <Form.Group className="mb-3">
               <Form.Label>Comments</Form.Label>
               <Form.Control
                 as="textarea"
@@ -403,34 +420,14 @@ const GrantCloseOut = () => {
                 onChange={handleReviewChange}
               />
             </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Status</Form.Label>
-              <Form.Control
-                as="select"
-                name="status"
-                value={reviewData.status}
-                onChange={handleReviewChange}
-              >
-                <option value="">Select Status</option>
-                <option value="Approved">Approved</option>
-                <option value="Rejected">Rejected</option>
-                <option value="Pending">Pending</option>
-              </Form.Control>
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Reviewer</Form.Label>
-              <Form.Control
-                type="text"
-                name="reviewer"
-                value={reviewData.reviewer}
-                onChange={handleReviewChange}
-              />
-            </Form.Group>
           </Form>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowReviewModal(false)}>
-            Close
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleReviewSubmit}>
+            Submit Review
           </Button>
         </Modal.Footer>
       </Modal>
@@ -531,9 +528,7 @@ const GrantCloseOut = () => {
             )}
           </div>
         </Modal.Body>
-        <Modal.Footer>
-
-        </Modal.Footer>
+        <Modal.Footer></Modal.Footer>
       </Modal>
     </div>
   );

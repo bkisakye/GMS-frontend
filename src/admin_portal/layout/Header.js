@@ -67,6 +67,8 @@ function Header({ toggleSidebar }) {
       navigate('/admin/subgrantee-registration-request');
     } else if (notification.notification_category === "grant_application") {
       navigate('/admin/applications_list');
+    } else if (notification.notification_category === "grant_closeout") {
+      navigate('/admin/closeout-requests');
     } else {
       console.error(
         "Unknown notification category:",

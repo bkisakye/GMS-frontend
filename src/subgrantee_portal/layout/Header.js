@@ -72,8 +72,8 @@ const handleNotificationClick = async (notification) => {
       case "disbursement_received":
         navigate('/funding-allocation'); 
         break;
-      case "profile_update":
-        navigate("/profile"); 
+      case "grant_closeout_review":
+        navigate('/requests'); 
         break;
       default:
         console.error(

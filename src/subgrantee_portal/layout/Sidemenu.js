@@ -2,7 +2,7 @@ import React from "react";
 import { NavLink } from "react-router-dom";
 import { Home, FileText, BarChart2, Settings } from "lucide-react";
 import { AiFillMoneyCollect } from "react-icons/ai";
-import { FaMoneyBill, FaMoneyBillWave } from "react-icons/fa";
+import { FaInbox, FaMoneyBill, FaMoneyBillWave } from "react-icons/fa";
 import { CurrencyBitcoin } from "react-bootstrap-icons";
 
 const Sidemenu = () => {
@@ -78,7 +78,7 @@ const Sidemenu = () => {
           <span>Reports</span>
         </NavLink>
         <NavLink
-          to="/settings"
+          to="/requests"
           className="list-group-item list-group-item-action border-0 py-3 d-flex align-items-center"
           activeClassName="active"
           style={({ isActive }) => ({
@@ -87,8 +87,9 @@ const Sidemenu = () => {
             color: isActive ? "#007bff" : "#333",
           })}
         >
-          <Settings size={20} className="me-3" />
-          <span>Settings</span>
+          <FaInbox size={20} className="me-3" />{" "}
+          
+          <span>Requests</span>
         </NavLink>
       </div>
     </div>
