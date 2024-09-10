@@ -100,8 +100,9 @@ const GrantCloseOut = () => {
   };
 
   const getAccountHolderInfo = (request) => {
-    if (request.grant_closeout && request.grant_closeout.initiated_by) {
-      return request.grant_closeout.initiated_by;
+  if (request && request.grant_closeout && request.grant_closeout.grant_account) {
+    return request.grant_closeout.grant_account.account_holder?.organisation_name || 'Unknown';
+  
     } else if (request.modifications && request.modifications.requested_by) {
       return request.modifications.requested_by;
     }
@@ -262,7 +263,6 @@ const GrantCloseOut = () => {
 
   return (
     <div className="container mt-4">
-      <h1 className="mb-4 text-center">Grant Closeout Requests</h1>
       <div className="mb-4">
         <Form.Control
           type="text"
@@ -287,7 +287,8 @@ const GrantCloseOut = () => {
                 {filteredRequests.map((request) => (
                   <tr key={request.id}>
                     <td>{request.request_type}</td>
-                    <td>{getAccountHolderInfo(request)?.email || "N/A"}</td>
+                    <td>{getAccountHolderInfo(request) || "N/A"}</td>
+
                     <td>
                       <Button
                         variant="info"
@@ -346,7 +347,7 @@ const GrantCloseOut = () => {
               </p>
               <p>
                 <strong>Account Holder:</strong>{" "}
-                {getAccountHolderInfo(selectedRequest)?.email || "N/A"}
+                {getAccountHolderInfo(selectedRequest) || "N/A"}
               </p>
               <p>
                 <strong>Grant Info:</strong>{" "}
@@ -357,7 +358,7 @@ const GrantCloseOut = () => {
               <p>
                 <strong>Status:</strong> {getStatus(selectedRequest) || "N/A"}
               </p>
-              {/* <p>
+              <p>
                 <strong>Progress:</strong>{" "}
                 {getProgressPercentage(selectedRequest)}
               </p>
@@ -378,7 +379,7 @@ const GrantCloseOut = () => {
                   <h5>Modification Details:</h5>
                   {getModificationDetails(selectedRequest)}
                 </div>
-              )} */}
+              )}
             </div>
           )}
         </Modal.Body>
@@ -461,8 +462,7 @@ const GrantCloseOut = () => {
                   // "Total Budgeted":
                   //   financialReport.budget_summary.total_budgeted,
                   // Balance: financialReport.budget_summary.remaining_amount,
-                  "Balance":
-                  financialReport.budget_summary.remaining_amount,
+                  Balance: financialReport.budget_summary.remaining_amount,
                 }).map(([label, value], index) => (
                   <div
                     key={index}

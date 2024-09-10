@@ -14,17 +14,19 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMoneyBillWave } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "react-toastify";
+import Closeout from "./Closeout"; // Adjust the import path based on your file structure
 
 const Accounts = () => {
   const [accounts, setAccounts] = useState([]);
   const [disbursements, setDisbursements] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
-  const [showModal, setShowModal] = useState(false);
+  const [showDisburseModal, setShowDisburseModal] = useState(false);
+  const [showCloseoutModal, setShowCloseoutModal] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState(null);
   const [disbursementAmount, setDisbursementAmount] = useState("");
   const [budgetTotal, setBudgetTotal] = useState(0);
   const [error, setError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false); // Add this line
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchAccountsAndDisbursements();
@@ -35,6 +37,7 @@ const Accounts = () => {
       const response = await fetchWithAuth("/api/grants/grant-accounts/");
       const data = await response.json();
       setAccounts(data);
+
       const disbursementPromises = data.map((account) =>
         fetchWithAuth(
           `/api/grants/disbursements-by-account/${account.id}/`
@@ -45,6 +48,7 @@ const Accounts = () => {
           }))
         )
       );
+
       const disbursementResults = await Promise.all(disbursementPromises);
       const newDisbursements = disbursementResults.reduce(
         (acc, { accountId, disbursementData }) => {
@@ -56,7 +60,22 @@ const Accounts = () => {
       setDisbursements(newDisbursements);
     } catch (error) {
       console.error("Error fetching accounts or disbursements:", error);
+      setError("Failed to fetch accounts or disbursements.");
     }
+  };
+
+  const handleCloseOutClick = (accountId) => {
+    setSelectedAccountId(accountId);
+    setShowCloseoutModal(true);
+  };
+
+  const handleDisburseClick = (accountId) => {
+    setSelectedAccountId(accountId);
+    setBudgetTotal(
+      accounts.find((acc) => acc.id === accountId)?.budget_total
+        ?.budget_total || 0
+    ); // Fetch the budget total
+    setShowDisburseModal(true);
   };
 
   const getStatusBadge = (status) => {
@@ -93,7 +112,6 @@ const Accounts = () => {
       return;
     }
 
-     // Clear previous errors
     setIsSubmitting(true); // Show loading state
 
     try {
@@ -125,53 +143,34 @@ const Accounts = () => {
       }
 
       if (!response.ok) {
-        
-          toast.error("An error occurred while processing the disbursement.");
         const contentType = response.headers.get("Content-Type");
 
         if (contentType && contentType.includes("application/json")) {
           const errorData = await response.json();
-          toast.error(errorData.detail );
+          toast.error(
+            errorData.detail ||
+              "An error occurred while processing the disbursement."
+          );
         } else {
           const errorText = await response.text();
           toast.error("An unexpected error occurred. Please try again.");
           console.error("Server responded with HTML:", errorText);
         }
 
-        throw new Error;
+        throw new Error("Disbursement request failed.");
       }
 
       setDisbursementAmount("");
-      setShowModal(false);
-      await fetchAccountsAndDisbursements(); 
+      setShowDisburseModal(false);
+      await fetchAccountsAndDisbursements();
       toast.success("Disbursement successful!");
     } catch (error) {
       console.error("Error handling disbursement:", error);
-      
       toast.error("An error occurred while processing the disbursement.");
     } finally {
       setIsSubmitting(false); // Hide loading state
     }
   };
-
-  const DisburseButton = ({ accountId }) => (
-    <Button
-      variant="outline-primary"
-      size="sm"
-      className="disburse-btn"
-      onClick={() => {
-        setSelectedAccountId(accountId);
-        setBudgetTotal(
-          accounts.find((acc) => acc.id === accountId)?.budget_total
-            ?.budget_total || 0
-        ); // Fetch the budget total
-        setShowModal(true);
-      }}
-    >
-      <FontAwesomeIcon icon={faMoneyBillWave} className="me-2" />
-      Disburse
-    </Button>
-  );
 
   return (
     <Container className="mt-5">
@@ -191,6 +190,7 @@ const Accounts = () => {
             <th>Balance</th>
             <th>Status</th>
             <th>Action</th>
+            <th>Closeout</th> {/* Added Closeout column */}
           </tr>
         </thead>
         <tbody>
@@ -204,20 +204,41 @@ const Accounts = () => {
                     {account.grant?.name}
                   </td>
                   <td>{account.budget_total?.budget_total}</td>
-                  <td>{disbursement.disbursement_amount }</td>
-                  <td>{disbursement.budget_balance }</td>
+                  <td>{disbursement.disbursement_amount}</td>
+                  <td>{disbursement.budget_balance}</td>
                   <td>{getStatusBadge(account.disbursed)}</td>
                   <td>
                     {account.disbursed !== "fully_disbursed" && (
-                      <DisburseButton accountId={account.id} />
+                      <Button
+                        variant="outline-primary"
+                        size="sm"
+                        className="disburse-btn"
+                        onClick={() => handleDisburseClick(account.id)}
+                      >
+                        <FontAwesomeIcon
+                          icon={faMoneyBillWave}
+                          className="me-2"
+                        />
+                        Disburse
+                      </Button>
                     )}
+                  </td>
+                  <td>
+                    <Button
+                      variant="outline-danger"
+                      size="sm"
+                      className="closeout-btn"
+                      onClick={() => handleCloseOutClick(account.id)}
+                    >
+                      Closeout
+                    </Button>
                   </td>
                 </tr>
               );
             })
           ) : (
             <tr>
-              <td colSpan="6" className="text-center">
+              <td colSpan="7" className="text-center">
                 No matching accounts found
               </td>
             </tr>
@@ -225,11 +246,10 @@ const Accounts = () => {
         </tbody>
       </Table>
 
+      {/* Disburse Modal */}
       <Modal
-        show={showModal}
-        onHide={() => {
-          setShowModal(false);
-        }}
+        show={showDisburseModal}
+        onHide={() => setShowDisburseModal(false)}
       >
         <Modal.Header closeButton>
           <Modal.Title>Disburse Funds</Modal.Title>
@@ -240,9 +260,9 @@ const Accounts = () => {
               <Form.Label>Disbursement Amount</Form.Label>
               <Form.Control
                 type="number"
-                placeholder="Enter amount"
                 value={disbursementAmount}
                 onChange={(e) => setDisbursementAmount(e.target.value)}
+                min="0"
               />
             </Form.Group>
             <Button
@@ -255,6 +275,12 @@ const Accounts = () => {
           </Form>
         </Modal.Body>
       </Modal>
+
+      {/* Closeout Modal */}
+      <Closeout
+        showModal={showCloseoutModal}
+        handleClose={() => setShowCloseoutModal(false)}
+      />
     </Container>
   );
 };
