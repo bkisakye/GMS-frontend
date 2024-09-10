@@ -72,7 +72,7 @@ const handleNotificationClick = async (notification) => {
       case "disbursement_received":
         navigate('/funding-allocation'); 
         break;
-      case "grant_closeout_review":
+      case "request_review":
         navigate('/requests'); 
         break;
       default:
@@ -104,6 +104,7 @@ const handleNotificationClick = async (notification) => {
         )
       );
       fetchNotificationsCount();
+      window.location.reload();
     } else {
       console.error("Failed to mark notification as read:", response.status);
     }

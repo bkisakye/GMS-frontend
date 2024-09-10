@@ -103,8 +103,17 @@ const GrantCloseOut = () => {
   if (request && request.grant_closeout && request.grant_closeout.grant_account) {
     return request.grant_closeout.grant_account.account_holder?.organisation_name || 'Unknown';
   
-    } else if (request.modifications && request.modifications.requested_by) {
-      return request.modifications.requested_by;
+    } else if (request && request.modifications && request.modifications.grant_account) {
+      return request.modifications.grant_account.account_holder || "Unknown";
+    } else if (
+      request &&
+      request.requirements &&
+      request.requirements.grant_account
+    ) {
+      return (
+        request.requirements.grant_account.account_holder
+          ?.organisation_name || "Unknown"
+      );
     }
     return null;
   };
@@ -185,25 +194,54 @@ const GrantCloseOut = () => {
             <strong>Description:</strong>{" "}
             {request.modifications.description || "N/A"}
           </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const getRequirementsDetails = (request) => {
+    if (request.requirements) {
+      return (
+        <div>
           <p>
-            <strong>Status:</strong> {request.modifications.status || "N/A"}
+            <strong>Requested By:</strong>{" "}
+            {request.requirements.requested_by.email || "N/A"}
           </p>
           <p>
-            <strong>Reviewed By:</strong>{" "}
-            {request.modifications.reviewed_by
-              ? request.modifications.reviewed_by.email
-              : "N/A"}
+            <strong>Grant:</strong>{" "}
+            {request.requirements.grant_account.grant.name || "N/A"}
           </p>
           <p>
-            <strong>Reviewed Date:</strong>{" "}
-            {request.modifications.reviewed_date
-              ? new Date(
-                  request.modifications.reviewed_date
-                ).toLocaleDateString()
-              : "N/A"}
+            <strong>Requested Date:</strong>{" "}
+            {new Date(request.requirements.request_date).toLocaleDateString() ||
+              "N/A"}
           </p>
           <p>
-            <strong>Comments:</strong> {request.modifications.comments || "N/A"}
+            <strong>Items:</strong>
+            {request.requirements.items &&
+            request.requirements.items.length > 0 ? (
+              <table className="table table-striped table-bordered">
+                <thead className="thead-dark">
+                  <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Quantity</th>
+                    <th scope="col">Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {request.requirements.items.map((item, index) => (
+                    <tr key={index}>
+                      <td>{item.name}</td>
+                      <td>{item.quantity}</td>
+                      <td>{item.description}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              "N/A"
+            )}
           </p>
         </div>
       );
@@ -218,30 +256,44 @@ const GrantCloseOut = () => {
     });
   };
 
-  const handleReviewSubmit = async () => {
-    try {
-      const response = await fetchWithAuth(
-        `/api/grants/closeouts/${selectedRequest.grant_closeout.id}/reviews/`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(reviewData),
-        }
-      );
-      if (response.ok) {
-        toast.success("Review submitted successfully!");
-        setShowReviewModal(false);
-        window.location.reload();
-        console.log("Review Data:", reviewData);
-      } else {
-        console.error("Error submitting review:", response.statusText);
-      }
-    } catch (error) {
-      console.error("Error submitting review:", error);
-    }
+const handleReviewSubmit = async () => {
+  if (!selectedRequest) {
+    console.error("No request selected.");
+    return;
+  }
+
+  const reviewDataWithRequestId = {
+    request: selectedRequest.id, // Add the request_id here
+    reviewer: userId,
+    comments: reviewData.comments,
+    status: reviewData.status,
   };
+
+  try {
+    const response = await fetchWithAuth(`/api/grants/request-reviews/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(reviewDataWithRequestId),
+    });
+
+    if (response.ok) {
+      
+      setShowReviewModal(false);
+      window.location.reload();
+      toast.success("Review submitted successfully!");
+      console.log("Review Data:", reviewDataWithRequestId);
+    } else {
+      console.error("Error submitting review:", response.statusText);
+    }
+  } catch (error) {
+    console.error("Error submitting review:", error);
+  }
+};
+
+
+
 
   const handleShowReportsModal = () => {
     if (selectedRequest) {
@@ -300,6 +352,7 @@ const GrantCloseOut = () => {
                       >
                         <FaRegEye />
                       </Button>{" "}
+                      {request.request_type === "grant_closeout" && (
                       <Button
                         variant="primary"
                         size="sm"
@@ -307,19 +360,22 @@ const GrantCloseOut = () => {
                           setSelectedRequest(request);
                           handleShowReportsModal();
                         }}
-                      >
+                      >{" "}
                         <BsClipboard2 />
-                      </Button>{" "}
-                      <Button
-                        variant="success"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedRequest(request);
-                          setShowReviewModal(true);
-                        }}
-                      >
-                        <FaRegCheckCircle />
-                      </Button>
+                    </Button>
+                      )}
+                      {request.reviewed === false && (
+                        <Button
+                          variant="success"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedRequest(request);
+                            setShowReviewModal(true);
+                          }}
+                        >
+                          <FaRegCheckCircle />
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -339,49 +395,49 @@ const GrantCloseOut = () => {
           <Modal.Title>Request Details</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {selectedRequest && (
-            <div>
-              <p>
-                <strong>Request Type:</strong>{" "}
-                {selectedRequest.request_type || "N/A"}
-              </p>
-              <p>
-                <strong>Account Holder:</strong>{" "}
-                {getAccountHolderInfo(selectedRequest) || "N/A"}
-              </p>
-              <p>
-                <strong>Grant Info:</strong>{" "}
-                {getGrantInfo(selectedRequest)
-                  ? getGrantInfo(selectedRequest).name || "N/A"
-                  : "N/A"}
-              </p>
-              <p>
-                <strong>Status:</strong> {getStatus(selectedRequest) || "N/A"}
-              </p>
-              <p>
-                <strong>Progress:</strong>{" "}
-                {getProgressPercentage(selectedRequest)}
-              </p>
-              <p>
-                <strong>Achievements:</strong>{" "}
-                {getAchievements(selectedRequest)}
-              </p>
-              <p>
-                <strong>Best Practices:</strong>{" "}
-                {getBestPractices(selectedRequest)}
-              </p>
-              <p>
-                <strong>Lessons Learned:</strong>{" "}
-                {getLessonsLearned(selectedRequest)}
-              </p>
-              {shouldHideAdditionalFields(selectedRequest) && (
-                <div>
-                  <h5>Modification Details:</h5>
-                  {getModificationDetails(selectedRequest)}
-                </div>
-              )}
-            </div>
-          )}
+          {selectedRequest &&
+            selectedRequest.request_type === "grant_closeout" && (
+              <div>
+                <p>
+                  <strong>Request Type:</strong>{" "}
+                  {selectedRequest.request_type || "N/A"}
+                </p>
+                <p>
+                  <strong>Account Holder:</strong>{" "}
+                  {getAccountHolderInfo(selectedRequest) || "N/A"}
+                </p>
+                <p>
+                  <strong>Grant Info:</strong>{" "}
+                  {getGrantInfo(selectedRequest)
+                    ? getGrantInfo(selectedRequest).name || "N/A"
+                    : "N/A"}
+                </p>
+                <p>
+                  <strong>Status:</strong> {getStatus(selectedRequest) || "N/A"}
+                </p>
+                <p>
+                  <strong>Progress:</strong>{" "}
+                  {getProgressPercentage(selectedRequest)}
+                </p>
+                <p>
+                  <strong>Achievements:</strong>{" "}
+                  {getAchievements(selectedRequest)}
+                </p>
+                <p>
+                  <strong>Best Practices:</strong>{" "}
+                  {getBestPractices(selectedRequest)}
+                </p>
+                <p>
+                  <strong>Lessons Learned:</strong>{" "}
+                  {getLessonsLearned(selectedRequest)}
+                </p>
+              </div>
+            )}
+
+          {selectedRequest &&
+            selectedRequest.request_type === "requirements" && (
+              <div>{getRequirementsDetails(selectedRequest)}</div>
+            )}
         </Modal.Body>
         <Modal.Footer></Modal.Footer>
       </Modal>

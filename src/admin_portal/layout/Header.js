@@ -67,7 +67,7 @@ function Header({ toggleSidebar }) {
       navigate('/admin/subgrantee-registration-request');
     } else if (notification.notification_category === "grant_application") {
       navigate('/admin/applications_list');
-    } else if (notification.notification_category === "grant_closeout") {
+    } else if (notification.notification_category === "requests") {
       navigate('/admin/closeout-requests');
     } else {
       console.error(
