@@ -114,6 +114,8 @@ const GrantCloseOut = () => {
         request.requirements.grant_account.account_holder
           ?.organisation_name || "Unknown"
       );
+    } else if (request && request.extensions && request.extensions.grant_account) {
+      return request.extensions.grant_account.account_holder?.organisation_name || 'Unknown';
     }
     return null;
   };
@@ -248,6 +250,49 @@ const GrantCloseOut = () => {
     }
     return null;
   };
+
+  const formatExtensionPeriod = (period) => {
+    if (!period) return "N/A";
+
+    const [days, time] = period.split(" ");
+
+    const [hours, minutes] = time.split(":");
+
+    let formattedPeriod = `${days} days`;
+    if (hours !== "00") formattedPeriod += `, ${hours} hours`;
+    if (minutes !== "00") formattedPeriod += `, ${minutes} minutes`;
+
+    return formattedPeriod;
+  };
+
+  const getExtensionDetails = (request) => {
+    if (request.extensions) {
+      return (
+        <div>
+          <p>
+            <strong>Requested By:</strong>{" "}
+            {request.extensions.requested_by.email || "N/A"}
+          </p>
+          <p>
+            <strong>Grant:</strong>{" "}
+            {request.extensions.grant_account.grant.name || "N/A"}
+          </p>
+          <p>
+            <strong>Extension Period:</strong>{" "}
+            {formatExtensionPeriod(request.extensions.extension_period) ||
+              "N/A"}
+          </p>
+          <p>
+            <strong>Reason: </strong>{" "}
+            {request.extensions.reason || "N/A"}
+          </p>
+
+        </div>
+      );
+    }
+    return null;
+  };
+  
 
   const handleReviewChange = (event) => {
     setReviewData({
@@ -438,6 +483,11 @@ const handleReviewSubmit = async () => {
             selectedRequest.request_type === "requirements" && (
               <div>{getRequirementsDetails(selectedRequest)}</div>
             )}
+          
+          {selectedRequest && 
+            selectedRequest.request_type === "extension" && (
+            <div>{getExtensionDetails(selectedRequest)}</div>
+          )}
         </Modal.Body>
         <Modal.Footer></Modal.Footer>
       </Modal>

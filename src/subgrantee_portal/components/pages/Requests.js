@@ -25,6 +25,8 @@ const Requests = () => {
     achievements: "",
     grant_account: "",
     items: [{ name: "", quantity: "", description: "" }],
+    extension_period: "",
+    
   });
   const [searchQuery, setSearchQuery] = useState("");
   const user = JSON.parse(localStorage.getItem("user"));
@@ -73,6 +75,7 @@ const Requests = () => {
     setFormData({
       ...formData,
       items: [{ name: "", quantity: "", description: "" }],
+      requested_by: userId,
     });
   };
 
@@ -126,6 +129,8 @@ const Requests = () => {
         endpoint = `/api/grants/grant-closeout-request/`;
       } else if (selectedRequestType === "modification") {
         endpoint = `/api/grants/modification-request/`;
+      } else if (selectedRequestType === "extension") {
+        endpoint = `/api/grants/grant-extension/`;
       }
 
       const response = await fetchWithAuth(endpoint, {
@@ -210,6 +215,10 @@ const Requests = () => {
                     grantName =
                       request.requirements?.grant_account?.grant?.name || "N/A";
                     status = request.requirements?.status || "N/A";
+                  } else if (request.request_type === "extension") {
+                    grantName =
+                      request.extensions?.grant_account?.grant?.name || "N/A";
+                    status = request.extensions?.status || "N/A";
                   }
 
                   return (
@@ -252,8 +261,41 @@ const Requests = () => {
                 <option value="requirements">Requirements</option>
                 <option value="modification">Modification</option>
                 <option value="grant_closeout">Grant Closeout</option>
+                <option value="extension">Grant Extension</option>
               </Form.Control>
             </Form.Group>
+
+            {selectedRequestType === "extension" && (
+              <>
+                <Form.Group controlId="grantAccount">
+                  <Form.Label>Grant Account</Form.Label>
+                  <Form.Control
+                    as="select"
+                    name="grant_account"
+                    value={formData.grant_account}
+                    onChange={handleInputChange}
+                    required
+                  >
+                    <option value="">Select Grant Account</option>
+                    {grantAccounts.map((account) => (
+                      <option key={account.id} value={account.id}>
+                        {account.grant.name}
+                      </option>
+                    ))}
+                  </Form.Control>
+                </Form.Group>
+                <Form.Group controlId="extensionPeriod">
+                  <Form.Label>Extension Period</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="extension_period"
+                    value={formData.extension_period}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </Form.Group>
+              </>
+            )}
 
             {selectedRequestType === "requirements" && (
               <>
