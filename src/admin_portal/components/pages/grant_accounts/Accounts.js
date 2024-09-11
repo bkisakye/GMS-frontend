@@ -215,23 +215,25 @@ const Accounts = () => {
                         className="disburse-btn"
                         onClick={() => handleDisburseClick(account.id)}
                       >
-                        <FontAwesomeIcon
-                          icon={faMoneyBillWave}
-                          className="me-2"
-                        />
                         Disburse
                       </Button>
                     )}
                   </td>
                   <td>
-                    <Button
-                      variant="outline-danger"
-                      size="sm"
-                      className="closeout-btn"
-                      onClick={() => handleCloseOutClick(account.id)}
-                    >
-                      Closeout
-                    </Button>
+                    {account.status === "active" ? (
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
+                        className="closeout-btn"
+                        onClick={() => handleCloseOutClick(account.id)}
+                      >
+                        Closeout
+                      </Button>
+                    ) : account.status === "closed" ? (
+                      <div className="account-closed-message">
+                        This account is closed.
+                      </div>
+                    ) : null}
                   </td>
                 </tr>
               );

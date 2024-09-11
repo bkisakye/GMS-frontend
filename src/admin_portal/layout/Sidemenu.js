@@ -35,7 +35,6 @@ const Sidemenu = () => {
       }}
     >
       <div className="d-flex flex-column h-100">
-
         <div className="nav flex-column py-3">
           <NavLink
             to=""
@@ -157,6 +156,13 @@ const Sidemenu = () => {
                   activeClassName="active bg-primary"
                 >
                   Progress Reports
+                </NavLink>
+                <NavLink
+                  to="finance-reports"
+                  className="nav-link py-3 text-light"
+                  activeClassName="active bg-primary"
+                >
+                  Financial Reports
                 </NavLink>
               </div>
             )}

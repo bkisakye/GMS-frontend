@@ -18,6 +18,7 @@
     "framer-motion": "^11.3.31",
     "html2canvas": "^1.4.1",
     "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.8.3",
     "lucide-react": "^0.438.0",
     "react": "^18.2.0",
     "react-bootstrap": "^2.10.4",
@@ -32,6 +33,7 @@
     "reactstrap": "^9.2.2",
     "styled-components": "^6.1.13",
     "web-vitals": "^2.1.4",
+    "xlsx": "^0.18.5",
     "yup": "^1.4.0"
   },
   "scripts": {

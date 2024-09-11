@@ -49,6 +49,7 @@ import GrantCloseOut from "./admin_portal/components/pages/requests/GrantCloseOu
 import SubgranteeReg from "./admin_portal/components/pages/requests/SubgranteeReg";
 import Budgetcategory from "./subgrantee_portal/components/pages/Budgetcategory";
 import Report from "./subgrantee_portal/components/pages/Report";
+import FinanceReport from "./admin_portal/components/pages/reports/FinanceReport";
 
 function App() {
   return (
@@ -80,6 +81,7 @@ function App() {
           <Route path="donors" element={<Donors />} />
           <Route path="types" element={<Types />} />
           <Route path="progress-reports" element={<ProgressReports />} />
+          <Route path="finance-reports" element={<FinanceReport />} />
           <Route path="grant-accounts" element={<GrantAccounts />} />
           <Route path="closeout-requests" element={<GrantCloseOut />} />
         </Route>

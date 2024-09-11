@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { fetchWithAuth } from "../../../../utils/helpers";
-import { BsEyeFill, BsCheckCircle, BsFileEarmarkPdf } from "react-icons/bs";
+import {
+  BsEyeFill,
+  BsCheckCircle,
+  BsFileEarmarkPdf,
+  BsFileEarmarkExcel,
+} from "react-icons/bs";
 import {
   Table,
   Button,
@@ -12,10 +17,10 @@ import {
 } from "react-bootstrap";
 import { toast } from "react-toastify";
 import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+import * as XLSX from "xlsx";
 import "jspdf-autotable";
 
-const ProgressReports = () => {
+const FinanceReport = () => {
   const [reports, setReports] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -28,11 +33,11 @@ const ProgressReports = () => {
   }, []);
 
   const fetchReports = () => {
-    fetchWithAuth(`/api/grants/progress-reports/`)
+    fetchWithAuth(`/api/grants/finance-reports/`)
       .then((response) => response.json())
       .then((data) => setReports(data))
       .catch((error) =>
-        console.error("Error fetching progress reports:", error)
+        console.error("Error fetching finance reports:", error)
       );
   };
 
@@ -56,52 +61,52 @@ const ProgressReports = () => {
   const handleReviewSubmit = async () => {
     try {
       const response = await fetchWithAuth(
-        `/api/grants/progress-reports/${selectedReport.id}/review/`,
+        `/api/grants/finance-reports/${selectedReport.id}/review/`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            review_comments: reviewComments,
             reviewer_status: reviewerStatus,
+            review_comments: reviewComments,
           }),
         }
       );
 
       if (response.ok) {
         const data = await response.json();
-        toast.success("Report reviewed successfully!");
+        toast.success("Review submitted successfully!");
         setShowReviewModal(false);
         setReports((prevReports) =>
           prevReports.map((report) =>
             report.id === selectedReport.id
               ? {
                   ...report,
-                  review_status: "reviewed", // Update the status directly
-                  reviewer_name: data.reviewer, // Update with the actual reviewer if returned
+                  review_status: "reviewed",
+                  reviewer_name: data.reviewer,
                 }
               : report
           )
         );
       } else {
-        console.error("Error reviewing report:", response.statusText);
-        toast.error("Error reviewing report.");
+        console.error("Error submitting review:", response.statusText);
+        toast.error("Error submitting review. Please try again.");
       }
     } catch (error) {
-      console.error("Error reviewing report:", error);
-      toast.error("Error reviewing report.");
+      console.error("Error submitting review:", error);
+      toast.error("Error submitting review. Please try again.");
     }
   };
 
-  const exportReportToPDF = (report) => {
+  const exportToPDF = (report) => {
     const pdf = new jsPDF();
     const pageWidth = pdf.internal.pageSize.width;
 
     // Add a title
     pdf.setFontSize(20);
     pdf.setTextColor(0, 102, 204);
-    pdf.text("Progress Report", pageWidth / 2, 20, { align: "center" });
+    pdf.text("Finance Report", pageWidth / 2, 20, { align: "center" });
 
     // Add organization details
     pdf.setFontSize(14);
@@ -113,41 +118,108 @@ const ProgressReports = () => {
     );
     pdf.text(`Grant: ${report.grant_account?.grant?.name}`, 20, 50);
 
-    // Add report details
+    // Add financial details
     pdf.setFontSize(12);
     const details = [
-      ["Report Date", new Date(report.report_date).toLocaleDateString()],
-      ["Completed KPIs", report.completed_pkis.join(", ")],
-      ["Progress", `${report.progress_percentage}%`],
-      ["Status", report.status],
-      ["Review Status", report.review_status],
-      ["Review Comments", report.review_comments],
+      [`Report Date: ${new Date(report.report_date).toLocaleDateString()}`],
+      [`Budget: $${report.grant_account?.budget_total?.budget_total || "N/A"}`],
+      [
+        `Total Allocations: $${
+          report.report_data?.budget_summary?.total_allocated?.toFixed(2) ||
+          "N/A"
+        }`,
+      ],
+      [
+        `Balance: $${
+          report.report_data?.budget_summary?.remaining_amount?.toFixed(2) ||
+          "N/A"
+        }`,
+      ],
+      [
+        `Status: ${
+          report.report_data?.budget_summary?.is_over_budget
+            ? "Over Budget"
+            : "Within Budget"
+        }`,
+        ],
+        [
+          `Review Comments: ${report.review_comments || "N/A"}`,
+      ],
     ];
 
     pdf.autoTable({
       startY: 60,
-      head: [["Report Details", "Value"]],
+      head: [["Financial Details"]],
       body: details,
       theme: "grid",
       headStyles: { fillColor: [0, 102, 204], textColor: 255 },
       alternateRowStyles: { fillColor: [245, 245, 245] },
     });
 
-    // Add a footer
-    const pageCount = pdf.internal.getNumberOfPages();
-    pdf.setFontSize(10);
-    for (let i = 1; i <= pageCount; i++) {
-      pdf.setPage(i);
-      pdf.text(
-        `Page ${i} of ${pageCount}`,
-        pageWidth / 2,
-        pdf.internal.pageSize.height - 10,
-        { align: "center" }
-      );
+
+    pdf.save(
+      `FinanceReport_${report.grant_account?.account_holder?.organisation_name} - ${report.grant_account.grant.name}.pdf`
+    );
+  };
+
+  const exportToExcel = (report) => {
+    // Prepare the data
+    const data = [
+      ["Finance Report"],
+      ["Organization", report.grant_account?.account_holder?.organisation_name],
+      ["Grant", report.grant_account?.grant?.name],
+      ["Report Date", new Date(report.report_date).toLocaleDateString()],
+      [
+        "Budget",
+        `$${report.grant_account?.budget_total?.budget_total || "N/A"}`,
+      ],
+      [
+        "Total Allocations",
+        `$${
+          report.report_data?.budget_summary?.total_allocated?.toFixed(2) ||
+          "N/A"
+        }`,
+      ],
+      [
+        "Balance",
+        `$${
+          report.report_data?.budget_summary?.remaining_amount?.toFixed(2) ||
+          "N/A"
+        }`,
+      ],
+      [
+        "Status",
+        report.report_data?.budget_summary?.is_over_budget
+          ? "Over Budget"
+          : "Within Budget",
+      ],
+      ["Review Comments", report.review_comments || "N/A"],
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(data);
+
+    const range = XLSX.utils.decode_range(ws["!ref"]);
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const address = XLSX.utils.encode_col(C) + "1"; // first row
+      if (!ws[address]) continue;
+      ws[address].s = {
+        font: { bold: true, color: { rgb: "FFFFFFFF" } },
+        fill: { fgColor: { rgb: "FF0066CC" } },
+      };
     }
 
-    pdf.save(`ProgressReport_${report.grant_account?.account_holder?.organisation_name} - ${report.grant_account?.grant?.name}.pdf`);
+    // Set column widths
+    ws["!cols"] = [{ wch: 20 }, { wch: 30 }];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Report");
+
+    XLSX.writeFile(
+      wb,
+      `FinanceReport-${report.grant_account?.account_holder?.organisation_name} - ${report.grant_account.grant.name}.xlsx`
+    );
   };
+    
   return (
     <div className="container mt-4">
       <InputGroup className="mb-3">
@@ -162,11 +234,11 @@ const ProgressReports = () => {
           <tr>
             <th>Grant Account</th>
             <th>Report Date</th>
-            <th>Completed KPIs</th>
-            <th>Progress (%)</th>
+            <th>Budget</th>
+            <th>Total Allocations</th>
+            <th>Balance</th>
             <th>Status</th>
-            <th>Review Status</th>
-            <th>Actions</th>
+            <th>Action</th>
             <th>Export</th>
           </tr>
         </thead>
@@ -179,10 +251,40 @@ const ProgressReports = () => {
                   {report.grant_account?.grant?.name}
                 </td>
                 <td>{new Date(report.report_date).toLocaleDateString()}</td>
-                <td>{report.completed_pkis.join(", ")}</td>
-                <td>{report.progress_percentage}%</td>
-                <td>{report.status}</td>
-                <td>{report.review_status}</td>
+                <td>
+                  ${report.grant_account?.budget_total?.budget_total || "N/A"}
+                </td>
+                <td>
+                  $
+                  {report.report_data?.budget_summary?.total_allocated?.toFixed(
+                    2
+                  ) || "N/A"}
+                </td>
+                <td
+                  className={
+                    report.report_data?.budget_summary?.remaining_amount < 0
+                      ? "text-danger"
+                      : ""
+                  }
+                >
+                  $
+                  {report.report_data?.budget_summary?.remaining_amount?.toFixed(
+                    2
+                  ) || "N/A"}
+                </td>
+                <td>
+                  <span
+                    className={
+                      report.report_data?.budget_summary?.is_over_budget
+                        ? "badge bg-danger"
+                        : "badge bg-success"
+                    }
+                  >
+                    {report.report_data?.budget_summary?.is_over_budget
+                      ? "Over Budget"
+                      : "Within Budget"}
+                  </span>
+                </td>
                 <td>
                   {report.review_status === "pending" && (
                     <Button
@@ -200,28 +302,33 @@ const ProgressReports = () => {
                 <td>
                   <Button
                     variant="outline-primary"
-                    className="ms-2"
-                    title="Export Report"
-                    onClick={() => exportReportToPDF(report)}
+                    onClick={() => exportToPDF(report)}
+                    title="Export to PDF"
                   >
                     <BsFileEarmarkPdf />
-                  </Button>
+                  </Button>{" "}
+                  <Button
+                    variant="outline-success"
+                    onClick={() => exportToExcel(report)}
+                    title="Export to Excel"
+                  >
+                    <BsFileEarmarkExcel />
+                  </Button>{" "}
                 </td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan="7" className="text-center">
+              <td colSpan="8" className="text-center">
                 No matching reports found
               </td>
             </tr>
           )}
         </tbody>
       </Table>
-
       <Modal show={showReviewModal} onHide={() => setShowReviewModal(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>Review Progress Report</Modal.Title>
+          <Modal.Title>Review Finance Report</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <FormGroup>
@@ -259,4 +366,4 @@ const ProgressReports = () => {
   );
 };
 
-export default ProgressReports;
+export default FinanceReport;
