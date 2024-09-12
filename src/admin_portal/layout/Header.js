@@ -96,6 +96,7 @@ function Header({ toggleSidebar }) {
           )
         );
         fetchNotificationCount(); 
+        window.location.reload();
       } else {
         console.error("Failed to mark notification as read:", response.status);
       }

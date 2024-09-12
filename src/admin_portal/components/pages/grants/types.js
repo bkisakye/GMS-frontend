@@ -10,6 +10,7 @@ import {
 } from "react-bootstrap";
 import { fetchWithAuth } from "../../../../utils/helpers";
 import { AiFillEdit, AiFillDelete, AiOutlineSearch } from "react-icons/ai";
+import { toast } from "react-toastify";
 
 const GrantTypes = () => {
   const [grantTypes, setGrantTypes] = useState([]);
@@ -58,7 +59,7 @@ const GrantTypes = () => {
         throw new Error("Failed to delete Grant Type");
       }
     } catch (error) {
-      setError(error.message);
+      toast.error("Failed to delete Grant Type");
     }
   };
 
@@ -82,15 +83,14 @@ const GrantTypes = () => {
         body: JSON.stringify(newGrantType),
       });
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Error response:", errorData);
-        throw new Error("Failed to add Grant Type");
+toast.error("Failed to add Grant Type");
       }
       const data = await response.json();
       setGrantTypes([...grantTypes, data]);
       handleCloseAddModal();
+      toast.success("Grant Type added successfully");
     } catch (error) {
-      setError(error.message);
+      toast.error("Failed to add Grant Type");
     }
   };
 
@@ -110,8 +110,9 @@ const GrantTypes = () => {
           grantTypes.map((gt) => (gt.id === data.id ? { ...gt, ...data } : gt))
         );
         handleCloseEditModal();
+        toast.success("Grant Type updated successfully");
       } else {
-        throw new Error("Failed to update Grant Type");
+        toast.error("Failed to update Grant Type");
       }
     } catch (error) {
       setError(error.message);

@@ -165,6 +165,8 @@ const Requests = () => {
         .includes(searchQuery.toLowerCase())
   );
 
+   const showAdditionalFields = formData.reason === "completed";
+
   return (
     <div className="container mt-4">
       <div className="d-flex justify-content-end mb-3">
@@ -365,18 +367,7 @@ const Requests = () => {
 
             {selectedRequestType === "grant_closeout" && (
               <>
-                <Form.Group controlId="grantCloseoutDetails">
-                  <Form.Label>Grant Closeout Details</Form.Label>
-                  <Form.Control
-                    as="textarea"
-                    rows={3}
-                    name="grantCloseoutDetails"
-                    value={formData.grantCloseoutDetails}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </Form.Group>
-                <Form.Group controlId="grantAccount">
+                <Form.Group controlId="grant_account">
                   <Form.Label>Grant Account</Form.Label>
                   <Form.Control
                     as="select"
@@ -385,7 +376,7 @@ const Requests = () => {
                     onChange={handleInputChange}
                     required
                   >
-                    <option value="">Select Grant Account</option>
+                    <option value="">Select a grant account</option>
                     {grantAccounts.map((account) => (
                       <option key={account.id} value={account.id}>
                         {account.grant.name}
@@ -393,6 +384,56 @@ const Requests = () => {
                     ))}
                   </Form.Control>
                 </Form.Group>
+                <Form.Group controlId="reason">
+                  <Form.Label>Reason for Close Out</Form.Label>
+                  <Form.Control
+                    as="select"
+                    name="reason"
+                    value={formData.reason}
+                    onChange={handleInputChange}
+                    required
+                  >
+                    <option value="">Select a reason</option>
+                    <option value="completed">Completed</option>
+                    <option value="terminated">Terminated</option>
+                    <option value="suspended">Suspended</option>
+                    <option value="other">Other</option>
+                  </Form.Control>
+                </Form.Group>
+                {showAdditionalFields && (
+                  <>
+                    <Form.Group controlId="achievements">
+                      <Form.Label>Achievements</Form.Label>
+                      <Form.Control
+                        as="textarea"
+                        rows={3}
+                        name="achievements"
+                        value={formData.achievements}
+                        onChange={handleInputChange}
+                      />
+                    </Form.Group>
+                    <Form.Group controlId="lessonsLearnt">
+                      <Form.Label>Lessons Learnt</Form.Label>
+                      <Form.Control
+                        as="textarea"
+                        rows={3}
+                        name="lessons_learnt"
+                        value={formData.lessons_learnt}
+                        onChange={handleInputChange}
+                      />
+                    </Form.Group>
+                    <Form.Group controlId="bestPractices">
+                      <Form.Label>Best Practices</Form.Label>
+                      <Form.Control
+                        as="textarea"
+                        rows={3}
+                        name="best_practices"
+                        value={formData.best_practices}
+                        onChange={handleInputChange}
+                      />
+                    </Form.Group>
+                  </>
+                )}
               </>
             )}
 

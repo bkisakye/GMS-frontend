@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { fetchWithAuth } from "../../../utils/helpers";
-import { BsBarChartFill } from "react-icons/bs"; 
-import { FaFileInvoiceDollar } from "react-icons/fa"; 
+import { BsBarChartFill } from "react-icons/bs";
+import { FaFileInvoiceDollar } from "react-icons/fa";
 import {
   Spinner,
   Table,
@@ -12,17 +12,19 @@ import {
   Tooltip,
   Modal,
 } from "react-bootstrap";
+import { toast } from "react-toastify";
 
 const Report = () => {
-  const [grantAccount, setGrantAccount] = useState(null);
+  const [grantAccounts, setGrantAccounts] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState(null);
   const [kpis, setKpis] = useState([]);
-  const [showProgressModal, setShowProgressModal] = useState(false); 
-  const [showFinancialModal, setShowFinancialModal] = useState(false); 
-  const [progressReport, setProgressReport] = useState(null); 
-  const [financialReport, setFinancialReport] = useState(null); 
-  const [modalLoading, setModalLoading] = useState(false); 
+  const [showProgressModal, setShowProgressModal] = useState(false);
+  const [showFinancialModal, setShowFinancialModal] = useState(false);
+  const [progressReport, setProgressReport] = useState(null);
+  const [financialReport, setFinancialReport] = useState(null);
+  const [modalLoading, setModalLoading] = useState(false);
   const user = JSON.parse(localStorage.getItem("user"));
   const userId = user?.user_id;
     const totalAllocated =
@@ -32,12 +34,13 @@ const Report = () => {
     const totalBudget = totalAllocated + remainingAmount;
     const expenditurePercentage = (totalAllocated / totalBudget) * 100;
     const remainingPercentage = (remainingAmount / totalBudget) * 100;
-      const statusClass = financialReport?.budget_summary?.is_over_budget
-        ? "danger"
-        : "success";
-      const statusText = financialReport?.budget_summary?.is_over_budget
-        ? "Over Budget"
-        : "On Budget";
+    const statusClass = financialReport?.budget_summary?.is_over_budget
+      ? "danger"
+      : "success";
+    const statusText = financialReport?.budget_summary?.is_over_budget
+      ? "Over Budget"
+      : "On Budget";
+
 
   useEffect(() => {
     fetchGrantAccounts();
@@ -51,12 +54,8 @@ const Report = () => {
       );
       if (response.ok) {
         const data = await response.json();
-        setGrantAccount(data);
-        setKpis(
-          data.grant?.kpis
-            ? data.grant.kpis.split(",").map((kpi) => kpi.trim())
-            : []
-        );
+        console.log(data); // Debugging log
+        setGrantAccounts(data);
       } else {
         console.error("Failed to fetch grant accounts");
       }
@@ -80,7 +79,7 @@ const Report = () => {
       if (response.ok) {
         const data = await response.json();
         setProgressReport(data);
-        setShowProgressModal(true); 
+        setShowProgressModal(true);
       } else {
         console.error("Failed to fetch progress report");
       }
@@ -100,7 +99,7 @@ const Report = () => {
       if (response.ok) {
         const data = await response.json();
         setFinancialReport(data);
-        setShowFinancialModal(true); 
+        setShowFinancialModal(true);
       } else {
         console.error("Failed to fetch financial report");
       }
@@ -111,12 +110,14 @@ const Report = () => {
     }
   };
 
-  const handleProgressReportClick = (grantAccountId) => {
-    fetchProgressReport(grantAccountId);
+  const handleProgressReportClick = (account) => {
+    setSelectedAccount(account);
+    fetchProgressReport(account.id);
   };
 
-  const handleFinancialReportClick = (grantAccountId) => {
-    fetchFinancialReport(grantAccountId);
+  const handleFinancialReportClick = (account) => {
+    setSelectedAccount(account);
+    fetchFinancialReport(account.id);
   };
 
   const handleCloseProgressModal = () => {
@@ -129,9 +130,9 @@ const Report = () => {
     setFinancialReport(null);
   };
 
-  const filteredAccount = grantAccount?.grant?.name
-    .toLowerCase()
-    .includes(searchQuery.toLowerCase());
+  const filteredAccounts = grantAccounts.filter((account) =>
+    account.grant?.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (loading) {
     return (
@@ -166,42 +167,44 @@ const Report = () => {
           </tr>
         </thead>
         <tbody>
-          {filteredAccount ? (
-            <tr>
-              <td>{grantAccount.grant?.name}</td>
-              <td>{grantAccount.grant?.reporting_time}</td>
-              <td>{grantAccount.budget_total?.budget_total}</td>
-              <td>{grantAccount.current_amount}</td>
-              <td>
-                <OverlayTrigger
-                  placement="top"
-                  overlay={<Tooltip>Progress Report</Tooltip>}
-                >
-                  <Button
-                    variant="primary"
-                    className="me-2"
-                    onClick={() => handleProgressReportClick(grantAccount.id)}
+          {filteredAccounts.length > 0 ? (
+            filteredAccounts.map((account) => (
+              <tr key={account.id}>
+                <td>{account.grant?.name}</td>
+                <td>{account.grant?.reporting_time}</td>
+                <td>{account.budget_total?.budget_total}</td>
+                <td>{account.current_amount}</td>
+                <td>
+                  <OverlayTrigger
+                    placement="top"
+                    overlay={<Tooltip>Progress Report</Tooltip>}
                   >
-                    <BsBarChartFill />
-                  </Button>
-                </OverlayTrigger>
-                <OverlayTrigger
-                  placement="top"
-                  overlay={<Tooltip>Financial Report</Tooltip>}
-                >
-                  <Button
-                    variant="success"
-                    onClick={() => handleFinancialReportClick(grantAccount.id)}
+                    <Button
+                      variant="primary"
+                      className="me-2"
+                      onClick={() => handleProgressReportClick(account)}
+                    >
+                      <BsBarChartFill />
+                    </Button>
+                  </OverlayTrigger>
+                  <OverlayTrigger
+                    placement="top"
+                    overlay={<Tooltip>Financial Report</Tooltip>}
                   >
-                    <FaFileInvoiceDollar />
-                  </Button>
-                </OverlayTrigger>
-              </td>
-            </tr>
+                    <Button
+                      variant="success"
+                      onClick={() => handleFinancialReportClick(account)}
+                    >
+                      <FaFileInvoiceDollar />
+                    </Button>
+                  </OverlayTrigger>
+                </td>
+              </tr>
+            ))
           ) : (
             <tr>
               <td colSpan="5" className="text-center">
-                No matching grant account found
+                No matching grant accounts found
               </td>
             </tr>
           )}
@@ -250,7 +253,9 @@ const Report = () => {
                   </tr>
                   <tr>
                     <th>Completed KPIs</th>
-                    <td>{progressReport.completed_pkis.join(", ")}</td>
+                    <td>
+                      {progressReport.completed_pkis?.join(", ") || "N/A"}
+                    </td>
                   </tr>
                   <tr>
                     <th>Status</th>
@@ -305,32 +310,18 @@ const Report = () => {
                       {progressReport.review_comments || "No comments provided"}
                     </td>
                   </tr>
-                  <tr>
-                    <th>Reviewer</th>
-                    <td>{progressReport.reviewer}</td>
-                  </tr>
-                  <tr>
-                    <th>Last Updated</th>
-                    <td>
-                      {new Date(
-                        progressReport.last_updated
-                      ).toLocaleDateString()}
-                    </td>
-                  </tr>
                 </tbody>
               </table>
             </div>
           ) : (
-            <div
-              className="alert alert-info d-flex align-items-center"
-              role="alert"
-            >
-              <i className="bi bi-info-circle-fill me-2"></i>
-              No progress report found.
-            </div>
+            <p>No progress report available</p>
           )}
         </Modal.Body>
-        <Modal.Footer></Modal.Footer>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseProgressModal}>
+            Close
+          </Button>
+        </Modal.Footer>
       </Modal>
 
       <Modal

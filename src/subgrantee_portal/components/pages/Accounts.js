@@ -58,7 +58,8 @@ const Accounts = () => {
     account.grant?.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-const handleOpenModal = async (account) => {
+  const handleOpenModal = async (account) => {
+   console.log("Opening modal for account:", account);
   setSelectedAccount(account);
   setShowModal(true);
 
@@ -94,32 +95,40 @@ console.log("kpi", kpis)
     );
   };
 
-  const generateFinancialReport = async () => {
-    setLoading(true);
-    try {
-      const response = await fetchWithAuth(
-        `/api/grants/generate-report/${selectedAccount.id}/`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+const generateFinancialReport = async () => {
+  if (!selectedAccount) {
+    console.error("No account selected");
+    toast.error("No account selected");
+    return;
+  }
 
-      if (response.ok) {
-        console.log("Financial report generated successfully");
-        toast.success("Financial Report generated successfully");
-      } else {
-        console.error("Failed to generate financial report");
+  setLoading(true);
+  try {
+    const response = await fetchWithAuth(
+      `/api/grants/generate-report/${selectedAccount.id}/`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
-    } catch (error) {
-      console.error("Error generating financial report:", error);
-      toast.error("Error generating financial report");
-    } finally {
-      setLoading(false);
+    );
+
+    if (response.ok) {
+      console.log("Financial report generated successfully");
+      toast.success("Financial Report generated successfully");
+    } else {
+      console.error("Failed to generate financial report");
+      toast.error("Failed to generate financial report");
     }
-  };
+  } catch (error) {
+    console.error("Error generating financial report:", error);
+    toast.error("Error generating financial report");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleSubmit = async () => {
     setLoading(true);

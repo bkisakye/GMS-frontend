@@ -13,6 +13,7 @@ import {
 import "bootstrap/dist/css/bootstrap.min.css";
 import { AiFillDelete, AiFillEdit } from "react-icons/ai";
 import { fetchWithAuth } from "../../../../utils/helpers";
+import  { toast } from "react-toastify";
 
 const DonorsPage = () => {
   const [donors, setDonors] = useState([]);
@@ -46,7 +47,7 @@ const DonorsPage = () => {
       setDonors(data || []); 
     } catch (error) {
       console.error("Error fetching donor data:", error);
-      setError("Failed to load donor data");
+      toast.error("Failed to load donor data");
       setDonors([]);
     }
   };
@@ -68,7 +69,7 @@ const DonorsPage = () => {
       setFilteredDonors(filteredDonors.filter((donor) => donor.id !== donorId));
     } catch (error) {
       console.error("Error deleting donor:", error);
-      setError("Failed to delete donor");
+      toast.error("Failed to delete donor");
     }
   };
 
@@ -98,9 +99,10 @@ const DonorsPage = () => {
         filteredDonors.map((donor) => (donor.id === data.id ? data : donor))
       );
       handleCloseEditModal();
+      toast.success("Donor updated successfully");
     } catch (error) {
       console.error("Error updating donor:", error);
-      setError("Failed to update donor");
+      toast.error("Failed to update donor");
     }
   };
 
@@ -121,9 +123,10 @@ const DonorsPage = () => {
       setFilteredDonors([...filteredDonors, data]);
       setNewDonor({ name: "" });
       setShowAddModal(false);
+      toast.success("Donor added successfully");
     } catch (error) {
       console.error("Error adding donor:", error);
-      setError("Failed to add donor");
+      toast.error("Failed to add donor");
     }
   };
 
@@ -142,7 +145,7 @@ const DonorsPage = () => {
       >
         Add New Donor
       </Button>
-      {error && <Alert variant="danger">{error}</Alert>}
+      
       <Card>
         <Card.Header>
           <InputGroup className="mb-3">

@@ -102,7 +102,7 @@ const Sidemenu = () => {
             {activeSubMenu === "grants" && isSidebarOpen && (
               <div className="nav flex-column ms-4 mt-2">
                 <NavLink
-                  to="grants"
+                  to="index"
                   className="nav-link py-3 text-light"
                   activeClassName="active bg-primary"
                 >

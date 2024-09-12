@@ -33,32 +33,33 @@ const labelStyle = {
 const buttonStyle = {
   backgroundColor: "#007bff",
   border: "none",
+  color: "#fff",
 };
 
 const buttonHoverStyle = {
   backgroundColor: "#0056b3",
 };
 
-const Subgrantees = () => {
+const GrantsForm = ({ grant, onSubmit }) => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     startDate: "",
     endDate: "",
     applicationDeadline: "",
-    selectedGrantTypes: [],
-    selectedDonors: [],
+    category: "",
+    donor: "",
     selectedDistricts: [],
     amount: "",
     numberOfAwards: "",
     eligibilityDetails: "",
-    grantTypes: [],
-    donors: [],
-    districts: [],
-    kpis: [],
+    kpis: "",
     reporting_time: "",
-
   });
+
+  const [grantTypes, setGrantTypes] = useState([]);
+  const [donors, setDonors] = useState([]);
+  const [districts, setDistricts] = useState([]);
 
   const navigate = useNavigate();
 
@@ -69,91 +70,61 @@ const Subgrantees = () => {
           "/api/grants/grant-types/"
         );
         const grantTypeData = await grantTypeResponse.json();
-        if (Array.isArray(grantTypeData)) {
-          // Case where the response is an array
-          setFormData((prevState) => ({
-            ...prevState,
-            grantTypes: grantTypeData,
-          }));
-        } else if (
-          grantTypeData.results &&
+        setGrantTypes(
           Array.isArray(grantTypeData.results)
-        ) {
-          // Case where the response is an object with a results array
-          setFormData((prevState) => ({
-            ...prevState,
-            grantTypes: grantTypeData.results,
-          }));
-        } else {
-          console.error("Invalid grantTypes data format:", grantTypeData);
-          setFormData((prevState) => ({
-            ...prevState,
-           
-          }));
-        }
+            ? grantTypeData.results
+            : grantTypeData
+        );
 
         const donorResponse = await fetchWithAuth("/api/grants/donors/");
         const donorData = await donorResponse.json();
-        if (Array.isArray(donorData)) {
-          // Case where the response is an array
-          setFormData((prevState) => ({
-            ...prevState,
-            donors: donorData,
-          }));
-        } else if (donorData.results && Array.isArray(donorData.results)) {
-          // Case where the response is an object with a results array
-          setFormData((prevState) => ({
-            ...prevState,
-            donors: donorData.results,
-          }));
-        } else {
-          console.error("Invalid donor data format:", donorData);
-          setFormData((prevState) => ({
-            ...prevState,
-            
-          }));
-        }
+        setDonors(
+          Array.isArray(donorData.results) ? donorData.results : donorData
+        );
 
         const districtResponse = await fetchWithAuth(
           "/api/subgrantees/districts/"
         );
         const districtData = await districtResponse.json();
-        if (
-          Array.isArray(districtData) &&
-          districtData.length > 0 &&
-          Array.isArray(districtData[0].districts)
-        ) {
-          // Case where the response is an array of objects containing districts
-          setFormData((prevState) => ({
-            ...prevState,
-            districts: districtData[0].districts,
-          }));
-        } else if (
-          districtData.results &&
+        setDistricts(
           Array.isArray(districtData.results)
-        ) {
-          // Case where the response is an object with a results array
-          setFormData((prevState) => ({
-            ...prevState,
-            districts: districtData.results,
-          }));
-        } else {
-          console.error("Invalid districts data format:", districtData);
-          setFormData((prevState) => ({
-            ...prevState,
-            
-          }));
-        }
+            ? districtData.results
+            : districtData[0]?.districts || []
+        );
       } catch (error) {
         console.error("Error fetching data:", error);
-        setFormData((prevState) => ({
-          ...prevState,
-        }));
+        toast.error("Error fetching data.");
       }
     };
 
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (grant && districts.length > 0) {
+      setFormData((prevState) => ({
+        ...prevState,
+        name: grant.name || "",
+        description: grant.description || "",
+        startDate: grant.start_date || "",
+        endDate: grant.end_date || "",
+        applicationDeadline: grant.application_deadline || "",
+        category: grant.category || "",
+        donor: grant.donor || "",
+        selectedDistricts: grant.districts
+          ? grant.districts.map((id) => ({
+              value: id,
+              label: districts.find((district) => district.id === id)?.name,
+            }))
+          : [],
+        amount: grant.amount || "",
+        numberOfAwards: grant.number_of_awards || "",
+        eligibilityDetails: grant.eligibility_details || "",
+        kpis: grant.kpis || "",
+        reporting_time: grant.reporting_time || "",
+      }));
+    }
+  }, [grant, districts]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -167,134 +138,144 @@ const Subgrantees = () => {
     }));
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  const {
-    name,
-    description,
-    startDate,
-    endDate,
-    applicationDeadline,
-    category,
-    donor,
-    selectedDistricts,
-    amount,
-    numberOfAwards,
-    kpis,
-    eligibilityDetails,
-    reporting_time,
-  } = formData;
-
-  const grantData = {
-    name,
-    description,
-    start_date: startDate,
-    end_date: endDate,
-    application_deadline: applicationDeadline,
-    category,
-    kpis,
-    donor,
-    district: selectedDistricts.map((option) => option.value),
-    amount,
-    number_of_awards: numberOfAwards,
-    eligibility_details: eligibilityDetails,
-    reporting_time,
+  const validateForm = () => {
+    const {
+      name,
+      description,
+      startDate,
+      endDate,
+      applicationDeadline,
+      category,
+      donor,
+      amount,
+      numberOfAwards,
+      eligibilityDetails,
+      reporting_time,
+    } = formData;
+    if (
+      !name ||
+      !description ||
+      !startDate ||
+      !endDate ||
+      !applicationDeadline ||
+      !category ||
+      !donor ||
+      !amount ||
+      !numberOfAwards ||
+      !eligibilityDetails ||
+      !reporting_time
+    ) {
+      toast.error("Please fill in all required fields.");
+      return false;
+    }
+    return true;
   };
 
-  console.log("grant data", grantData);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
 
-  try {
-    const response = await fetchWithAuth("/api/grants/grants/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-      body: JSON.stringify(grantData),
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("Error details:", errorData);
-      throw new Error("Network response was not ok");
-    }
+    const {
+      name,
+      description,
+      startDate,
+      endDate,
+      applicationDeadline,
+      category,
+      donor,
+      selectedDistricts,
+      amount,
+      numberOfAwards,
+      kpis,
+      eligibilityDetails,
+      reporting_time,
+    } = formData;
 
-    const result = await response.json();
-    console.log("Grant created successfully:", result);
-    toast.success("Grant created successfully!");
-    setFormData({
-      name: "",
-      description: "",
-      startDate: "",
-      endDate: "",
-      applicationDeadline: "",
-      category: "",
-      kpis: [],
-      donor: "",
-      selectedDistricts: [],
-      amount: "",
-      numberOfAwards: "",
-      eligibilityDetails: "",
-      reporting_time: "",
-      grantTypes: formData.grantTypes,
-      donors: formData.donors,
-      districts: formData.districts,
-    });
+    const grantData = {
+      name,
+      description,
+      start_date: startDate,
+      end_date: endDate,
+      application_deadline: applicationDeadline,
+      category,
+      kpis,
+      donor,
+      district: selectedDistricts.map((option) => option.value),
+      amount,
+      number_of_awards: numberOfAwards,
+      eligibility_details: eligibilityDetails,
+      reporting_time,
+    };
 
-    window.location.reload();
-  } catch (error) {
-    console.error("Error creating grant:", error);
-    toast.error("Unable to create grant. Please try again later.");
-  }
-};
+    try {
+      const url = grant
+        ? `/api/grants/update-grant/${grant.id}/`
+        : "/api/grants/grants/";
+      const method = grant ? "PATCH" : "POST";
 
+      const response = await fetchWithAuth(url, {
+        method: method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify(grantData),
+      });
 
-  const {
-    name,
-    description,
-    startDate,
-    endDate,
-    applicationDeadline,
-    category,
-    donor,
-    selectedDistricts,
-    grantTypes,
-    donors,
-    kpis,
-    reporting_time,
-    districts,
-    amount,
-    numberOfAwards,
-    eligibilityDetails,
-    successMessage,
-  } = formData;
+      if (!response.ok) {
+      }
+
+      const result = await response.json();
+      toast.success(
+        grant ? "Grant updated successfully!" : "Grant created successfully!"
+      );
+      window.location.reload();
+      if (onSubmit) {
+        onSubmit(result);
+      } else {
+        setFormData({
+          name: "",
+          description: "",
+          startDate: "",
+          endDate: "",
+          applicationDeadline: "",
+          category: "",
+          kpis: "",
+          donor: "",
+          selectedDistricts: [],
+          amount: "",
+          numberOfAwards: "",
+          eligibilityDetails: "",
+          reporting_time: "",
+        });
+      }
+    } catch (error) {}
+  };
 
   const grantTypeOptions = grantTypes.map((type) => ({
     label: type.name,
     value: type.id,
   }));
-
   const donorOptions = donors.map((donor) => ({
     label: donor.name,
     value: donor.id,
   }));
-
   const districtOptions = districts.map((district) => ({
     label: district.name,
     value: district.id,
   }));
-
-    const reportingTimeOptions = [
-      { value: "monthly", label: "Monthly" },
-      { value: "quarterly", label: "Quarterly" },
-      { value: "annually", label: "Annually" },
-      { value: "weekly", label: "Weekly" },
-    ];
+  const reportingTimeOptions = [
+    { value: "monthly", label: "Monthly" },
+    { value: "quarterly", label: "Quarterly" },
+    { value: "annually", label: "Annually" },
+    { value: "weekly", label: "Weekly" },
+  ];
 
   return (
     <div className="container" style={containerStyle}>
       <div className="card" style={cardStyle}>
         <div className="card-header" style={cardHeaderStyle}>
-          <h5 className="mb-0">Add a New Grant</h5>
+          <h5 className="mb-0">{grant ? "Edit Grant" : "Add a New Grant"}</h5>
         </div>
         <div className="card-body" style={cardBodyStyle}>
           <form onSubmit={handleSubmit}>
@@ -314,7 +295,7 @@ const handleSubmit = async (e) => {
                   <input
                     type="text"
                     name="name"
-                    value={name}
+                    value={formData.name}
                     onChange={handleChange}
                     className="form-control"
                     placeholder="Enter grant name"
@@ -326,7 +307,7 @@ const handleSubmit = async (e) => {
                   </label>
                   <select
                     name="category"
-                    value={category}
+                    value={formData.category}
                     onChange={handleChange}
                     className="form-select"
                   >
@@ -339,20 +320,18 @@ const handleSubmit = async (e) => {
                   </select>
                 </div>
               </div>
-              <div className="row mb-3">
-                <div className="col-md-12">
-                  <label className="form-label" style={labelStyle}>
-                    Description:
-                  </label>
-                  <textarea
-                    name="description"
-                    value={description}
-                    onChange={handleChange}
-                    className="form-control"
-                    rows="3"
-                    placeholder="Enter grant description"
-                  />
-                </div>
+              <div className="mb-3">
+                <label className="form-label" style={labelStyle}>
+                  Description:
+                </label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  className="form-control"
+                  placeholder="Enter grant description"
+                  rows="4"
+                />
               </div>
               <div className="row mb-3">
                 <div className="col-md-6">
@@ -362,7 +341,7 @@ const handleSubmit = async (e) => {
                   <input
                     type="date"
                     name="startDate"
-                    value={startDate}
+                    value={formData.startDate}
                     onChange={handleChange}
                     className="form-control"
                   />
@@ -374,7 +353,7 @@ const handleSubmit = async (e) => {
                   <input
                     type="date"
                     name="endDate"
-                    value={endDate}
+                    value={formData.endDate}
                     onChange={handleChange}
                     className="form-control"
                   />
@@ -388,7 +367,7 @@ const handleSubmit = async (e) => {
                   <input
                     type="date"
                     name="applicationDeadline"
-                    value={applicationDeadline}
+                    value={formData.applicationDeadline}
                     onChange={handleChange}
                     className="form-control"
                   />
@@ -399,7 +378,7 @@ const handleSubmit = async (e) => {
                   </label>
                   <select
                     name="donor"
-                    value={donor}
+                    value={formData.donor}
                     onChange={handleChange}
                     className="form-select"
                   >
@@ -414,48 +393,63 @@ const handleSubmit = async (e) => {
               </div>
               <div className="mb-3">
                 <label className="form-label" style={labelStyle}>
-                  Districts:
+                  Amount:
                 </label>
-                <MultiSelect
-                  options={districtOptions}
-                  value={selectedDistricts}
-                  onChange={handleMultiSelectChange}
-                  labelledBy="Select"
+                <input
+                  type="number"
+                  name="amount"
+                  value={formData.amount}
+                  onChange={handleChange}
+                  className="form-control"
+                  placeholder="Enter grant amount"
                 />
               </div>
-              <div className="row mb-3">
-                <div className="col-md-6">
-                  <label className="form-label" style={labelStyle}>
-                    Amount:
-                  </label>
-                  <input
-                    type="number"
-                    name="amount"
-                    value={amount}
-                    onChange={handleChange}
-                    className="form-control"
-                    placeholder="Enter amount"
-                  />
-                </div>
-                <div className="col-md-6">
-                  <label className="form-label" style={labelStyle}>
-                    Number of Awards:
-                  </label>
-                  <input
-                    type="number"
-                    name="numberOfAwards"
-                    value={numberOfAwards}
-                    onChange={handleChange}
-                    className="form-control"
-                    placeholder="Enter number of awards"
-                  />
-                </div>
+              <div className="mb-3">
+                <label className="form-label" style={labelStyle}>
+                  Number of Awards:
+                </label>
+                <input
+                  type="number"
+                  name="numberOfAwards"
+                  value={formData.numberOfAwards}
+                  onChange={handleChange}
+                  className="form-control"
+                  placeholder="Enter number of awards"
+                />
               </div>
               <div className="mb-3">
-                <label className="form-label fw-bold">Reporting Time:</label>
+                <label className="form-label" style={labelStyle}>
+                  Eligibility Details:
+                </label>
+                <textarea
+                  name="eligibilityDetails"
+                  value={formData.eligibilityDetails}
+                  onChange={handleChange}
+                  className="form-control"
+                  placeholder="Enter eligibility details"
+                  rows="4"
+                />
+              </div>
+              <div className="mb-3">
+                <label className="form-label" style={labelStyle}>
+                  KPIs:
+                </label>
+                <textarea
+                  name="kpis"
+                  value={formData.kpis}
+                  onChange={handleChange}
+                  className="form-control"
+                  placeholder="Enter KPIs"
+                  rows="4"
+                />
+              </div>
+              <div className="mb-3">
+                <label className="form-label" style={labelStyle}>
+                  Reporting Time:
+                </label>
                 <select
                   name="reporting_time"
-                  value={reporting_time}
+                  value={formData.reporting_time}
                   onChange={handleChange}
                   className="form-select"
                 >
@@ -469,44 +463,28 @@ const handleSubmit = async (e) => {
               </div>
               <div className="mb-3">
                 <label className="form-label" style={labelStyle}>
-                  Key Performance Indicators:
+                  Districts:
                 </label>
-                <textarea
-                  name="kpis"
-                  value={kpis}
-                  onChange={handleChange}
-                  className="form-control"
-                  rows="3"
-                  placeholder="Enter Key Performance Indicators"
-                />
-              </div>
-              <div className="mb-3">
-                <label className="form-label" style={labelStyle}>
-                  Eligibility Details:
-                </label>
-                <textarea
-                  name="eligibilityDetails"
-                  value={eligibilityDetails}
-                  onChange={handleChange}
-                  className="form-control"
-                  rows="3"
-                  placeholder="Enter eligibility details"
+                <MultiSelect
+                  options={districtOptions}
+                  value={formData.selectedDistricts}
+                  onChange={handleMultiSelectChange}
+                  labelledBy="Select Districts"
                 />
               </div>
               <button
                 type="submit"
                 className="btn"
-                style={{ ...buttonStyle, color: "#fff" }}
+                style={buttonStyle}
                 onMouseOver={(e) =>
-                  (e.currentTarget.style.backgroundColor =
+                  (e.target.style.backgroundColor =
                     buttonHoverStyle.backgroundColor)
                 }
                 onMouseOut={(e) =>
-                  (e.currentTarget.style.backgroundColor =
-                    buttonStyle.backgroundColor)
+                  (e.target.style.backgroundColor = buttonStyle.backgroundColor)
                 }
               >
-                Submit
+                {grant ? "Update Grant" : "Create Grant"}
               </button>
             </fieldset>
           </form>
@@ -516,4 +494,4 @@ const handleSubmit = async (e) => {
   );
 };
 
-export default Subgrantees;
+export default GrantsForm;

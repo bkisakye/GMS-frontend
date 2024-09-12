@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { fetchWithAuth } from "../../../../utils/helpers";
 import GrantDetailsModal from "./grantdetails";
 import GrantsForm from "./grant_form";
-import { AiFillEye } from "react-icons/ai";
+import { AiFillEye, AiFillEdit } from "react-icons/ai";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import {
   Modal,
@@ -14,6 +14,7 @@ import {
   Spinner,
 } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { toast } from "react-toastify";
 
 const GrantsTable = () => {
   const [grants, setGrants] = useState([]);
@@ -21,34 +22,14 @@ const GrantsTable = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedGrantId, setSelectedGrantId] = useState(null);
   const [selectedGrant, setSelectedGrant] = useState(null);
-  const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [isAddGrantModalOpen, setIsAddGrantModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    const fetchGrants = async () => {
-      try {
-        const response = await fetchWithAuth(
-          `/api/grants/list/?page=${currentPage}`
-        );
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        setGrants(data.results);
-        setTotalPages(Math.ceil(data.count / 10)); // Assuming 10 items per page
-        setFilteredGrants(data.results); // Initialize filteredGrants
-      } catch (error) {
-        setError(error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchGrants();
   }, [currentPage]);
 
@@ -60,17 +41,41 @@ const GrantsTable = () => {
     );
   }, [searchTerm, grants]);
 
+  const fetchGrants = async () => {
+    try {
+      const response = await fetchWithAuth(
+        `/api/grants/list/?page=${currentPage}`
+      );
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setGrants(data.results);
+      setTotalPages(Math.ceil(data.count / 10)); // Assuming 10 items per page
+      setFilteredGrants(data.results);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleAddGrant = () => {
-    setIsAddGrantModalOpen(true);
+    setIsEditing(false);
+    setSelectedGrant(null);
+    setIsFormModalOpen(true);
   };
 
-  const handleCloseAddGrantModal = () => {
-    setIsAddGrantModalOpen(false);
+  const handleEditGrant = (grant) => {
+    setIsEditing(true);
+    setSelectedGrant(grant);
+    setIsFormModalOpen(true);
   };
 
-  const handleAddQuestion = (grantId) => {
-    setSelectedGrantId(grantId);
-    setIsQuestionModalOpen(true);
+  const handleCloseFormModal = () => {
+    setIsFormModalOpen(false);
+    setSelectedGrant(null);
+    setIsEditing(false);
   };
 
   const handleViewDetails = (grant) => {
@@ -78,14 +83,72 @@ const GrantsTable = () => {
     setIsDetailsModalOpen(true);
   };
 
-  const handleCloseQuestionModal = () => {
-    setIsQuestionModalOpen(false);
-    setSelectedGrantId(null);
-  };
-
   const handleCloseDetailsModal = () => {
     setIsDetailsModalOpen(false);
     setSelectedGrant(null);
+  };
+
+  const handleGrantSubmit = async (updatedGrant) => {
+    try {
+      if (isEditing) {
+        // Update existing grant
+        const response = await fetchWithAuth(
+          `/api/grants/update-grant/${updatedGrant.id}/`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(updatedGrant),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const updatedGrantData = await response.json();
+        setGrants(
+          grants.map((grant) =>
+            grant.id === updatedGrantData.id ? updatedGrantData : grant
+          )
+        );
+        setFilteredGrants(
+          filteredGrants.map((grant) =>
+            grant.id === updatedGrantData.id ? updatedGrantData : grant
+          )
+        );
+        toast.success("Grant updated successfully!");
+      } else {
+        // Add new grant
+        const response = await fetchWithAuth("/api/grants/grants/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedGrant),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const newGrantData = await response.json();
+        setGrants([...grants, newGrantData]);
+        setFilteredGrants([...filteredGrants, newGrantData]);
+        toast.success("Grant created successfully!");
+      }
+
+      handleCloseFormModal();
+      fetchGrants(); // Refresh the grants list
+    } catch (error) {
+      console.error("Error submitting grant:", error);
+      toast.error(
+        isEditing
+          ? "Failed to update grant. Please try again."
+          : "Failed to create grant. Please try again."
+      );
+    }
   };
 
   const goToPage = (pageNumber) => {
@@ -94,7 +157,6 @@ const GrantsTable = () => {
     }
   };
 
-  // Inline styles
   const buttonStyle = {
     backgroundColor: "#007bff",
     color: "white",
@@ -157,7 +219,7 @@ const GrantsTable = () => {
       {error && <Alert variant="danger">{error}</Alert>}
       <div className="d-flex justify-content-between align-items-center mb-3">
         <Button variant="primary" onClick={handleAddGrant}>
-          Add New Grant
+          Add Funding Opportunity
         </Button>
         <InputGroup style={{ width: "300px" }}>
           <Form.Control
@@ -193,9 +255,15 @@ const GrantsTable = () => {
                   <Button
                     variant="info"
                     onClick={() => handleViewDetails(grant)}
-                    style={buttonStyle}
+                    className="me-2"
                   >
                     <AiFillEye />
+                  </Button>
+                  <Button
+                    variant="warning"
+                    onClick={() => handleEditGrant(grant)}
+                  >
+                    <AiFillEdit />
                   </Button>
                 </td>
               </tr>
@@ -210,47 +278,28 @@ const GrantsTable = () => {
         </tbody>
       </Table>
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          margin: "20px 0",
-        }}
-      >
-        <button
-          style={{
-            ...arrowStyle,
-            ...(currentPage === 1 ? disabledArrowStyle : {}),
-          }}
+      {/* Pagination */}
+      <div className="d-flex justify-content-center align-items-center mt-4">
+        <Button
+          variant="outline-primary"
           onClick={() => goToPage(currentPage - 1)}
           disabled={currentPage === 1}
         >
           <FaChevronLeft />
-        </button>
-        <div style={paginationNumbersStyle}>
-          {[...Array(totalPages).keys()].map((page) => (
-            <button
-              key={page + 1}
-              style={paginationNumberStyle(currentPage === page + 1)}
-              onClick={() => goToPage(page + 1)}
-            >
-              {page + 1}
-            </button>
-          ))}
-        </div>
-        <button
-          style={{
-            ...arrowStyle,
-            ...(currentPage === totalPages ? disabledArrowStyle : {}),
-          }}
+        </Button>
+        <span className="mx-3">
+          Page {currentPage} of {totalPages}
+        </span>
+        <Button
+          variant="outline-primary"
           onClick={() => goToPage(currentPage + 1)}
           disabled={currentPage === totalPages}
         >
           <FaChevronRight />
-        </button>
+        </Button>
       </div>
 
+      {/* Grant Details Modal */}
       {isDetailsModalOpen && (
         <GrantDetailsModal
           isOpen={isDetailsModalOpen}
@@ -258,16 +307,16 @@ const GrantsTable = () => {
           grant={selectedGrant}
         />
       )}
-      <Modal
-        show={isAddGrantModalOpen}
-        onHide={handleCloseAddGrantModal}
-        size="lg"
-      >
+
+      {/* Grant Form Modal */}
+      <Modal show={isFormModalOpen} onHide={handleCloseFormModal} size="lg">
         <Modal.Header closeButton>
-          <Modal.Title>Add New Grant</Modal.Title>
+          <Modal.Title>
+            {isEditing ? "Edit Grant" : "Add New Grant"}
+          </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <GrantsForm />
+          <GrantsForm grant={selectedGrant} onSubmit={handleGrantSubmit} />
         </Modal.Body>
       </Modal>
     </div>
