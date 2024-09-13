@@ -312,7 +312,6 @@ const GrantsTable = () => {
       <Modal show={isFormModalOpen} onHide={handleCloseFormModal} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>
-            {isEditing ? "Edit Grant" : "Add New Grant"}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>

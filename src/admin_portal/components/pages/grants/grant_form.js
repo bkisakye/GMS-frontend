@@ -275,7 +275,7 @@ const GrantsForm = ({ grant, onSubmit }) => {
     <div className="container" style={containerStyle}>
       <div className="card" style={cardStyle}>
         <div className="card-header" style={cardHeaderStyle}>
-          <h5 className="mb-0">{grant ? "Edit Grant" : "Add a New Grant"}</h5>
+          <h5 className="mb-0">{grant ? "Edit Funding Opportunity" : "Add a New Funding Opportunity"}</h5>
         </div>
         <div className="card-body" style={cardBodyStyle}>
           <form onSubmit={handleSubmit}>
