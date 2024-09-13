@@ -21,6 +21,12 @@ const ApplicationPage = () => {
   const [existingDocuments, setExistingDocuments] = useState([]);
   const navigate = useNavigate();
 
+  const CHARACTER_LIMITS = {
+    text: 500,
+    number: 10,
+    date: 10,
+  };
+
   useEffect(() => {
     const fetchQuestionsAndResponses = async () => {
       try {
@@ -113,104 +119,106 @@ const ApplicationPage = () => {
     }
   }, [applicationId, userId]);
 
-  const handleChange = (e, question, column = null, rowIndex = null) => {
-  
-    const { value, type, checked } = e.target;
-    const questionId = question.id;
-    const questionType = question.question_type;
+const handleChange = (e, question, column = null, rowIndex = null) => {
+  const { value, type, checked } = e.target;
+  const questionId = question.id;
+  const questionType = question.question_type;
 
-    // Find the existing answer for the given questionId
-    const existingAnswerIndex = answers.answers.findIndex(
-      (answer) => answer.question_id === questionId
-    );
+  const maxLength = CHARACTER_LIMITS[questionType] || Infinity;
+  const trimmedValue = value.slice(0, maxLength);
 
-    if (existingAnswerIndex === -1) {
-      // New answer
-      if (questionType === "table") {
-        const newAnswer = {
-          question_id: questionId,
-          answer: null,
-          choice_answers: [{ [column]: value }],
-          question_type: questionType,
-          number_of_rows: question.number_of_rows,
+  // Update answers and character count
+  const existingAnswerIndex = answers.answers.findIndex(
+    (answer) => answer.question_id === questionId
+  );
+
+  if (existingAnswerIndex === -1) {
+    if (questionType === "table") {
+      const newAnswer = {
+        question_id: questionId,
+        answer: null,
+        choice_answers: [{ [column]: trimmedValue }],
+        question_type: questionType,
+        number_of_rows: question.number_of_rows,
+      };
+
+      for (let i = 0; i < question.number_of_rows; i++) {
+        if (i !== rowIndex) {
+          newAnswer.choice_answers.push({});
+        }
+      }
+
+      setAnswers((prevAnswers) => ({
+        answers: [...prevAnswers.answers, newAnswer],
+      }));
+    } else if (questionType === "checkbox") {
+      setAnswers((prevAnswers) => ({
+        answers: [
+          ...prevAnswers.answers,
+          {
+            question_id: questionId,
+            answer: null,
+            choice_answers: checked ? [{ check: trimmedValue }] : [],
+            question_type: questionType,
+          },
+        ],
+      }));
+    } else {
+      setAnswers((prevAnswers) => ({
+        answers: [
+          ...prevAnswers.answers,
+          {
+            question_id: questionId,
+            answer: trimmedValue,
+            choice_answers: null,
+            question_type: questionType,
+          },
+        ],
+      }));
+    }
+  } else {
+    if (questionType === "table") {
+      setAnswers((prevAnswers) => {
+        const updatedAnswers = [...prevAnswers.answers];
+        updatedAnswers[existingAnswerIndex].choice_answers[rowIndex] = {
+          ...updatedAnswers[existingAnswerIndex].choice_answers[rowIndex],
+          [column]: trimmedValue,
         };
+        return { answers: updatedAnswers };
+      });
+    } else if (questionType === "checkbox") {
+      setAnswers((prevAnswers) => {
+        const updatedAnswers = [...prevAnswers.answers];
+        const choiceIndex = updatedAnswers[
+          existingAnswerIndex
+        ].choice_answers.findIndex((choice) => choice.check === trimmedValue);
 
-        for (let i = 0; i < question.number_of_rows; i++) {
-          if (i !== rowIndex) {
-            newAnswer.choice_answers.push({});
+        if (checked) {
+          if (choiceIndex === -1) {
+            updatedAnswers[existingAnswerIndex].choice_answers.push({
+              check: trimmedValue,
+            });
+          }
+        } else {
+          if (choiceIndex !== -1) {
+            updatedAnswers[existingAnswerIndex].choice_answers.splice(
+              choiceIndex,
+              1
+            );
           }
         }
-
-        setAnswers((prevAnswers) => ({
-          answers: [...prevAnswers.answers, newAnswer],
-        }));
-      } else if (questionType === "checkbox") {
-        setAnswers((prevAnswers) => ({
-          answers: [
-            ...prevAnswers.answers,
-            {
-              question_id: questionId,
-              answer: null,
-              choice_answers: checked ? [{ check: value }] : [],
-              question_type: questionType,
-            },
-          ],
-        }));
-      } else {
-        setAnswers((prevAnswers) => ({
-          answers: [
-            ...prevAnswers.answers,
-            {
-              question_id: questionId,
-              answer: value,
-              choice_answers: null,
-              question_type: questionType,
-            },
-          ],
-        }));
-      }
+        return { answers: updatedAnswers };
+      });
     } else {
-      if (questionType === "table") {
-        setAnswers((prevAnswers) => {
-          const updatedAnswers = [...prevAnswers.answers];
-          updatedAnswers[existingAnswerIndex].choice_answers[rowIndex] = {
-            ...updatedAnswers[existingAnswerIndex].choice_answers[rowIndex],
-            [column]: value,
-          };
-          return { answers: updatedAnswers };
-        });
-      } else if (questionType === "checkbox") {
-        setAnswers((prevAnswers) => {
-          const updatedAnswers = [...prevAnswers.answers];
-          const choiceIndex = updatedAnswers[
-            existingAnswerIndex
-          ].choice_answers.findIndex((choice) => choice.check === value);
-
-          if (checked) {
-            if (choiceIndex === -1) {
-              updatedAnswers[existingAnswerIndex].choice_answers.push({
-                check: value,
-              });
-            }
-          } else {
-            if (choiceIndex !== -1) {
-              updatedAnswers[existingAnswerIndex].choice_answers.splice(
-                choiceIndex,
-                1
-              );
-            }
-          }
-          return { answers: updatedAnswers };
-        });
-      } else {
-        setAnswers((prevAnswers) => {
-          const updatedAnswers = [...prevAnswers.answers];
-          updatedAnswers[existingAnswerIndex].answer = value;
-          return { answers: updatedAnswers };
-        });
-      }
+      setAnswers((prevAnswers) => {
+        const updatedAnswers = [...prevAnswers.answers];
+        updatedAnswers[existingAnswerIndex].answer = trimmedValue;
+        return { answers: updatedAnswers };
+      });
     }
-  };
+  }
+};
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -330,6 +338,12 @@ const confirmSubmit = window.confirm(
     marginTop: "20px",
   };
 
+  const CharacterCounter = ({ current, limit }) => (
+    <Form.Text className="text-muted">
+      Characters: {current}/{limit}
+    </Form.Text>
+  );
+
   return (
     <div style={containerStyle}>
       <h1 className="mb-4">
@@ -350,41 +364,59 @@ const confirmSubmit = window.confirm(
                       <Form.Group key={question.id} className="mb-4">
                         <Form.Label>{question.text}</Form.Label>
                         {question.question_type === "text" && (
-                          <Form.Control
-                            as="textarea"
-                            value={
-                              answers.answers.find(
-                                (answer) => answer.question_id === question.id
-                              )?.answer || ""
-                            }
-                            onChange={(e) => handleChange(e, question)}
-                            rows={3}
-                            readOnly={isReadOnly}
-                          />
+                          <>
+                            <Form.Control
+                              as="textarea"
+                              value={
+                                answers.answers.find(
+                                  (answer) => answer.question_id === question.id
+                                )?.answer || ""
+                              }
+                              onChange={(e) => handleChange(e, question)}
+                              rows={3}
+                              readOnly={isReadOnly}
+                              maxLength={CHARACTER_LIMITS.text}
+                            />
+                            <Form.Text className="text-muted">
+                              Character limit: {CHARACTER_LIMITS.text}
+                            </Form.Text>
+                          </>
                         )}
                         {question.question_type === "number" && (
-                          <Form.Control
-                            type="number"
-                            value={
-                              answers.answers.find(
-                                (answer) => answer.question_id === question.id
-                              )?.answer || ""
-                            }
-                            onChange={(e) => handleChange(e, question)}
-                            readOnly={isReadOnly}
-                          />
+                          <>
+                            <Form.Control
+                              type="number"
+                              value={
+                                answers.answers.find(
+                                  (answer) => answer.question_id === question.id
+                                )?.answer || ""
+                              }
+                              onChange={(e) => handleChange(e, question)}
+                              readOnly={isReadOnly}
+                              maxLength={CHARACTER_LIMITS.number}
+                            />
+                            <Form.Text className="text-muted">
+                              Character limit: {CHARACTER_LIMITS.number}
+                            </Form.Text>
+                          </>
                         )}
                         {question.question_type === "date" && (
-                          <Form.Control
-                            type="date"
-                            value={
-                              answers.answers.find(
-                                (answer) => answer.question_id === question.id
-                              )?.answer || ""
-                            }
-                            onChange={(e) => handleChange(e, question)}
-                            readOnly={isReadOnly}
-                          />
+                          <>
+                            <Form.Control
+                              type="date"
+                              value={
+                                answers.answers.find(
+                                  (answer) => answer.question_id === question.id
+                                )?.answer || ""
+                              }
+                              onChange={(e) => handleChange(e, question)}
+                              readOnly={isReadOnly}
+                              maxLength={CHARACTER_LIMITS.date}
+                            />
+                            <Form.Text className="text-muted">
+                              Character limit: {CHARACTER_LIMITS.date}
+                            </Form.Text>
+                          </>
                         )}
                         {question.question_type === "checkbox" && (
                           <div>
