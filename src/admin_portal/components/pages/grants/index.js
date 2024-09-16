@@ -239,6 +239,7 @@ const GrantsTable = () => {
             <th>Start Date</th>
             <th>End Date</th>
             <th>Amount</th>
+            <th>Open</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -251,6 +252,8 @@ const GrantsTable = () => {
                 <td>{grant.start_date}</td>
                 <td>{grant.end_date}</td>
                 <td>{grant.amount}</td>
+                <td>{grant.is_open ? "✓" : "✗"}</td>
+
                 <td>
                   <Button
                     variant="info"
@@ -311,8 +314,7 @@ const GrantsTable = () => {
       {/* Grant Form Modal */}
       <Modal show={isFormModalOpen} onHide={handleCloseFormModal} size="lg">
         <Modal.Header closeButton>
-          <Modal.Title>
-          </Modal.Title>
+          <Modal.Title></Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <GrantsForm grant={selectedGrant} onSubmit={handleGrantSubmit} />

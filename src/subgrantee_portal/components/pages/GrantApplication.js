@@ -119,154 +119,200 @@ const ApplicationPage = () => {
     }
   }, [applicationId, userId]);
 
-const handleChange = (e, question, column = null, rowIndex = null) => {
-  const { value, type, checked } = e.target;
-  const questionId = question.id;
-  const questionType = question.question_type;
+  const handleChange = (e, question, column = null, rowIndex = null) => {
+    const { value, type, checked } = e.target;
+    const questionId = question.id;
+    const questionType = question.question_type;
 
-  const maxLength = CHARACTER_LIMITS[questionType] || Infinity;
-  const trimmedValue = value.slice(0, maxLength);
+    const maxLength = CHARACTER_LIMITS[questionType] || Infinity;
+    const trimmedValue = value.slice(0, maxLength);
 
-  // Update answers and character count
-  const existingAnswerIndex = answers.answers.findIndex(
-    (answer) => answer.question_id === questionId
+    // Update answers and character count
+    const existingAnswerIndex = answers.answers.findIndex(
+      (answer) => answer.question_id === questionId
+    );
+
+    if (existingAnswerIndex === -1) {
+      if (questionType === "table") {
+        const newAnswer = {
+          question_id: questionId,
+          answer: null,
+          choice_answers: [{ [column]: trimmedValue }],
+          question_type: questionType,
+          number_of_rows: question.number_of_rows,
+        };
+
+        for (let i = 0; i < question.number_of_rows; i++) {
+          if (i !== rowIndex) {
+            newAnswer.choice_answers.push({});
+          }
+        }
+
+        setAnswers((prevAnswers) => ({
+          answers: [...prevAnswers.answers, newAnswer],
+        }));
+      } else if (questionType === "checkbox") {
+        setAnswers((prevAnswers) => ({
+          answers: [
+            ...prevAnswers.answers,
+            {
+              question_id: questionId,
+              answer: null,
+              choice_answers: checked ? [{ check: trimmedValue }] : [],
+              question_type: questionType,
+            },
+          ],
+        }));
+      } else {
+        setAnswers((prevAnswers) => ({
+          answers: [
+            ...prevAnswers.answers,
+            {
+              question_id: questionId,
+              answer: trimmedValue,
+              choice_answers: null,
+              question_type: questionType,
+            },
+          ],
+        }));
+      }
+    } else {
+      if (questionType === "table") {
+        setAnswers((prevAnswers) => {
+          const updatedAnswers = [...prevAnswers.answers];
+          updatedAnswers[existingAnswerIndex].choice_answers[rowIndex] = {
+            ...updatedAnswers[existingAnswerIndex].choice_answers[rowIndex],
+            [column]: trimmedValue,
+          };
+          return { answers: updatedAnswers };
+        });
+      } else if (questionType === "checkbox") {
+        setAnswers((prevAnswers) => {
+          const updatedAnswers = [...prevAnswers.answers];
+          const choiceIndex = updatedAnswers[
+            existingAnswerIndex
+          ].choice_answers.findIndex((choice) => choice.check === trimmedValue);
+
+          if (checked) {
+            if (choiceIndex === -1) {
+              updatedAnswers[existingAnswerIndex].choice_answers.push({
+                check: trimmedValue,
+              });
+            }
+          } else {
+            if (choiceIndex !== -1) {
+              updatedAnswers[existingAnswerIndex].choice_answers.splice(
+                choiceIndex,
+                1
+              );
+            }
+          }
+          return { answers: updatedAnswers };
+        });
+      } else {
+        setAnswers((prevAnswers) => {
+          const updatedAnswers = [...prevAnswers.answers];
+          updatedAnswers[existingAnswerIndex].answer = trimmedValue;
+          return { answers: updatedAnswers };
+        });
+      }
+    }
+  };
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  // Validate answers
+  const missingFields = questions.filter((question) => {
+    const answer = answers.answers.find(
+      (answer) => answer.question_id === question.id
+    );
+    if (!answer) return true;
+
+    if (
+      question.question_type === "text" ||
+      question.question_type === "number" ||
+      question.question_type === "date"
+    ) {
+      return !answer.answer;
+    } else if (
+      question.question_type === "checkbox" ||
+      question.question_type === "radio"
+    ) {
+      return !answer.choice_answers.length;
+    } else if (question.question_type === "table") {
+      return answer.choice_answers.some((row) =>
+        Object.values(row).some((value) => !value)
+      );
+    }
+    return false;
+  });
+
+  if (missingFields.length > 0) {
+    // Notify user
+    toast.error("Please fill out all required fields before submitting.");
+
+    // Scroll to the first missing field
+    const firstMissingField = document.querySelector(
+      `[data-question-id="${missingFields[0].id}"]`
+    );
+    if (firstMissingField) {
+      firstMissingField.scrollIntoView({ behavior: "smooth" });
+    }
+
+    return; // Stop submission
+  }
+
+  // Confirm submission
+  const confirmSubmit = window.confirm(
+    "By confirming, you agree to the terms of the agreement. Are you ready to submit the application?"
   );
 
-  if (existingAnswerIndex === -1) {
-    if (questionType === "table") {
-      const newAnswer = {
-        question_id: questionId,
-        answer: null,
-        choice_answers: [{ [column]: trimmedValue }],
-        question_type: questionType,
-        number_of_rows: question.number_of_rows,
-      };
+  if (confirmSubmit) {
+    console.log("Form data submitted:", answers);
 
-      for (let i = 0; i < question.number_of_rows; i++) {
-        if (i !== rowIndex) {
-          newAnswer.choice_answers.push({});
+    const method = answers.answers.length > 0 ? "PATCH" : "POST"; // Use PATCH if answers already exist
+
+    try {
+      const response = await fetchWithAuth(
+        `/api/grants/responses/${grantId}/`,
+        {
+          method: method,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(answers),
         }
-      }
+      );
 
-      setAnswers((prevAnswers) => ({
-        answers: [...prevAnswers.answers, newAnswer],
-      }));
-    } else if (questionType === "checkbox") {
-      setAnswers((prevAnswers) => ({
-        answers: [
-          ...prevAnswers.answers,
-          {
-            question_id: questionId,
-            answer: null,
-            choice_answers: checked ? [{ check: trimmedValue }] : [],
-            question_type: questionType,
-          },
-        ],
-      }));
-    } else {
-      setAnswers((prevAnswers) => ({
-        answers: [
-          ...prevAnswers.answers,
-          {
-            question_id: questionId,
-            answer: trimmedValue,
-            choice_answers: null,
-            question_type: questionType,
-          },
-        ],
-      }));
+      if (response.ok) {
+        console.log("Application submitted successfully!", response);
+        toast.success(
+          "Your application has been saved. Please proceed to upload necessary documents in order to submit."
+        );
+        const responseData = await response.json();
+        setApplicationId(responseData.application_id);
+        setShowModal(true);
+
+        console.log(
+          "Application ID after submission:",
+          responseData.application_id
+        );
+        console.log("User ID:", userId);
+      } else {
+        console.error("Error submitting application:", response);
+      }
+    } catch (error) {
+      console.error("Error submitting application:", error);
+      toast.error(
+        "An error occurred while submitting your application. Please try again later."
+      );
     }
   } else {
-    if (questionType === "table") {
-      setAnswers((prevAnswers) => {
-        const updatedAnswers = [...prevAnswers.answers];
-        updatedAnswers[existingAnswerIndex].choice_answers[rowIndex] = {
-          ...updatedAnswers[existingAnswerIndex].choice_answers[rowIndex],
-          [column]: trimmedValue,
-        };
-        return { answers: updatedAnswers };
-      });
-    } else if (questionType === "checkbox") {
-      setAnswers((prevAnswers) => {
-        const updatedAnswers = [...prevAnswers.answers];
-        const choiceIndex = updatedAnswers[
-          existingAnswerIndex
-        ].choice_answers.findIndex((choice) => choice.check === trimmedValue);
-
-        if (checked) {
-          if (choiceIndex === -1) {
-            updatedAnswers[existingAnswerIndex].choice_answers.push({
-              check: trimmedValue,
-            });
-          }
-        } else {
-          if (choiceIndex !== -1) {
-            updatedAnswers[existingAnswerIndex].choice_answers.splice(
-              choiceIndex,
-              1
-            );
-          }
-        }
-        return { answers: updatedAnswers };
-      });
-    } else {
-      setAnswers((prevAnswers) => {
-        const updatedAnswers = [...prevAnswers.answers];
-        updatedAnswers[existingAnswerIndex].answer = trimmedValue;
-        return { answers: updatedAnswers };
-      });
-    }
+    navigate(-1);
   }
 };
 
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-const confirmSubmit = window.confirm(
-  "By confirming, you agree to the terms of the agreement. Are you ready to submit the application?"
-);
-
-    
-    if (confirmSubmit) {
-      console.log("Form data submitted:", answers);
-
-      const method = answers.answers.length > 0 ? "PATCH" : "POST"; // Use PATCH if answers already exist
-
-      try {
-        const response = await fetchWithAuth(
-          `/api/grants/responses/${grantId}/`,
-          {
-            method: method,
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(answers),
-          }
-        );
-
-        if (response.ok) {
-          console.log("Application submitted successfully!", response);
-          toast.success("Your application has been saved please proceed to upload necessary documents inorder to submit")
-          const responseData = await response.json();
-          setApplicationId(responseData.application_id);
-          setShowModal(true);
-
-          console.log(
-            "Application ID after submission:",
-            responseData.application_id
-          );
-          console.log("User ID:", userId);
-        } else {
-          console.error("Error submitting application:", response);
-        }
-      } catch (error) {
-        console.error("Error submitting application:", error);
-        toast.error("An error occurred while submitting your application. Please try again later.")
-      }
-    } else {
-      navigate(-1);
-    }
-  };
 
   const handleFileUpload = async () => {
     if (!applicationId) return;
@@ -298,7 +344,7 @@ const confirmSubmit = window.confirm(
       }
     } catch (error) {
       console.error("Error handling file upload:", error);
-      toast.error("Failed to submit ypur application, please try again!")
+      toast.error("Failed to submit ypur application, please try again!");
     }
   };
 
