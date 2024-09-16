@@ -1,7 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { fetchWithAuth } from "../../../utils/helpers";
-import { Accordion, Card, Form, Button, Modal } from "react-bootstrap";
+import {
+  Accordion,
+  Card,
+  Form,
+  Button,
+  Modal,
+  ProgressBar,
+  Alert,
+  OverlayTrigger,
+  Tooltip,
+} from "react-bootstrap";
 import { toast } from "react-toastify";
 
 const ApplicationPage = () => {
@@ -20,11 +30,88 @@ const ApplicationPage = () => {
   const userId = user?.user_id;
   const [existingDocuments, setExistingDocuments] = useState([]);
   const navigate = useNavigate();
+  const [validationErrors, setValidationErrors] = useState({});
+  const [focusedQuestionId, setFocusedQuestionId] = useState(null);
+  const [inputValues, setInputValues] = useState({});
+  const [visibleQuestions, setVisibleQuestions] = useState([]);
 
   const CHARACTER_LIMITS = {
     text: 500,
     number: 10,
     date: 10,
+  };
+
+  const shouldQuestionBeVisible = (question, currentAnswers) => {
+    const hasChoice = (choiceAnswers, value) => {
+      return choiceAnswers.some((answer) => answer.check === value);
+    };
+
+    switch (question.id) {
+      case 12:
+        const question11AnswerFor12 = currentAnswers.find(
+          (a) => a.question_id === 11
+        );
+        const choiceAnswers12 =
+          question11AnswerFor12 &&
+          Array.isArray(question11AnswerFor12.choice_answers)
+            ? question11AnswerFor12.choice_answers
+            : [];
+        const isDistrictSelected = hasChoice(choiceAnswers12, "District");
+        const isSubCountiesSelected = hasChoice(
+          choiceAnswers12,
+          "Sub-counties"
+        );
+        return isDistrictSelected && isSubCountiesSelected;
+
+      case 13:
+        const question11AnswerFor13 = currentAnswers.find(
+          (a) => a.question_id === 11
+        );
+        const choiceAnswers13 =
+          question11AnswerFor13 &&
+          Array.isArray(question11AnswerFor13.choice_answers)
+            ? question11AnswerFor13.choice_answers
+            : [];
+        const isDistrictOnly =
+          hasChoice(choiceAnswers13, "District") &&
+          !hasChoice(choiceAnswers13, "Sub-counties");
+        return isDistrictOnly;
+
+      case 22:
+        const question21Answer = currentAnswers.find(
+          (a) => a.question_id === 21
+        );
+        return question21Answer && question21Answer.answer === "No";
+
+      default:
+        return true;
+    }
+  };
+
+  const updateVisibleQuestions = (currentAnswers) => {
+    const newVisibleQuestions = questions.filter((question) =>
+      shouldQuestionBeVisible(question, currentAnswers)
+    );
+    setVisibleQuestions(newVisibleQuestions);
+  };
+
+  useEffect(() => {
+    updateVisibleQuestions(answers.answers);
+  }, [answers.answers, questions]);
+
+  const handleFocus = (questionId) => {
+    setFocusedQuestionId(questionId);
+  };
+
+  const handleBlur = (questionId) => {
+    if (!inputValues[questionId]) {
+      setFocusedQuestionId(null);
+    }
+  };
+
+  const handleInputChange = (e, question) => {
+    handleChange(e, question);
+    setInputValues((prev) => ({ ...prev, [question.id]: e.target.value }));
   };
 
   useEffect(() => {
@@ -128,6 +215,15 @@ const ApplicationPage = () => {
     const trimmedValue = value.slice(0, maxLength);
 
     // Update answers and character count
+    const updateAnswers = (updater) => {
+      setAnswers((prevAnswers) => {
+        const newAnswers = updater(prevAnswers);
+        return { ...newAnswers, answers: [...newAnswers.answers] };
+        updateVisibleQuestions(newAnswers.answers);
+        return newAnswers;
+      });
+    };
+
     const existingAnswerIndex = answers.answers.findIndex(
       (answer) => answer.question_id === questionId
     );
@@ -148,11 +244,13 @@ const ApplicationPage = () => {
           }
         }
 
-        setAnswers((prevAnswers) => ({
+        updateAnswers((prevAnswers) => ({
+          ...prevAnswers,
           answers: [...prevAnswers.answers, newAnswer],
         }));
       } else if (questionType === "checkbox") {
-        setAnswers((prevAnswers) => ({
+        updateAnswers((prevAnswers) => ({
+          ...prevAnswers,
           answers: [
             ...prevAnswers.answers,
             {
@@ -164,7 +262,8 @@ const ApplicationPage = () => {
           ],
         }));
       } else {
-        setAnswers((prevAnswers) => ({
+        updateAnswers((prevAnswers) => ({
+          ...prevAnswers,
           answers: [
             ...prevAnswers.answers,
             {
@@ -178,16 +277,16 @@ const ApplicationPage = () => {
       }
     } else {
       if (questionType === "table") {
-        setAnswers((prevAnswers) => {
+        updateAnswers((prevAnswers) => {
           const updatedAnswers = [...prevAnswers.answers];
           updatedAnswers[existingAnswerIndex].choice_answers[rowIndex] = {
             ...updatedAnswers[existingAnswerIndex].choice_answers[rowIndex],
             [column]: trimmedValue,
           };
-          return { answers: updatedAnswers };
+          return { ...prevAnswers, answers: updatedAnswers };
         });
       } else if (questionType === "checkbox") {
-        setAnswers((prevAnswers) => {
+        updateAnswers((prevAnswers) => {
           const updatedAnswers = [...prevAnswers.answers];
           const choiceIndex = updatedAnswers[
             existingAnswerIndex
@@ -207,112 +306,98 @@ const ApplicationPage = () => {
               );
             }
           }
-          return { answers: updatedAnswers };
+          return { ...prevAnswers, answers: updatedAnswers };
         });
       } else {
-        setAnswers((prevAnswers) => {
+        updateAnswers((prevAnswers) => {
           const updatedAnswers = [...prevAnswers.answers];
           updatedAnswers[existingAnswerIndex].answer = trimmedValue;
-          return { answers: updatedAnswers };
+          return { ...prevAnswers, answers: updatedAnswers };
         });
       }
     }
+
+    setValidationErrors((prevErrors) => ({
+      ...prevErrors,
+      [questionId]: null,
+    }));
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  // Validate answers
-  const missingFields = questions.filter((question) => {
-    const answer = answers.answers.find(
-      (answer) => answer.question_id === question.id
-    );
-    if (!answer) return true;
-
-    if (
-      question.question_type === "text" ||
-      question.question_type === "number" ||
-      question.question_type === "date"
-    ) {
-      return !answer.answer;
-    } else if (
-      question.question_type === "checkbox" ||
-      question.question_type === "radio"
-    ) {
-      return !answer.choice_answers.length;
-    } else if (question.question_type === "table") {
-      return answer.choice_answers.some((row) =>
-        Object.values(row).some((value) => !value)
+    // Validate answers
+    const missingFields = visibleQuestions.filter((question) => {
+      const answer = answers.answers.find(
+        (answer) => answer.question_id === question.id
       );
-    }
-    return false;
-  });
+      if (!answer) return true;
 
-  if (missingFields.length > 0) {
-    // Notify user
-    toast.error("Please fill out all required fields before submitting.");
-
-    // Scroll to the first missing field
-    const firstMissingField = document.querySelector(
-      `[data-question-id="${missingFields[0].id}"]`
-    );
-    if (firstMissingField) {
-      firstMissingField.scrollIntoView({ behavior: "smooth" });
-    }
-
-    return; // Stop submission
-  }
-
-  // Confirm submission
-  const confirmSubmit = window.confirm(
-    "By confirming, you agree to the terms of the agreement. Are you ready to submit the application?"
-  );
-
-  if (confirmSubmit) {
-    console.log("Form data submitted:", answers);
-
-    const method = answers.answers.length > 0 ? "PATCH" : "POST"; // Use PATCH if answers already exist
-
-    try {
-      const response = await fetchWithAuth(
-        `/api/grants/responses/${grantId}/`,
-        {
-          method: method,
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(answers),
-        }
-      );
-
-      if (response.ok) {
-        console.log("Application submitted successfully!", response);
-        toast.success(
-          "Your application has been saved. Please proceed to upload necessary documents in order to submit."
+      if (
+        question.question_type === "text" ||
+        question.question_type === "number" ||
+        question.question_type === "date"
+      ) {
+        return !answer.answer;
+      } else if (
+        question.question_type === "checkbox" ||
+        question.question_type === "radio"
+      ) {
+        return (
+          !Array.isArray(answer.choice_answers) ||
+          answer.choice_answers.length === 0
         );
-        const responseData = await response.json();
-        setApplicationId(responseData.application_id);
-        setShowModal(true);
-
-        console.log(
-          "Application ID after submission:",
-          responseData.application_id
+      } else if (question.question_type === "table") {
+        const choiceAnswersTable = Array.isArray(answer.choice_answers)
+          ? answer.choice_answers
+          : [];
+        return choiceAnswersTable.some((row) =>
+          Object.values(row).some((value) => !value)
         );
-        console.log("User ID:", userId);
-      } else {
-        console.error("Error submitting application:", response);
       }
-    } catch (error) {
-      console.error("Error submitting application:", error);
-      toast.error(
-        "An error occurred while submitting your application. Please try again later."
-      );
-    }
-  } else {
-    navigate(-1);
-  }
-};
 
+      return false;
+    });
+
+    const confirmSubmit = window.confirm(
+      "By confirming, you agree to the terms of the agreement. Are you ready to submit the application?"
+    );
+
+    if (confirmSubmit) {
+      const method = answers.answers.length > 0 ? "PATCH" : "POST"; // Use PATCH if answers already exist
+
+      try {
+        const response = await fetchWithAuth(
+          `/api/grants/responses/${grantId}/`,
+          {
+            method: method,
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(answers),
+          }
+        );
+
+        if (response.ok) {
+          toast.success(
+            "Your application has been saved. Please proceed to upload necessary documents in order to submit."
+          );
+          const responseData = await response.json();
+          setApplicationId(responseData.application_id);
+          setShowModal(true);
+        } else {
+          console.error("Error submitting application:", response);
+        }
+      } catch (error) {
+        console.error("Error submitting application:", error);
+        toast.error(
+          "An error occurred while submitting your application. Please try again later."
+        );
+      }
+    } else {
+      navigate(-1);
+    }
+  };
 
   const handleFileUpload = async () => {
     if (!applicationId) return;
@@ -336,7 +421,6 @@ const handleSubmit = async (e) => {
       });
 
       if (uploadResponse.ok) {
-        console.log("Files uploaded successfully!");
         toast.success("Your Application has been submitted successfully");
         navigate("/");
       } else {
@@ -384,11 +468,58 @@ const handleSubmit = async (e) => {
     marginTop: "20px",
   };
 
-  const CharacterCounter = ({ current, limit }) => (
-    <Form.Text className="text-muted">
-      Characters: {current}/{limit}
-    </Form.Text>
-  );
+  const EmojiFeedback = ({ type, current, limit }) => {
+    const charactersLeft = limit - current;
+
+    let emoji;
+    let feedbackText;
+
+    switch (type) {
+      case "text":
+        if (charactersLeft <= 0) {
+          emoji = "🚫"; // Stop sign for exceeding the limit
+          feedbackText = "You have exceeded the character limit!";
+        } else if (charactersLeft <= 10) {
+          emoji = "⚠️"; // Warning emoji
+          feedbackText = `Almost there! Only ${charactersLeft} characters left.`;
+        } else {
+          emoji = "✅"; // Checkmark for safe
+          feedbackText = `You have ${charactersLeft} characters remaining.`;
+        }
+        break;
+      case "number":
+        emoji = "🔢"; // Input numbers
+        feedbackText = `You have entered ${current} out of ${limit} allowed.`;
+        break;
+      case "date":
+        emoji = "📅"; // Calendar
+        feedbackText = `Selected date: ${current}`;
+        break;
+      case "checkbox":
+        emoji = "☑️"; // Checkbox
+        feedbackText = `Checked ${current} items`;
+        break;
+      case "radio":
+        emoji = "🔘"; // Radio button
+        feedbackText = `Selected option: ${current}`;
+        break;
+      case "table":
+        emoji = "📊"; // Table
+        feedbackText = `Filled ${current} rows out of ${limit}`;
+        break;
+      default:
+        emoji = "ℹ️"; // Information symbol
+        feedbackText = "Please provide input";
+    }
+
+    return (
+      <div style={{ marginTop: "5px", fontSize: "14px", color: "black" }}>
+        <span role="img" aria-label="feedback">
+          {emoji} {feedbackText}
+        </span>
+      </div>
+    );
+  };
 
   return (
     <div style={containerStyle}>
@@ -406,158 +537,301 @@ const handleSubmit = async (e) => {
                 {Object.keys(groupedQuestions[section]).map((subSection) => (
                   <div key={subSection} className="mb-4">
                     <h5 className="mb-3">{subSection}</h5>
-                    {groupedQuestions[section][subSection].map((question) => (
-                      <Form.Group key={question.id} className="mb-4">
-                        <Form.Label>{question.text}</Form.Label>
-                        {question.question_type === "text" && (
-                          <>
-                            <Form.Control
-                              as="textarea"
-                              value={
-                                answers.answers.find(
-                                  (answer) => answer.question_id === question.id
-                                )?.answer || ""
-                              }
-                              onChange={(e) => handleChange(e, question)}
-                              rows={3}
-                              readOnly={isReadOnly}
-                              maxLength={CHARACTER_LIMITS.text}
-                            />
-                            <Form.Text className="text-muted">
-                              Character limit: {CHARACTER_LIMITS.text}
-                            </Form.Text>
-                          </>
-                        )}
-                        {question.question_type === "number" && (
-                          <>
-                            <Form.Control
-                              type="number"
-                              value={
-                                answers.answers.find(
-                                  (answer) => answer.question_id === question.id
-                                )?.answer || ""
-                              }
-                              onChange={(e) => handleChange(e, question)}
-                              readOnly={isReadOnly}
-                              maxLength={CHARACTER_LIMITS.number}
-                            />
-                            <Form.Text className="text-muted">
-                              Character limit: {CHARACTER_LIMITS.number}
-                            </Form.Text>
-                          </>
-                        )}
-                        {question.question_type === "date" && (
-                          <>
-                            <Form.Control
-                              type="date"
-                              value={
-                                answers.answers.find(
-                                  (answer) => answer.question_id === question.id
-                                )?.answer || ""
-                              }
-                              onChange={(e) => handleChange(e, question)}
-                              readOnly={isReadOnly}
-                              maxLength={CHARACTER_LIMITS.date}
-                            />
-                            <Form.Text className="text-muted">
-                              Character limit: {CHARACTER_LIMITS.date}
-                            </Form.Text>
-                          </>
-                        )}
-                        {question.question_type === "checkbox" && (
-                          <div>
-                            {question.choices?.map((choice, index) => {
-                              const isChecked = answers.answers.find(
-                                (answer) =>
-                                  answer.question_id === question.id &&
-                                  answer.choice_answers.some(
-                                    (ca) => ca.check === choice
-                                  )
-                              );
-                              return (
-                                <Form.Check
-                                  key={index}
-                                  type="checkbox"
-                                  label={choice}
-                                  value={choice}
-                                  checked={isChecked}
-                                  onChange={(e) => handleChange(e, question)}
-                                  disabled={isReadOnly}
-                                />
-                              );
-                            })}
-                          </div>
-                        )}
-                        {question.question_type === "radio" && (
-                          <div>
-                            {question.choices?.map((choice, index) => (
-                              <Form.Check
-                                key={index}
-                                type="radio"
-                                label={choice}
-                                value={choice}
-                                checked={
+                    {groupedQuestions[section][subSection]
+                      .filter((question) => visibleQuestions.includes(question))
+                      .map((question) => (
+                        <Form.Group key={question.id} className="mb-3">
+                          {question.question_type === "text" && (
+                            <>
+                              <Form.Label>
+                                {question.text}
+                                {focusedQuestionId === question.id && (
+                                  <span className="text-muted">
+                                    {" "}
+                                    (Max {CHARACTER_LIMITS.text} characters)
+                                  </span>
+                                )}
+                              </Form.Label>
+                              <Form.Control
+                                as="textarea"
+                                value={
                                   answers.answers.find(
                                     (answer) =>
                                       answer.question_id === question.id
-                                  )?.answer === choice
+                                  )?.answer || ""
                                 }
-                                onChange={(e) => handleChange(e, question)}
-                                disabled={isReadOnly}
+                                onChange={(e) => handleInputChange(e, question)}
+                                onFocus={() => handleFocus(question.id)}
+                                onBlur={() => handleBlur(question.id)}
+                                rows={3}
+                                readOnly={isReadOnly}
+                                maxLength={CHARACTER_LIMITS.text}
+                                isInvalid={!!validationErrors[question.id]}
+                                style={{
+                                  borderColor: validationErrors[question.id],
+                                }}
                               />
-                            ))}
-                          </div>
-                        )}
-                        {question.question_type === "table" && (
-                          <div className="table-responsive">
-                            <table className="table table-bordered">
-                              <thead>
-                                <tr>
-                                  {question.choices.map((column, index) => (
-                                    <th key={index}>{column}</th>
-                                  ))}
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {Array.from({
-                                  length: question.number_of_rows,
-                                }).map((_, rowIndex) => (
-                                  <tr key={rowIndex}>
-                                    {question.choices.map(
-                                      (column, colIndex) => (
-                                        <td key={colIndex}>
-                                          <Form.Control
-                                            type="text"
-                                            value={
-                                              answers.answers.find(
-                                                (answer) =>
-                                                  answer.question_id ===
-                                                  question.id
-                                              )?.choice_answers[rowIndex]?.[
-                                                column
-                                              ] || ""
-                                            }
-                                            onChange={(e) =>
-                                              handleChange(
-                                                e,
-                                                question,
-                                                column,
-                                                rowIndex
-                                              )
-                                            }
-                                            readOnly={isReadOnly}
-                                          />
-                                        </td>
+                              {(focusedQuestionId === question.id ||
+                                inputValues[question.id]) && (
+                                <EmojiFeedback
+                                  type="text"
+                                  current={
+                                    (
+                                      answers.answers.find(
+                                        (answer) =>
+                                          answer.question_id === question.id
+                                      )?.answer || ""
+                                    ).length
+                                  }
+                                  limit={CHARACTER_LIMITS.text}
+                                />
+                              )}
+                              <Form.Control.Feedback type="invalid">
+                                {validationErrors[question.id]}
+                              </Form.Control.Feedback>
+                            </>
+                          )}
+
+                          {question.question_type === "number" && (
+                            <>
+                              <Form.Label>{question.text}</Form.Label>
+                              <Form.Control
+                                type="number"
+                                value={
+                                  answers.answers.find(
+                                    (answer) =>
+                                      answer.question_id === question.id
+                                  )?.answer || ""
+                                }
+                                onChange={(e) => handleInputChange(e, question)}
+                                onFocus={() => handleFocus(question.id)}
+                                onBlur={() => handleBlur(question.id)}
+                                readOnly={isReadOnly}
+                                maxLength={CHARACTER_LIMITS.number}
+                                isInvalid={!!validationErrors[question.id]}
+                              />
+                              {(focusedQuestionId === question.id ||
+                                inputValues[question.id]) && (
+                                <EmojiFeedback
+                                  type="number"
+                                  current={parseInt(
+                                    answers.answers.find(
+                                      (answer) =>
+                                        answer.question_id === question.id
+                                    )?.answer || "0"
+                                  )}
+                                  limit={CHARACTER_LIMITS.number}
+                                />
+                              )}
+                              <Form.Control.Feedback type="invalid">
+                                {validationErrors[question.id]}
+                              </Form.Control.Feedback>
+                            </>
+                          )}
+
+                          {question.question_type === "date" && (
+                            <>
+                              <Form.Label>{question.text}</Form.Label>
+                              <Form.Control
+                                type="date"
+                                value={
+                                  answers.answers.find(
+                                    (answer) =>
+                                      answer.question_id === question.id
+                                  )?.answer || ""
+                                }
+                                onChange={(e) => handleInputChange(e, question)}
+                                onFocus={() => handleFocus(question.id)}
+                                onBlur={() => handleBlur(question.id)}
+                                readOnly={isReadOnly}
+                                isInvalid={!!validationErrors[question.id]}
+                              />
+                              {(focusedQuestionId === question.id ||
+                                inputValues[question.id]) && (
+                                <EmojiFeedback
+                                  type="date"
+                                  current={
+                                    answers.answers.find(
+                                      (answer) =>
+                                        answer.question_id === question.id
+                                    )?.answer || ""
+                                  }
+                                  limit={CHARACTER_LIMITS.date}
+                                />
+                              )}
+                              <Form.Control.Feedback type="invalid">
+                                {validationErrors[question.id]}
+                              </Form.Control.Feedback>
+                            </>
+                          )}
+
+                          {question.question_type === "checkbox" && (
+                            <>
+                              <Form.Label>{question.text}</Form.Label>
+                              <div>
+                                {question.choices?.map((choice, index) => {
+                                  const isChecked = answers.answers.find(
+                                    (answer) =>
+                                      answer.question_id === question.id &&
+                                      answer.choice_answers.some(
+                                        (ca) => ca.check === choice
                                       )
-                                    )}
-                                  </tr>
+                                  );
+                                  return (
+                                    <Form.Check
+                                      key={index}
+                                      type="checkbox"
+                                      label={choice}
+                                      value={choice}
+                                      checked={isChecked}
+                                      onChange={(e) =>
+                                        handleChange(e, question)
+                                      }
+                                      disabled={isReadOnly}
+                                    />
+                                  );
+                                })}
+                              </div>
+                              {(focusedQuestionId === question.id ||
+                                inputValues[question.id]) && (
+                                <EmojiFeedback
+                                  type="checkbox"
+                                  current={
+                                    answers.answers.find(
+                                      (answer) =>
+                                        answer.question_id === question.id
+                                    )?.choice_answers.length || 0
+                                  }
+                                  limit={question.choices.length}
+                                />
+                              )}
+                              {validationErrors[question.id] && (
+                                <Alert variant="danger" className="mt-2">
+                                  {validationErrors[question.id]}
+                                </Alert>
+                              )}
+                            </>
+                          )}
+
+                          {question.question_type === "radio" && (
+                            <>
+                              <Form.Label>{question.text}</Form.Label>
+                              <div>
+                                {question.choices?.map((choice, index) => (
+                                  <Form.Check
+                                    key={index}
+                                    type="radio"
+                                    label={choice}
+                                    value={choice}
+                                    checked={
+                                      answers.answers.find(
+                                        (answer) =>
+                                          answer.question_id === question.id
+                                      )?.answer === choice
+                                    }
+                                    onChange={(e) => handleChange(e, question)}
+                                    disabled={isReadOnly}
+                                  />
                                 ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
-                      </Form.Group>
-                    ))}
+                              </div>
+                              {(focusedQuestionId === question.id ||
+                                inputValues[question.id]) && (
+                                <EmojiFeedback
+                                  type="radio"
+                                  current={
+                                    answers.answers.find(
+                                      (answer) =>
+                                        answer.question_id === question.id
+                                    )?.answer || ""
+                                  }
+                                  limit={question.choices.length}
+                                />
+                              )}
+                              {validationErrors[question.id] && (
+                                <Alert variant="danger" className="mt-2">
+                                  {validationErrors[question.id]}
+                                </Alert>
+                              )}
+                            </>
+                          )}
+
+                          {question.question_type === "table" && (
+                            <>
+                              <Form.Label>{question.text}</Form.Label>
+                              <div className="table-responsive">
+                                <table className="table table-bordered">
+                                  <thead>
+                                    <tr>
+                                      {question.choices.map((column, index) => (
+                                        <th key={index}>{column}</th>
+                                      ))}
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {Array.from({
+                                      length: question.number_of_rows,
+                                    }).map((_, rowIndex) => (
+                                      <tr key={rowIndex}>
+                                        {question.choices.map(
+                                          (column, colIndex) => (
+                                            <td key={colIndex}>
+                                              <Form.Control
+                                                type="text"
+                                                value={
+                                                  answers.answers.find(
+                                                    (answer) =>
+                                                      answer.question_id ===
+                                                      question.id
+                                                  )?.choice_answers[rowIndex]?.[
+                                                    column
+                                                  ] || ""
+                                                }
+                                                onChange={(e) =>
+                                                  handleChange(
+                                                    e,
+                                                    question,
+                                                    column,
+                                                    rowIndex
+                                                  )
+                                                }
+                                                onFocus={() =>
+                                                  handleFocus(question.id)
+                                                }
+                                                onBlur={() =>
+                                                  handleBlur(question.id)
+                                                }
+                                                readOnly={isReadOnly}
+                                              />
+                                            </td>
+                                          )
+                                        )}
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                              {(focusedQuestionId === question.id ||
+                                inputValues[question.id]) && (
+                                <EmojiFeedback
+                                  type="table"
+                                  current={
+                                    answers.answers.find(
+                                      (answer) =>
+                                        answer.question_id === question.id
+                                    )?.choice_answers.length || 0
+                                  }
+                                  limit={question.number_of_rows}
+                                />
+                              )}
+                              {validationErrors[question.id] && (
+                                <Alert variant="danger" className="mt-2">
+                                  {validationErrors[question.id]}
+                                </Alert>
+                              )}
+                            </>
+                          )}
+                        </Form.Group>
+                      ))}
                   </div>
                 ))}
               </Accordion.Body>
@@ -578,7 +852,6 @@ const handleSubmit = async (e) => {
           Submit
         </Button>
       </Form>
-
       <Modal
         show={showModal}
         onHide={() => setShowModal(false)}
