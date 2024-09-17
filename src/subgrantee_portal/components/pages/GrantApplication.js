@@ -13,6 +13,7 @@ import {
   Tooltip,
 } from "react-bootstrap";
 import { toast } from "react-toastify";
+import Loading from './Loading'
 
 const ApplicationPage = () => {
   const { grantName } = useParams();
@@ -34,6 +35,7 @@ const ApplicationPage = () => {
   const [focusedQuestionId, setFocusedQuestionId] = useState(null);
   const [inputValues, setInputValues] = useState({});
   const [visibleQuestions, setVisibleQuestions] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const CHARACTER_LIMITS = {
     text: 500,
@@ -367,6 +369,7 @@ const ApplicationPage = () => {
       const method = answers.answers.length > 0 ? "PATCH" : "POST"; // Use PATCH if answers already exist
 
       try {
+         await new Promise((resolve) => setTimeout(resolve, 2000));
         const response = await fetchWithAuth(
           `/api/grants/responses/${grantId}/`,
           {
@@ -526,6 +529,7 @@ const ApplicationPage = () => {
       <h1 className="mb-4">
         Application for Grant: {decodeURIComponent(grantName)}
       </h1>
+      {isLoading && <Loading />}
       <Form onSubmit={handleSubmit}>
         {Object.keys(groupedQuestions).map((section) => (
           <Accordion key={section} defaultActiveKey="0" className="mb-4">
