@@ -102,29 +102,30 @@ const GrantsForm = ({ grant, onSubmit }) => {
 
   useEffect(() => {
     if (grant && districts.length > 0) {
-      setFormData((prevState) => ({
-        ...prevState,
+      console.log(grant); 
+      setFormData({
         name: grant.name || "",
         description: grant.description || "",
         startDate: grant.start_date || "",
         endDate: grant.end_date || "",
         applicationDeadline: grant.application_deadline || "",
-        category: grant.category || "",
-        donor: grant.donor || "",
-        selectedDistricts: grant.districts
-          ? grant.districts.map((id) => ({
-              value: id,
-              label: districts.find((district) => district.id === id)?.name,
+        category: grant.category_detail?.id || "",
+        donor: grant.donor_detail?.id || "",
+        selectedDistricts: grant.district_detail
+          ? grant.district_detail.map((district) => ({
+              value: district.id,
+              label: district.name,
             }))
           : [],
         amount: grant.amount || "",
-        numberOfAwards: grant.number_of_awards || "",
+        numberOfAwards: grant.number_of_awards?.toString() || "",
         eligibilityDetails: grant.eligibility_details || "",
         kpis: grant.kpis || "",
         reporting_time: grant.reporting_time || "",
-      }));
+      });
     }
   }, [grant, districts]);
+ 
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -202,7 +203,7 @@ const GrantsForm = ({ grant, onSubmit }) => {
       donor,
       district: selectedDistricts.map((option) => option.value),
       amount,
-      number_of_awards: numberOfAwards,
+      number_of_awards: parseInt(numberOfAwards, 10),
       eligibility_details: eligibilityDetails,
       reporting_time,
     };
@@ -223,6 +224,7 @@ const GrantsForm = ({ grant, onSubmit }) => {
       });
 
       if (!response.ok) {
+        throw new Error("Failed to submit grant data");
       }
 
       const result = await response.json();
@@ -249,7 +251,10 @@ const GrantsForm = ({ grant, onSubmit }) => {
           reporting_time: "",
         });
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error("Error submitting grant data:", error);
+      toast.error("Failed to submit grant data. Please try again.");
+    }
   };
 
   const grantTypeOptions = grantTypes.map((type) => ({
@@ -275,7 +280,11 @@ const GrantsForm = ({ grant, onSubmit }) => {
     <div className="container" style={containerStyle}>
       <div className="card" style={cardStyle}>
         <div className="card-header" style={cardHeaderStyle}>
-          <h5 className="mb-0">{grant ? "Edit Funding Opportunity" : "Add a New Funding Opportunity"}</h5>
+          <h5 className="mb-0">
+            {grant
+              ? "Edit Funding Opportunity"
+              : "Add a New Funding Opportunity"}
+          </h5>
         </div>
         <div className="card-body" style={cardBodyStyle}>
           <form onSubmit={handleSubmit}>

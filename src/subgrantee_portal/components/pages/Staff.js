@@ -48,6 +48,12 @@ const buttonStyle = {
   fontSize: "16px",
 };
 
+const errorStyle = {
+  color: "red",
+  fontSize: "14px",
+  marginBottom: "15px",
+};
+
 const Staff = () => {
   const [formData, setFormData] = useState({
     staff_male: "",
@@ -62,6 +68,7 @@ const Staff = () => {
     finance_manager_details: "",
   });
 
+  const [errors, setErrors] = useState({});
     const navigate = useNavigate();
 
     useEffect(() => {
