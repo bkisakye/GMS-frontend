@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { fetchWithAuth } from "../../../utils/helpers";
 import {
@@ -36,6 +36,8 @@ const ApplicationPage = () => {
   const [inputValues, setInputValues] = useState({});
   const [visibleQuestions, setVisibleQuestions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  const questionRefs = useRef({});
 
   const CHARACTER_LIMITS = {
     text: 500,
@@ -391,6 +393,16 @@ const handleSubmit = async (e) => {
   if (Object.keys(errors).length > 0) {
     setValidationErrors(errors);
     toast.error("Please fill in all required fields before submitting.");
+    // Scroll to the first unfilled field
+    const firstUnfilledFieldId = visibleQuestions.find(
+      (question) => errors[question.id]
+    )?.id;
+    if (firstUnfilledFieldId) {
+      const fieldElement = questionRefs.current[firstUnfilledFieldId];
+      if (fieldElement) {
+        fieldElement.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
     return;
   }
 
