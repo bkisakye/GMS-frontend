@@ -1,240 +1,252 @@
 import React, { useEffect, useState } from "react";
-import { fetchWithAuth } from "../../../utils/helpers";
 import { useNavigate } from "react-router-dom";
+import { fetchWithAuth } from "../../../utils/helpers";
 import { toast } from "react-toastify";
 
-const PartnershipAndSubgrants = () => {
- const [formData, setFormData] = useState({
-   partnership_name: "",
-   partnership_period: "",
-   partnership_description: "",
-   subgrant_donor: "",
-   subgrant_amount: "",
-   subgrant_duration: "",
-   subgrant_description: "",
- });
+const Partnership = () => {
+  const [partnerships, setPartnerships] = useState([
+    { name: "", description: "", period: "" },
+  ]);
+  const [subgrants, setSubgrants] = useState([
+    { name: "", period: "", purpose: "", amount: "" },
+  ]);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch profile data
-        const profileResponse = await fetchWithAuth(
-          "/api/subgrantees/profiles/me/"
-        );
-        const profileData = await profileResponse.json();
-        console.log("Profile Data:", profileData);
-        setFormData((prevData) => ({
-          ...prevData,
-          ...profileData,
-        }));
+        const response = await fetchWithAuth(`/api/subgrantees/profiles/me/`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.partnerships && data.partnerships.length > 0) {
+            setPartnerships(data.partnerships);
+          }
+          if (data.subgrants && data.subgrants.length > 0) {
+            setSubgrants(data.subgrants);
+          }
+        } else {
+          const errorData = await response.json();
+          console.error("Error fetching data:", errorData);
+          toast.error("Error fetching data: " + errorData.message);
+        }
       } catch (error) {
-        console.error("Error:", error);
+        console.error("Error fetching data:", error);
+        toast.error("Error fetching data: " + error.message);
       }
     };
 
     fetchData();
   }, []);
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === "checkbox" ? checked : value,
-    });
+  const handleAddRow = (type) => {
+    if (type === "partnership") {
+      const newRow = {
+        name: "",
+        description: "",
+        period: "",
+      };
+      setPartnerships([...partnerships, newRow]);
+    } else {
+      const newRow = {
+        name: "",
+        period: "",
+        purpose: "",
+        amount: "",
+      };
+      setSubgrants([...subgrants, newRow]);
+    }
+  };
+
+  const handleInputChange = (e, index, type) => {
+    const { name, value } = e.target;
+    if (type === "partnership") {
+      const updatedPartnerships = [...partnerships];
+      updatedPartnerships[index][name] = value;
+      setPartnerships(updatedPartnerships);
+    } else {
+      const updatedSubgrants = [...subgrants];
+      updatedSubgrants[index][name] = value;
+      setSubgrants(updatedSubgrants);
+    }
   };
 
   const handleSubmit = async (e) => {
-     e.preventDefault();
-    console.log("Form Data:", formData);
-    const response = await fetchWithAuth("/api/subgrantees/profiles/", {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(formData),
-    });
-    if (response.ok) {
-      toast.success("Your Profile updated successfully");
-      navigate("/");
-    } else {
-      
-      toast.error("Failed to update profile");
+    e.preventDefault();
+    const formData = {
+      partnerships: partnerships,
+      subgrants: subgrants,
+    };
+
+    try {
+      const response = await fetchWithAuth(`/api/subgrantees/profiles/`, {
+        method: "PUT",
+        body: JSON.stringify(formData),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (response.ok) {
+        toast.success("Data saved successfully");
+        navigate("/");
+      } else {
+        const errorData = await response.json();
+        console.error("Error saving data:", errorData);
+        toast.error("Error saving data: " + errorData.message);
+      }
+    } catch (error) {
+      console.error("Error saving data:", error);
+      toast.error("Error saving data: " + error.message);
     }
-   
-  };
-
-  const formStyle = {
-    width: "80%",
-    margin: "0 auto",
-    fontFamily: "Arial, sans-serif",
-  };
-
-  const tableStyle = {
-    width: "100%",
-    borderCollapse: "collapse",
-    margin: "25px 0",
-    fontSize: "16px",
-    textAlign: "left",
-  };
-
-  const thTdStyle = {
-    padding: "12px 15px",
-    border: "1px solid #ddd",
-  };
-
-  const thStyle = {
-    ...thTdStyle,
-    backgroundColor: "#f2f2f2",
-    color: "#333",
-  };
-
-  const labelStyle = {
-    display: "block",
-    marginBottom: "8px",
-    fontWeight: "bold",
-    fontSize: "16px",
-  };
-
-  const tbodyTrStyle = (isEven) => ({
-    backgroundColor: isEven ? "#f9f9f9" : "#fff",
-  });
-
-  const buttonStyle = {
-    display: "inline-block",
-    padding: "10px 20px",
-    fontSize: "16px",
-    color: "#fff",
-    backgroundColor: "#4CAF50",
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
-    textAlign: "center",
-  };
-
-  const inputStyle = {
-    width: "100%",
-    padding: "8px",
-    border: "1px solid #ddd",
-    borderRadius: "4px",
-    boxSizing: "border-box",
   };
 
   return (
-    <form onSubmit={handleSubmit} style={formStyle}>
-      {/* Partnership Table */}
-      <label style={labelStyle}>
-        Please list any organization or entity (government, national or
-        international) with which your organization has had (or currently has) a
-        working relationship that does not involve a contract or funding.
-      </label>
-      <p>
-        Organizations from which you have received funding are included above
-        and those you have funded are listed below [please add lines if needed]
-      </p>
-      <table style={tableStyle}>
-        <thead>
-          <tr>
-            <th style={thStyle}>Name of organization/ entity</th>
-            <th style={thStyle}>
-              Briefly describe the relationship/ engagement
-            </th>
-            <th style={thStyle}>When [period]</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td style={thTdStyle}>
-              <input
-                type="text"
-                name="partnership_name"
-                value={formData.partnership_name}
-                onChange={handleChange}
-                style={inputStyle}
-              />
-            </td>
-            <td style={thTdStyle}>
-              <textarea
-                name="partnership_description"
-                value={formData.partnership_description}
-                onChange={handleChange}
-                style={inputStyle}
-              />
-            </td>
-            <td style={thTdStyle}>
-              <input
-                type="text"
-                name="partnership_period"
-                value={formData.partnership_period}
-                onChange={handleChange}
-                style={inputStyle}
-              />
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div className="container my-4">
+      <form onSubmit={handleSubmit}>
+        <div className="mb-4">
+          <label className="form-label">
+            Please list any organization or entity (government, national or
+            international) with which your organization has had (or currently
+            has) a working relationship that does not involve a contract or
+            funding.
+          </label>
+          <p>
+            Organizations from which you have received funding are included
+            above and those you have funded are listed below [please add lines
+            if needed]
+          </p>
+        </div>
 
-      {/* Subgrants Table */}
-      <label style={labelStyle}>
-        Have you ever sub-granted or sub-contracted to another organization in
-        the past 3 years? Please list details
-      </label>
-      <p>[please add lines if needed]</p>
-      <table style={tableStyle}>
-        <thead>
-          <tr>
-            <th style={thStyle}>Name of organization</th>
-            <th style={thStyle}>Period</th>
-            <th style={thStyle}>Purpose</th>
-            <th style={thStyle}>Amount (UGX)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td style={thTdStyle}>
-              <input
-                type="text"
-                name="subgrant_donor"
-                value={formData.subgrant_donor}
-                onChange={handleChange}
-                style={inputStyle}
-              />
-            </td>
-            <td style={thTdStyle}>
-              <input
-                type="text"
-                name="subgrant_duration"
-                value={formData.subgrant_duration}
-                onChange={handleChange}
-                style={inputStyle}
-              />
-            </td>
-            <td style={thTdStyle}>
-              <textarea
-                name="subgrant_description"
-                value={formData.subgrant_description}
-                onChange={handleChange}
-                style={inputStyle}
-              />
-            </td>
-            <td style={thTdStyle}>
-              <input
-                type="number"
-                name="subgrant_amount"
-                value={formData.subgrant_amount}
-                onChange={handleChange}
-                style={inputStyle}
-              />
-            </td>
-          </tr>
-        </tbody>
-      </table>
+        <table className="table table-striped mb-4">
+          <thead>
+            <tr>
+              <th>Name of the Organisation/entity</th>
+              <th>Briefly describe the relationship/engagement</th>
+              <th>When [period]</th>
+            </tr>
+          </thead>
+          <tbody>
+            {partnerships.map((partnership, index) => (
+              <tr key={index}>
+                <td>
+                  <input
+                    type="text"
+                    name="name"
+                    className="form-control"
+                    value={partnership.name}
+                    onChange={(e) => handleInputChange(e, index, "partnership")}
+                    required
+                  />
+                </td>
+                <td>
+                  <textarea
+                    name="description"
+                    className="form-control"
+                    value={partnership.description}
+                    onChange={(e) => handleInputChange(e, index, "partnership")}
+                    required
+                  />
+                </td>
+                <td>
+                  <input
+                    type="text"
+                    name="period"
+                    className="form-control"
+                    value={partnership.period}
+                    onChange={(e) => handleInputChange(e, index, "partnership")}
+                    required
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
 
-      <button type="submit" style={buttonStyle}>
-        Save Partnerships & Subgrants
-      </button>
-    </form>
+        <button
+          type="button"
+          className="btn btn-primary mb-4"
+          onClick={() => handleAddRow("partnership")}
+        >
+          Add Partnership Row
+        </button>
+
+        <div className="mb-4">
+          <label className="form-label">
+            Have you ever sub-granted or sub-contracted to another organization
+            in the past 3 years? Please list details
+          </label>
+          <p>[please add lines if needed]</p>
+        </div>
+
+        <table className="table table-striped mb-4">
+          <thead>
+            <tr>
+              <th>Name of the Organisation</th>
+              <th>Period</th>
+              <th>Purpose</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {subgrants.map((subgrant, index) => (
+              <tr key={index}>
+                <td>
+                  <input
+                    type="text"
+                    name="name"
+                    className="form-control"
+                    value={subgrant.name}
+                    onChange={(e) => handleInputChange(e, index, "subgrant")}
+                    required
+                  />
+                </td>
+                <td>
+                  <input
+                    type="text"
+                    name="period"
+                    className="form-control"
+                    value={subgrant.period}
+                    onChange={(e) => handleInputChange(e, index, "subgrant")}
+                    required
+                  />
+                </td>
+                <td>
+                  <textarea
+                    name="purpose"
+                    className="form-control"
+                    value={subgrant.purpose}
+                    onChange={(e) => handleInputChange(e, index, "subgrant")}
+                    required
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="amount"
+                    className="form-control"
+                    value={subgrant.amount}
+                    onChange={(e) => handleInputChange(e, index, "subgrant")}
+                    required
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <button
+          type="button"
+          className="btn btn-primary mb-4"
+          onClick={() => handleAddRow("subgrant")}
+        >
+          Add Subgrant Row
+        </button>
+<br />
+        <button type="submit" className="btn btn-success">
+          Save Projects
+        </button>
+      </form>
+    </div>
   );
 };
 
-export default PartnershipAndSubgrants;
+export default Partnership;
