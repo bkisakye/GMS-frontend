@@ -325,82 +325,115 @@ const ApplicationPage = () => {
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    // Validate answers
-    const missingFields = visibleQuestions.filter((question) => {
-      const answer = answers.answers.find(
-        (answer) => answer.question_id === question.id
-      );
-      if (!answer) return true;
+  const errors = {};
+  const missingFields = visibleQuestions.filter((question) => {
+    const answer = answers.answers.find(
+      (answer) => answer.question_id === question.id
+    );
 
-      if (
-        question.question_type === "text" ||
-        question.question_type === "number" ||
-        question.question_type === "date"
-      ) {
-        return !answer.answer;
-      } else if (
-        question.question_type === "checkbox" ||
-        question.question_type === "radio"
-      ) {
-        return (
+    if (!answer) {
+      errors[question.id] = "This field is required";
+      return true;
+    }
+
+    switch (question.question_type) {
+      case "text":
+      case "number":
+      case "date":
+        if (!answer.answer) {
+          errors[question.id] = "This field is required";
+          return true;
+        }
+        break;
+
+      case "checkbox":
+        if (
           !Array.isArray(answer.choice_answers) ||
           answer.choice_answers.length === 0
-        );
-      } else if (question.question_type === "table") {
+        ) {
+          errors[question.id] = "Please select at least one option";
+          return true;
+        }
+        break;
+
+      case "radio":
+        if (!answer.answer) {
+          errors[question.id] = "Please select an option";
+          return true;
+        }
+        break;
+
+      case "table":
         const choiceAnswersTable = Array.isArray(answer.choice_answers)
           ? answer.choice_answers
           : [];
-        return choiceAnswersTable.some((row) =>
-          Object.values(row).some((value) => !value)
-        );
-      }
-
-      return false;
-    });
-
-    const confirmSubmit = window.confirm(
-      "By confirming, you agree to the terms of the agreement. Are you ready to submit the application?"
-    );
-
-    if (confirmSubmit) {
-      const method = answers.answers.length > 0 ? "PATCH" : "POST"; // Use PATCH if answers already exist
-
-      try {
-         await new Promise((resolve) => setTimeout(resolve, 2000));
-        const response = await fetchWithAuth(
-          `/api/grants/responses/${grantId}/`,
-          {
-            method: method,
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(answers),
-          }
-        );
-
-        if (response.ok) {
-          toast.success(
-            "Your application has been saved. Please proceed to upload necessary documents in order to submit."
-          );
-          const responseData = await response.json();
-          setApplicationId(responseData.application_id);
-          setShowModal(true);
-        } else {
-          console.error("Error submitting application:", response);
+        if (
+          choiceAnswersTable.some((row) =>
+            Object.values(row).some((value) => !value)
+          )
+        ) {
+          errors[question.id] = "Please fill all cells in the table";
+          return true;
         }
-      } catch (error) {
-        console.error("Error submitting application:", error);
-        toast.error(
-          "An error occurred while submitting your application. Please try again later."
-        );
-      }
-    } else {
-      navigate(-1);
+        break;
+
+      default:
+        errors[question.id] = "Invalid question type";
+        return true;
     }
-  };
+
+    return false;
+  });
+
+  if (Object.keys(errors).length > 0) {
+    setValidationErrors(errors);
+    toast.error("Please fill in all required fields before submitting.");
+    return;
+  }
+
+  const confirmSubmit = window.confirm(
+    "By confirming, you agree to the terms of the agreement. Are you ready to submit the application?"
+  );
+
+  if (confirmSubmit) {
+    const method = answers.answers.length > 0 ? "PATCH" : "POST"; // Use PATCH if answers already exist
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const response = await fetchWithAuth(
+        `/api/grants/responses/${grantId}/`,
+        {
+          method: method,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(answers),
+        }
+      );
+
+      if (response.ok) {
+        toast.success(
+          "Your application has been saved. Please proceed to upload necessary documents in order to submit."
+        );
+        const responseData = await response.json();
+        setApplicationId(responseData.application_id);
+        setShowModal(true);
+      } else {
+        console.error("Error submitting application:", response);
+      }
+    } catch (error) {
+      console.error("Error submitting application:", error);
+      toast.error(
+        "An error occurred while submitting your application. Please try again later."
+      );
+    }
+  } else {
+    navigate(-1);
+  }
+};
 
   const handleFileUpload = async () => {
     if (!applicationId) return;
