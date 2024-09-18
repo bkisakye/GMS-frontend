@@ -5,6 +5,7 @@ import ViewApplicationModal from "./ViewApplicationModal";
 import ReviewApplicationModal from "./ReviewApplicationModal";
 import { fetchWithAuth } from "../../../../utils/helpers";
 import { Spinner, Button, Table, Form } from "react-bootstrap";
+import { format } from "date-fns";
 
 export default class GrantsApplication extends Component {
   static propTypes = {
@@ -157,7 +158,7 @@ export default class GrantsApplication extends Component {
                     <th>Subgrantee Name</th>
                     <th>Grant</th>
                     <th>Application Deadline</th>
-                    <th>Donor</th>
+                    <th>Sumission Date</th>
                     <th>Status</th>
                     <th>Actions</th>
                   </tr>
@@ -171,9 +172,19 @@ export default class GrantsApplication extends Component {
                         </td>
                         <td>{application.grant?.name || "N/A"}</td>
                         <td>
-                          {application.grant?.application_deadline || "N/A"}
+                          {
+                            format(
+                              new Date(application.grant?.application_deadline),
+                              "dd MMM yyyy"
+                            )
+                          }
                         </td>
-                        <td>{application.grant?.donor_detail?.name || "N/A"}</td>
+                        <td>
+                          {format(
+                            new Date(application.date_submitted),
+                            "dd MMM yyyy"
+                          )}
+                        </td>
                         <td>{application.status}</td>
                         <td className="text-nowrap">
                           <Button
