@@ -158,7 +158,7 @@ export default class GrantsApplication extends Component {
                     <th>Subgrantee Name</th>
                     <th>Grant</th>
                     <th>Application Deadline</th>
-                    <th>Sumission Date</th>
+                    <th>Submission Date</th>
                     <th>Status</th>
                     <th>Actions</th>
                   </tr>
@@ -172,12 +172,10 @@ export default class GrantsApplication extends Component {
                         </td>
                         <td>{application.grant?.name || "N/A"}</td>
                         <td>
-                          {
-                            format(
-                              new Date(application.grant?.application_deadline),
-                              "dd MMM yyyy"
-                            )
-                          }
+                          {format(
+                            new Date(application.grant?.application_deadline),
+                            "dd MMM yyyy"
+                          )}
                         </td>
                         <td>
                           {format(
@@ -201,13 +199,15 @@ export default class GrantsApplication extends Component {
                           >
                             <AiFillEye />
                           </Button>
-                          <Button
-                            variant="outline-secondary"
-                            onClick={() => this.handleOpenModal(application.id)}
-                            title="Review Application"
-                          >
-                            <AiFillStar />
-                          </Button>
+                          {!application.reviewed && (
+                            <Button
+                              variant="outline-secondary"
+                              onClick={() => this.handleOpenModal(application.id)}
+                              title="Review Application"
+                            >
+                              <AiFillStar />
+                            </Button>
+                          )}
                         </td>
                       </tr>
                     ))

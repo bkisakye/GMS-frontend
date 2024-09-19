@@ -1,36 +1,40 @@
-import React, { Component } from "react";
+import React, { useEffect, useState } from "react";
 import { fetchWithAuth } from "../../../../utils/helpers";
 import { toast } from "react-toastify";
 
-class ReviewApplicationModal extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      score: "",
-      status: "",
-      comments: "",
-      submitting: false,
-      error: null,
-    };
-  }
+const ReviewApplicationModal = ({
+  isOpen,
+  applicationId,
+  reviewerId,
+  reviewId: initialReviewId,
+  onClose,
+}) => {
+  const [score, setScore] = useState("");
+  const [status, setStatus] = useState("");
+  const [comments, setComments] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [reviewId, setReviewId] = useState(initialReviewId || null);
+  const [files, setFiles] = useState([]);
+  const user = JSON.parse(localStorage.getItem("user"));
+  const userId = user?.user_id;
 
-  handleClickOutside = (event) => {
+  const handleClickOutside = (event) => {
     if (event.target.id === "modal-backdrop") {
-      this.props.onClose();
+      onClose();
     }
   };
 
-  handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const { score, status, comments } = this.state;
-    const { applicationId, reviewId, reviewerId } = this.props;
-
     if (!score || !status) {
-      this.setState({ error: "Please fill out all required fields." });
+      setError("Please fill out all required fields.");
       return;
     }
 
-    this.setState({ submitting: true, error: null });
+    setSubmitting(true);
+    setError(null);
 
     const reviewData = {
       score,
@@ -47,7 +51,7 @@ class ReviewApplicationModal extends Component {
 
     try {
       const response = await fetchWithAuth(url, {
-        method: method,
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(reviewData),
       });
@@ -58,47 +62,146 @@ class ReviewApplicationModal extends Component {
       }
 
       const data = await response.json();
-      toast.success("Grant Application Reviewed Successfully");
-      this.props.onSubmit(data);
-      this.props.onClose();
+      console.log("API response data:", data);
+
+   
+
+      if (!reviewId) {
+        await fetchReview();
+      }
+
+      if (window.confirm("Would you like to upload supporting files?")) {
+        setShowUploadModal(true);
+      } else {
+        onClose();
+      }
     } catch (error) {
-      this.setState({ error: error.message });
+      setError(error.message);
       toast.error(error.message);
     } finally {
-      this.setState({ submitting: false });
+      setSubmitting(false);
     }
   };
 
-  handleChange = (e) => {
-    const { name, value } = e.target;
-    this.setState({ [name]: value });
+  const fetchReview = async () => {
+    try {
+      const response = await fetchWithAuth(
+        `/api/grants/review-application/${applicationId}/`
+      );
+      const data = await response.json();
+      setReviewId(data.id);
+    } catch (error) {
+      console.error("Error fetching review:", error);
+    }
   };
 
-  render() {
-    const { isOpen } = this.props;
-    const { score, status, comments, submitting, error } = this.state;
+  useEffect(() => {
+    if (isOpen && applicationId && reviewId === null) {
+      fetchReview();
+    }
+  }, [isOpen, applicationId, reviewId]);
 
-    if (!isOpen) return null;
+  const handleFileChange = (e) => {
+    setFiles([...e.target.files]);
+    console.log("Files selected:", e.target.files);
+  };
 
-    return (
-      <div
-        className="modal fade show"
-        style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)" }}
-        id="modal-backdrop"
-        onClick={this.handleClickOutside}
-      >
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content shadow-lg rounded">
-            <div className="modal-header border-bottom-0">
-              <h5 className="modal-title">Review Grant Application</h5>
-              <button
-                type="button"
-                className="btn-close"
-                aria-label="Close"
-                onClick={this.props.onClose}
-              ></button>
-            </div>
-            <form onSubmit={this.handleSubmit}>
+  const handleFileUpload = async () => {
+    if (!reviewId) {
+      toast.error(
+        "Review ID is missing. Please try submitting the review again."
+      );
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      Array.from(files).forEach((file) => formData.append("uploads", file));
+      console.log("FormData contents:", Array.from(formData.entries()));
+
+      const url = `http://127.0.0.1:8000/api/grants/review-upload/${reviewId}/`;
+      const token = localStorage.getItem("accessToken");
+      const uploadResponse = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData, // Don't set Content-Type here; FormData will handle it
+      });
+
+      if (uploadResponse.ok) {
+          toast.success("Review Submitted Successfully");
+        setShowUploadModal(false);
+      } else {
+        console.error("Error uploading files:", await uploadResponse.json());
+        toast.error("Error uploading files");
+      }
+    } catch (error) {
+      console.error("Error handling file upload:", error);
+      toast.error("Error uploading files");
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="modal fade show"
+      style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)" }}
+      id="modal-backdrop"
+      onClick={handleClickOutside}
+    >
+      <div className="modal-dialog modal-dialog-centered">
+        <div className="modal-content shadow-lg rounded">
+          <div className="modal-header border-bottom-0">
+            <h5 className="modal-title">
+              {showUploadModal
+                ? "Upload Supporting Files"
+                : "Review Grant Application"}
+            </h5>
+            <button
+              type="button"
+              className="btn-close"
+              aria-label="Close"
+              onClick={onClose}
+            ></button>
+          </div>
+          {showUploadModal ? (
+            <>
+              <div className="modal-body">
+                {error && <div className="alert alert-danger">{error}</div>}
+                <div className="mb-3">
+                  <label htmlFor="files" className="form-label">
+                    Select Files
+                  </label>
+                  <input
+                    type="file"
+                    id="files"
+                    name="files"
+                    className="form-control"
+                    onChange={handleFileChange}
+                    multiple
+                  />
+                </div>
+                {files.length > 0 && (
+                  <div className="mb-3">
+                    <p>Selected files:</p>
+                    <ul>
+                      {Array.from(files).map((file, index) => (
+                        <li key={index}>{file.name}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer border-top-0">
+                <button className="btn btn-success" onClick={handleFileUpload}>
+                  Upload Files
+                </button>
+              </div>
+            </>
+          ) : (
+            <form onSubmit={handleSubmit}>
               <div className="modal-body">
                 {error && <div className="alert alert-danger">{error}</div>}
                 <div className="mb-3">
@@ -110,7 +213,7 @@ class ReviewApplicationModal extends Component {
                     id="status"
                     className="form-select"
                     value={status}
-                    onChange={this.handleChange}
+                    onChange={(e) => setStatus(e.target.value)}
                     required
                   >
                     <option value="">Select status</option>
@@ -127,10 +230,10 @@ class ReviewApplicationModal extends Component {
                     name="score"
                     id="score"
                     type="number"
-                    placeholder="Score(0-10)"
+                    placeholder="Score (0-100)"
                     className="form-control"
                     value={score}
-                    onChange={this.handleChange}
+                    onChange={(e) => setScore(e.target.value)}
                     required
                     min="0"
                     max="100"
@@ -146,7 +249,7 @@ class ReviewApplicationModal extends Component {
                     placeholder="Comments"
                     className="form-control"
                     value={comments}
-                    onChange={this.handleChange}
+                    onChange={(e) => setComments(e.target.value)}
                   ></textarea>
                 </div>
               </div>
@@ -160,11 +263,11 @@ class ReviewApplicationModal extends Component {
                 </button>
               </div>
             </form>
-          </div>
+          )}
         </div>
       </div>
-    );
-  }
-}
+    </div>
+  );
+};
 
 export default ReviewApplicationModal;
