@@ -64,6 +64,7 @@ const getBudgetItemDetails = (itemId) => {
   const item = budgetItems.find((item) => item.id === itemId);
   if (item) {
     return `${item.category.name} - ${item.grant_account?.grant?.name}`;
+    
   }
   return "Unknown";
 };
@@ -206,6 +207,26 @@ const handleSubmit = async () => {
         <Modal.Body>
           <Form>
             <Form.Group controlId="formAmount">
+              <Form.Group controlId="formBudgetItem">
+                <Form.Label>Budget Item</Form.Label>
+                <Form.Control
+                  as="select"
+                  value={currentAllocation?.item || ""}
+                  onChange={(e) =>
+                    setCurrentAllocation({
+                      ...currentAllocation,
+                      item: e.target.value,
+                    })
+                  }
+                >
+                  <option value="">Select a budget item</option>
+                  {budgetItems.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.category.name} - {item.grant_account?.grant?.name}
+                    </option>
+                  ))}
+                </Form.Control>
+              </Form.Group>
               <Form.Label>Amount</Form.Label>
               <Form.Control
                 type="number"
@@ -232,26 +253,6 @@ const handleSubmit = async () => {
                 }
                 placeholder="Enter description"
               />
-            </Form.Group>
-            <Form.Group controlId="formBudgetItem">
-              <Form.Label>Budget Item</Form.Label>
-              <Form.Control
-                as="select"
-                value={currentAllocation?.item || ""}
-                onChange={(e) =>
-                  setCurrentAllocation({
-                    ...currentAllocation,
-                    item: e.target.value,
-                  })
-                }
-              >
-                <option value="">Select a budget item</option>
-                {budgetItems.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.category.name} - {item.grant_account?.grant?.name}
-                  </option>
-                ))}
-              </Form.Control>
             </Form.Group>
           </Form>
         </Modal.Body>
