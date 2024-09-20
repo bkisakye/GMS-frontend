@@ -60,67 +60,98 @@ const FundingAllocation = ({ grantAccountId }) => {
     }
   };
 
-const getBudgetItemDetails = (itemId) => {
-  const item = budgetItems.find((item) => item.id === itemId);
-  if (item) {
-    return `${item.category.name} - ${item.grant_account?.grant?.name}`;
-    
-  }
-  return "Unknown";
-};
+  const getBudgetItemDetails = (itemId) => {
+    const item = budgetItems.find((item) => item.id === itemId);
+    if (item) {
+      const disbursedStatus = item.grant_account?.disbursed;
+      let disbursedLabel = "";
 
-  const handleCreate = () => {
-    setCurrentAllocation({
-      amount: "",
-      
-      description: "",
-      item: "",
-    });
-    setShowModal(true);
-  };
-
-  const handleEdit = (allocation) => {
-    setCurrentAllocation(allocation);
-    setShowModal(true);
-  };
-
-const handleSubmit = async () => {
-  try {
-    const method = currentAllocation.id ? "PATCH" : "POST";
-    const url = currentAllocation.id
-      ? `/api/grants/funding/${userId}/allocations/${currentAllocation.id}/`
-      : `/api/grants/funding/${userId}/allocations/`;
-
-    const payload = {
-      ...currentAllocation,
-      user: userId,
-      item: currentAllocation.item, 
-    };
-
-    const response = await fetchWithAuth(url, {
-      method: method,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("Failed to save allocation:", errorData);
-      toast.error("Funds allocation failed");
-      return; 
+      if (disbursedStatus === "partially_disbursed") {
+        disbursedLabel = "(Partially Disbursed)";
+      } else if (disbursedStatus === "fully_disbursed") {
+        disbursedLabel = "(Fully Disbursed)";
+      } else if (disbursedStatus === "not_disbursed") {
+        disbursedLabel = "(Not Disbursed)";
+      }
+      return `${item.category.name} - ${item.grant_account?.grant?.name}`;
     }
+    return "Unknown";
+  };
 
-    fetchAllocations(); 
-    setShowModal(false);
-    toast.success("Funds allocated successfully");
-  } catch (error) {
-    console.error("Error:", error);
-    toast.error("Funds allocation failed");
+const handleCreate = () => {
+  const disbursedItems = budgetItems.filter(
+    (item) =>
+      item.grant_account?.disbursed === "partially_disbursed" ||
+      item.grant_account?.disbursed === "fully_disbursed"
+  );
+
+  if (disbursedItems.length === 0) {
+    toast.error("No disbursed accounts available for allocation.");
+    return;
   }
+
+  setCurrentAllocation({
+    amount: "",
+    description: "",
+    item: "",
+  });
+  setShowModal(true);
 };
 
+
+const handleEdit = (allocation) => {
+  const selectedItem = budgetItems.find((item) => item.id === allocation.item);
+
+  if (
+    !selectedItem ||
+    (selectedItem.grant_account?.disbursed !== "partially_disbursed" &&
+      selectedItem.grant_account?.disbursed !== "fully_disbursed")
+  ) {
+    toast.error("This account has not been disbursed. Editing is not allowed.");
+    return;
+  }
+
+  setCurrentAllocation(allocation);
+  setShowModal(true);
+};
+
+
+  const handleSubmit = async () => {
+    try {
+      const method = currentAllocation.id ? "PATCH" : "POST";
+      const url = currentAllocation.id
+        ? `/api/grants/funding/${userId}/allocations/${currentAllocation.id}/`
+        : `/api/grants/funding/${userId}/allocations/`;
+
+      const payload = {
+        ...currentAllocation,
+        user: userId,
+        item: currentAllocation.item,
+      };
+
+      const response = await fetchWithAuth(url, {
+        method: method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Failed to save allocation:", errorData);
+        toast.error("Funds allocation failed");
+        return;
+      }
+
+      fetchAllocations();
+      setShowModal(false);
+      toast.success("Funds allocated successfully");
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("Funds allocation failed");
+    }
+  };
 
   const getBudgetItemName = (itemId) => {
     const item = budgetItems.find((item) => item.id === itemId);
@@ -220,11 +251,18 @@ const handleSubmit = async () => {
                   }
                 >
                   <option value="">Select a budget item</option>
-                  {budgetItems.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.category.name} - {item.grant_account?.grant?.name}
-                    </option>
-                  ))}
+                  {budgetItems
+                    .filter(
+                      (item) =>
+                        item.grant_account?.disbursed ===
+                          "partially_disbursed" ||
+                        item.grant_account?.disbursed === "fully_disbursed"
+                    )
+                    .map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.category.name} - {item.grant_account?.grant?.name}
+                      </option>
+                    ))}
                 </Form.Control>
               </Form.Group>
               <Form.Label>Amount</Form.Label>
