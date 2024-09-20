@@ -47,7 +47,7 @@ const ReviewApplicationModal = ({
     const url = reviewId
       ? `/api/grants/reviews/${reviewId}/`
       : `/api/grants/reviews/`;
-    const method = reviewId ? "PUT" : "POST";
+    const method = reviewId ? "PATCH" : "POST";
 
     try {
       const response = await fetchWithAuth(url, {

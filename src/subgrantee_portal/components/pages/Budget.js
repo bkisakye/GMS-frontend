@@ -196,6 +196,7 @@ const Budget = () => {
   };
 
   const handleCreateItem = async () => {
+    setError("");
     const formattedData = {
       grant_account: parseInt(newItem.grant_account),
       category: parseInt(newItem.category),
@@ -205,6 +206,23 @@ const Budget = () => {
     };
 
     try {
+      const selectedGrantAccount = grants.find(grant => grant.id === formattedData.grant_account);
+
+      if (!selecteGrantAccount) {
+        throw new Error("Selected grant account not found");
+      }
+      
+      const currentAmount = selectedGrantAccount.current_amount;
+
+      const exixtingTotal = budgetItems
+        .filter((item) => item.grant_account?.id === formattedData.grant_account)
+        .reduce((total, item) => total + parseFloat(item.amount), 0);
+      
+      if (exixtingTotal + formattedData.amount > currentAmount) {
+        setError("The total amount for this grant exceeds the amount on your account")
+        return;
+      }
+
       const response = await fetchWithAuth(
         `/api/grants/budget_item/${userId}/`,
         {
