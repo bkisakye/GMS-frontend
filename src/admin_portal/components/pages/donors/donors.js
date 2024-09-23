@@ -8,12 +8,14 @@ import {
   InputGroup,
   Button,
   Modal,
+  Spinner,
 
 } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { AiFillDelete, AiFillEdit } from "react-icons/ai";
 import { fetchWithAuth } from "../../../../utils/helpers";
-import  { toast } from "react-toastify";
+import { toast } from "react-toastify";
+import useLoadingHandler from "../../../hooks/useLoadingHandler";
 
 const DonorsPage = () => {
   const [donors, setDonors] = useState([]);
@@ -24,6 +26,7 @@ const DonorsPage = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedDonor, setSelectedDonor] = useState(null);
   const [newDonor, setNewDonor] = useState({ name: "" });
+  const { loadingStates, handleLoading } = useLoadingHandler();
 
   useEffect(() => {
     fetchDonors();
@@ -38,18 +41,14 @@ const DonorsPage = () => {
   }, [searchTerm, donors]);
 
   const fetchDonors = async () => {
-    try {
+    await handleLoading("fetchDonors", async () => {
       const response = await fetchWithAuth("/api/grants/donors/");
       if (!response.ok) {
         throw new Error("Failed to fetch donor data");
       }
       const data = await response.json();
-      setDonors(data || []); 
-    } catch (error) {
-      console.error("Error fetching donor data:", error);
-      toast.error("Failed to load donor data");
-      setDonors([]);
-    }
+      setDonors(data || []);
+    });
   };
 
   const handleEditClick = (donor) => {
@@ -79,7 +78,7 @@ const DonorsPage = () => {
   };
 
   const handleSaveEdit = async () => {
-    try {
+    await handleLoading("handleSaveEdit", async () => {
       const response = await fetchWithAuth(
         `/api/grants/donors/${selectedDonor.id}/`,
         {
@@ -100,14 +99,11 @@ const DonorsPage = () => {
       );
       handleCloseEditModal();
       toast.success("Donor updated successfully");
-    } catch (error) {
-      console.error("Error updating donor:", error);
-      toast.error("Failed to update donor");
-    }
+    });
   };
 
   const handleAddDonor = async () => {
-    try {
+    await handleLoading("handleAddDonor", async () => {
       const response = await fetchWithAuth(`/api/grants/donors/`, {
         method: "POST",
         headers: {
@@ -124,10 +120,7 @@ const DonorsPage = () => {
       setNewDonor({ name: "" });
       setShowAddModal(false);
       toast.success("Donor added successfully");
-    } catch (error) {
-      console.error("Error adding donor:", error);
-      toast.error("Failed to add donor");
-    }
+    });
   };
 
   const handleCloseAddModal = () => {
@@ -238,8 +231,12 @@ const DonorsPage = () => {
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="primary" onClick={handleSaveEdit}>
-            Save changes
+          <Button variant="primary" onClick={handleSaveEdit} disabled={loadingStates.handleSaveEdit}>
+            {loadingStates.handleSaveEdit ? (
+              <Spinner animation="border" size="sm" />
+            ) : (
+              "Save changes"
+            )}
           </Button>
         </Modal.Footer>
       </Modal>
@@ -270,7 +267,7 @@ const DonorsPage = () => {
           </Form.Group>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="primary" onClick={handleAddDonor}>
+          <Button variant="primary" onClick={handleAddDonor} disabled={loadingStates.handleAddDonor}>
             Add Donor
           </Button>
         </Modal.Footer>

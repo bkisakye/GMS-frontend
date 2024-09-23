@@ -4,6 +4,7 @@ import { MultiSelect } from "react-multi-select-component";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { toast } from "react-toastify";
+import useLoadingHandler from "../../../hooks/useLoadingHandler";
 
 const containerStyle = {
   maxWidth: "800px",
@@ -56,7 +57,7 @@ const GrantsForm = ({ grant, onSubmit }) => {
     kpis: "",
     reporting_time: "",
   });
-
+const { loadingStates, handleLoading } = useLoadingHandler();
   const [grantTypes, setGrantTypes] = useState([]);
   const [donors, setDonors] = useState([]);
   const [districts, setDistricts] = useState([]);
@@ -65,7 +66,7 @@ const GrantsForm = ({ grant, onSubmit }) => {
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
+      await handleLoading("fetchData", async () => {
         const grantTypeResponse = await fetchWithAuth(
           "/api/grants/grant-types/"
         );
@@ -91,10 +92,7 @@ const GrantsForm = ({ grant, onSubmit }) => {
             ? districtData.results
             : districtData[0]?.districts || []
         );
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        toast.error("Error fetching data.");
-      }
+      });
     };
 
     fetchData();
@@ -208,7 +206,7 @@ const GrantsForm = ({ grant, onSubmit }) => {
       reporting_time,
     };
 
-    try {
+    await handleLoading("handleSubmit", async () => {
       const url = grant
         ? `/api/grants/update-grant/${grant.id}/`
         : "/api/grants/grants/";
@@ -251,10 +249,7 @@ const GrantsForm = ({ grant, onSubmit }) => {
           reporting_time: "",
         });
       }
-    } catch (error) {
-      console.error("Error submitting grant data:", error);
-      toast.error("Failed to submit grant data. Please try again.");
-    }
+    });
   };
 
   const grantTypeOptions = grantTypes.map((type) => ({
@@ -492,8 +487,18 @@ const GrantsForm = ({ grant, onSubmit }) => {
                 onMouseOut={(e) =>
                   (e.target.style.backgroundColor = buttonStyle.backgroundColor)
                 }
+                disabled={loadingStates.handleSubmit} 
               >
-                {grant ? "Update Grant" : "Create Grant"}
+                {loadingStates.handleSubmit ? (
+                  <div className="d-flex align-items-center">
+                    <span className="spinner-border spinner-border-sm me-2"></span>
+                    <span>Loading...</span>
+                  </div>
+                ) : grant ? (
+                  "Update Grant"
+                ) : (
+                  "Create Grant"
+                )}
               </button>
             </fieldset>
           </form>

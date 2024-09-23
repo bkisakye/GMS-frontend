@@ -10,11 +10,13 @@ import {
   Modal,
   Form,
   Alert,
+  Spinner,
 } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMoneyBillWave } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "react-toastify";
-import Closeout from "./Closeout"; // Adjust the import path based on your file structure
+import Closeout from "./Closeout"; 
+import useLoadingHandler from "../../../hooks/useLoadingHandler";
 
 const Accounts = () => {
   const [accounts, setAccounts] = useState([]);
@@ -27,13 +29,14 @@ const Accounts = () => {
   const [budgetTotal, setBudgetTotal] = useState(0);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { loadingStates, handleLoading } = useLoadingHandler();
 
   useEffect(() => {
     fetchAccountsAndDisbursements();
   }, []);
 
   const fetchAccountsAndDisbursements = async () => {
-    try {
+    await handleLoading("fetchAccountsAndDisbursements", async () => {
       const response = await fetchWithAuth("/api/grants/grant-accounts/");
       const data = await response.json();
       setAccounts(data);
@@ -58,10 +61,7 @@ const Accounts = () => {
         {}
       );
       setDisbursements(newDisbursements);
-    } catch (error) {
-      console.error("Error fetching accounts or disbursements:", error);
-      setError("Failed to fetch accounts or disbursements.");
-    }
+    });
   };
 
   const handleCloseOutClick = (accountId) => {
@@ -114,7 +114,7 @@ const Accounts = () => {
 
     setIsSubmitting(true); // Show loading state
 
-    try {
+    await handleLoading("handleDisburse", async () => {
       const existingDisbursement = disbursements[selectedAccountId]?.[0];
       let response;
 
@@ -149,7 +149,7 @@ const Accounts = () => {
           const errorData = await response.json();
           toast.error(
             errorData.detail ||
-              "An error occurred while processing the disbursement."
+            "An error occurred while processing the disbursement."
           );
         } else {
           const errorText = await response.text();
@@ -164,12 +164,7 @@ const Accounts = () => {
       setShowDisburseModal(false);
       await fetchAccountsAndDisbursements();
       toast.success("Disbursement successful!");
-    } catch (error) {
-      console.error("Error handling disbursement:", error);
-      toast.error("An error occurred while processing the disbursement.");
-    } finally {
-      setIsSubmitting(false); // Hide loading state
-    }
+    });
   };
 
   return (
@@ -270,9 +265,19 @@ const Accounts = () => {
             <Button
               variant="primary"
               onClick={handleDisburse}
-              disabled={isSubmitting} // Disable button while submitting
+              disabled={loadingStates.handleDisburse}
             >
-              {isSubmitting ? "Submitting..." : "Submit"}
+              {loadingStates.handleDisburse ? (
+                <Spinner
+                  as="span"
+                  animation="border"
+                  size="sm"
+                  role="status"
+                  aria-hidden="true"
+                />
+              ) : (
+                "Disburse"
+              )}
             </Button>
           </Form>
         </Modal.Body>

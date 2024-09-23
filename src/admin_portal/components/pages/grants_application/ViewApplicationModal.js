@@ -18,6 +18,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import useLoadingHandler from "../../../hooks/useLoadingHandler";
 
 const ViewApplicationModal = ({ isOpen, onClose, applicationId }) => {
   const [applicationData, setApplicationData] = useState(null);
@@ -26,6 +27,7 @@ const ViewApplicationModal = ({ isOpen, onClose, applicationId }) => {
   const [error, setError] = useState(null);
   const [selectedDocument, setSelectedDocument] = useState(null);
   const contentRef = useRef(null);
+  const { loadingStates, handleLoading } = useLoadingHandler();
 
   useEffect(() => {
     if (applicationId) {

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchWithAuth } from "../../../utils/helpers";
 import { toast } from "react-toastify";
+import useLoadingHandler from "../../hooks/useLoadingHandler";
 
 const SignUpPage = () => {
   const [email, setEmail] = useState("");
@@ -13,6 +14,7 @@ const SignUpPage = () => {
   const [errorMessage, setErrorMessage] = useState(null);
   const navigate = useNavigate();
   const url = "http://127.0.0.1:8000";
+  const { loadingStates, handleLoading } = useLoadingHandler();
   
 
   const handleSubmit = async (event) => {
@@ -30,7 +32,7 @@ const SignUpPage = () => {
       return;
     }
 
-    try {
+    await handleLoading("handleSubmit", async () => {
       const response = await fetch(`${url}/api/authentication/register/`, {
         method: "POST",
         headers: {
@@ -49,14 +51,11 @@ const SignUpPage = () => {
       const data = await response.json();
 
       if (response.ok) {
-      toast.success("Sign-up successful. Please wait for admin approval.");
+        toast.success("Sign-up successful. Please wait for admin approval.");
       } else {
         toast.error(data.message || "Sign-up failed");
       }
-    } catch (error) {
-      console.error("Sign-up error:", error);
-      toast.success("Please wait for approval.");
-    }
+    });
   };
 
   return (
@@ -173,8 +172,14 @@ const SignUpPage = () => {
                 </div>
               </div>
 
-              <button type="submit" className="btn btn-primary w-100 mb-2">
-                Sign Up
+              <button type="submit" className="btn btn-primary w-100 mb-2" disabled={loadingStates.handleSubmit}>
+                {loadingStates.handleSubmit ? (
+                  <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                ) : (
+                  "Sign Up"
+                )}
               </button>
               <div className="text-center mt-4">
                 <p>

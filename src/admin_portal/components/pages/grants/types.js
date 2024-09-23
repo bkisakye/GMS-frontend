@@ -7,10 +7,12 @@ import {
   Modal,
   Alert,
   Form,
+  Spinner,
 } from "react-bootstrap";
 import { fetchWithAuth } from "../../../../utils/helpers";
 import { AiFillEdit, AiFillDelete, AiOutlineSearch } from "react-icons/ai";
 import { toast } from "react-toastify";
+import useLoadingHandler from "../../../hooks/useLoadingHandler";
 
 const GrantTypes = () => {
   const [grantTypes, setGrantTypes] = useState([]);
@@ -24,6 +26,7 @@ const GrantTypes = () => {
     details: "",
   });
   const [error, setError] = useState(null);
+  const { loadingStates, handleLoading } = useLoadingHandler();
 
   useEffect(() => {
     fetchGrantTypes();
@@ -38,18 +41,16 @@ const GrantTypes = () => {
   }, [searchQuery, grantTypes]);
 
   const fetchGrantTypes = async () => {
-    try {
+    await handleLoading("fetchGrantTypes", async () => {
       const response = await fetchWithAuth(`/api/grants/grant-types/`);
       if (!response.ok) throw new Error("Failed to fetch Grant Types");
       const data = await response.json();
       setGrantTypes(data);
-    } catch (error) {
-      setError(error.message);
-    }
+    });
   };
 
   const handleDelete = async (id) => {
-    try {
+    await handleLoading("handleDelete", async () => {
       const response = await fetchWithAuth(`/api/grants/grant-types/${id}/`, {
         method: "DELETE",
       });
@@ -58,9 +59,7 @@ const GrantTypes = () => {
       } else {
         throw new Error("Failed to delete Grant Type");
       }
-    } catch (error) {
-      toast.error("Failed to delete Grant Type");
-    }
+    });
   };
 
   const handleSearchChange = (event) => {
@@ -76,26 +75,24 @@ const GrantTypes = () => {
   const handleCloseEditModal = () => setShowEditModal(false);
 
   const handleAddGrantType = async () => {
-    try {
+    await handleLoading("handleAddGrantType", async () => {
       const response = await fetchWithAuth("/api/grants/grant-types/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newGrantType),
       });
       if (!response.ok) {
-toast.error("Failed to add Grant Type");
+        toast.error("Failed to add Grant Type");
       }
       const data = await response.json();
       setGrantTypes([...grantTypes, data]);
       handleCloseAddModal();
       toast.success("Grant Type added successfully");
-    } catch (error) {
-      toast.error("Failed to add Grant Type");
-    }
+    });
   };
 
   const handleEditGrantType = async () => {
-    try {
+    await handleLoading("handleEditGrantType", async () => {
       const response = await fetchWithAuth(
         `/api/grants/grant-types/${selectedGrantType.id}/`,
         {
@@ -114,9 +111,7 @@ toast.error("Failed to add Grant Type");
       } else {
         toast.error("Failed to update Grant Type");
       }
-    } catch (error) {
-      setError(error.message);
-    }
+    });
   };
 
   return (
@@ -218,11 +213,12 @@ toast.error("Failed to add Grant Type");
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseAddModal}>
-            Close
-          </Button>
-          <Button variant="primary" onClick={handleAddGrantType}>
-            Save
+          <Button variant="primary" onClick={handleAddGrantType} disabled={loadingStates.handleAddGrantType}>
+            {loadingStates.handleAddGrantType ? (
+              <Spinner animation="border" size="sm" />
+            ) : (
+              "Add"
+            )}
           </Button>
         </Modal.Footer>
       </Modal>
@@ -264,11 +260,12 @@ toast.error("Failed to add Grant Type");
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseEditModal}>
-            Close
-          </Button>
-          <Button variant="primary" onClick={handleEditGrantType}>
-            Save Changes
+          <Button variant="primary" onClick={handleEditGrantType} disabled={loadingStates.handleEditGrantType}>
+            {loadingStates.handleEditGrantType ? (
+              <Spinner animation="border" size="sm" />
+            ) : (
+              "Save Changes"
+            )}
           </Button>
         </Modal.Footer>
       </Modal>

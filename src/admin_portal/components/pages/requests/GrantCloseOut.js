@@ -7,6 +7,8 @@ import Form from "react-bootstrap/Form";
 import { BsClipboard2 } from "react-icons/bs";
 import { format } from "date-fns";
 import { toast } from "react-toastify";
+import useLoadingHandler from "../../../hooks/useLoadingHandler";
+import { Spinner } from "react-bootstrap";
 
 const GrantCloseOut = () => {
   const [requests, setRequests] = useState([]);
@@ -24,10 +26,11 @@ const GrantCloseOut = () => {
   const [showReportsModal, setShowReportsModal] = useState(false);
   const [financialReport, setFinancialReport] = useState(null);
   const [progressReport, setProgressReport] = useState(null);
+  const { loadingStates, handleLoading } = useLoadingHandler();
 
   useEffect(() => {
     const fetchRequests = async () => {
-      try {
+      await handleLoading("fetchRequests", async () => {
         const response = await fetchWithAuth("/api/grants/all-requests/");
         if (response.ok) {
           const data = await response.json();
@@ -38,9 +41,7 @@ const GrantCloseOut = () => {
             response.statusText
           );
         }
-      } catch (error) {
-        console.error("Error fetching grant closeout requests:", error);
-      }
+      });
     };
 
     fetchRequests();
@@ -57,7 +58,7 @@ const GrantCloseOut = () => {
   }, [selectedRequest]);
 
   const fetchFinancialReport = async (grantAccountId) => {
-    try {
+    await handleLoading("fetchFinancialReport", async () => {
       const response = await fetchWithAuth(
         `/api/grants/most-recent-financial-report/${grantAccountId}/`
       );
@@ -67,13 +68,11 @@ const GrantCloseOut = () => {
       } else {
         console.error("Error fetching financial report:", response.statusText);
       }
-    } catch (error) {
-      console.error("Error fetching financial report:", error);
-    }
+    });
   };
 
   const fetchProgressReport = async (grantAccountId) => {
-    try {
+    await handleLoading("fetchProgressReport", async () => {
       const response = await fetchWithAuth(
         `/api/grants/most-recent-progress-report/${grantAccountId}/`
       );
@@ -83,9 +82,7 @@ const GrantCloseOut = () => {
       } else {
         console.error("Error fetching progress report:", response.statusText);
       }
-    } catch (error) {
-      console.error("Error fetching progress report:", error);
-    }
+    });
   };
 
   const handleSearchChange = (event) => {
@@ -308,13 +305,13 @@ const handleReviewSubmit = async () => {
   }
 
   const reviewDataWithRequestId = {
-    request: selectedRequest.id, // Add the request_id here
+    request: selectedRequest.id, 
     reviewer: userId,
     comments: reviewData.comments,
     status: reviewData.status,
   };
 
-  try {
+  await handleLoading("handleReviewSubmit", async () => {
     const response = await fetchWithAuth(`/api/grants/request-reviews/`, {
       method: "POST",
       headers: {
@@ -332,9 +329,7 @@ const handleReviewSubmit = async () => {
     } else {
       console.error("Error submitting review:", response.statusText);
     }
-  } catch (error) {
-    console.error("Error submitting review:", error);
-  }
+  });
 };
 
 
@@ -529,8 +524,19 @@ const handleReviewSubmit = async () => {
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="primary" onClick={handleReviewSubmit}>
-            Submit Review
+          <Button variant="primary" onClick={handleReviewSubmit} disabled={loadingStates.handleReviewSubmit}>
+            {loadingStates.handleReviewSubmit ? (
+              <Spinner
+                as="span"
+                animation="border"
+                size="sm"
+                role="status"
+                aria-hidden="true"
+              />
+            ) : (
+              "Submit Review"
+            )}
+
           </Button>
         </Modal.Footer>
       </Modal>

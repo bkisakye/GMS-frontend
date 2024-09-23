@@ -1,18 +1,18 @@
 import React, { useState } from "react";
-import { Modal, Form, Button } from "react-bootstrap";
+import { Modal, Form, Button, Spinner } from "react-bootstrap";
 import { fetchWithAuth } from "../../../../utils/helpers";
 import { toast } from "react-toastify";
+import useLoadingHandler from "../../../hooks/useLoadingHandler";
 
 const Closeout = ({ showModal, handleClose }) => {
   const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const user = JSON.parse(localStorage.getItem("user"));
   const userId = user.id;
+  const { loadingStates, handleLoading } = useLoadingHandler();
 
 const handleSubmit = async () => {
-  setIsSubmitting(true);
-
-  try {
+  await handleLoading("handleSubmit", async () => {
     const response = await fetchWithAuth(
       `/api/grants/grant-closeout-request/`,
       {
@@ -35,19 +35,14 @@ const handleSubmit = async () => {
       const errorData = await response.json();
       toast.error(
         errorData.detail ||
-          "An error occurred while processing the closeout request."
+        "An error occurred while processing the closeout request."
       );
       throw new Error(errorData.detail || "Unexpected error");
     }
 
     toast.success("Closeout request submitted successfully!");
-    handleClose(); // Close the modal on successful submission
-  } catch (error) {
-    console.error("Error handling closeout request:", error);
-    toast.error("An error occurred while processing the closeout request.");
-  } finally {
-    setIsSubmitting(false);
-  }
+    handleClose(); 
+  });
 };
 
 
@@ -75,9 +70,20 @@ const handleSubmit = async () => {
           <Button
             variant="primary"
             onClick={handleSubmit}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "Submitting..." : "Submit"}
+            disabled={loadingStates.handleSubmit}
+          >{
+            loadingStates.handleSubmit ? (
+              <Spinner
+                as="span"
+                animation="border"
+                size="sm"
+                role="status"
+                aria-hidden="true"
+              />
+            ) : (
+              "Submit Closeout Request"
+            )
+          }
           </Button>
         </Form>
       </Modal.Body>

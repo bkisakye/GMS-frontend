@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { fetchWithAuth } from "../../../../utils/helpers";
 import { toast } from "react-toastify";
+import useLoadingHandler from "../../../hooks/useLoadingHandler";
 
 const ReviewApplicationModal = ({
   isOpen,
@@ -19,6 +20,7 @@ const ReviewApplicationModal = ({
   const [files, setFiles] = useState([]);
   const user = JSON.parse(localStorage.getItem("user"));
   const userId = user?.user_id;
+  const { loadingStates, handleLoading } = useLoadingHandler();
 
   const handleClickOutside = (event) => {
     if (event.target.id === "modal-backdrop") {
@@ -49,7 +51,7 @@ const ReviewApplicationModal = ({
       : `/api/grants/reviews/`;
     const method = reviewId ? "PATCH" : "POST";
 
-    try {
+    await handleLoading("handleSubmit", async () => {
       const response = await fetchWithAuth(url, {
         method,
         headers: { "Content-Type": "application/json" },
@@ -75,24 +77,17 @@ const ReviewApplicationModal = ({
       } else {
         onClose();
       }
-    } catch (error) {
-      setError(error.message);
-      toast.error(error.message);
-    } finally {
-      setSubmitting(false);
-    }
+    });
   };
 
   const fetchReview = async () => {
-    try {
+    await handleLoading("fetchReview", async () => {
       const response = await fetchWithAuth(
         `/api/grants/review-application/${applicationId}/`
       );
       const data = await response.json();
       setReviewId(data.id);
-    } catch (error) {
-      console.error("Error fetching review:", error);
-    }
+    });
   };
 
   useEffect(() => {
@@ -114,7 +109,7 @@ const ReviewApplicationModal = ({
       return;
     }
 
-    try {
+    await handleLoading("handleFileUpload", async () => {
       const formData = new FormData();
       Array.from(files).forEach((file) => formData.append("uploads", file));
       console.log("FormData contents:", Array.from(formData.entries()));
@@ -130,16 +125,13 @@ const ReviewApplicationModal = ({
       });
 
       if (uploadResponse.ok) {
-          toast.success("Review Submitted Successfully");
+        toast.success("Review Submitted Successfully");
         setShowUploadModal(false);
       } else {
         console.error("Error uploading files:", await uploadResponse.json());
         toast.error("Error uploading files");
       }
-    } catch (error) {
-      console.error("Error handling file upload:", error);
-      toast.error("Error uploading files");
-    }
+    });
   };
 
   if (!isOpen) return null;
@@ -195,8 +187,12 @@ const ReviewApplicationModal = ({
                 )}
               </div>
               <div className="modal-footer border-top-0">
-                <button className="btn btn-success" onClick={handleFileUpload}>
-                  Upload Files
+                <button className="btn btn-success" onClick={handleFileUpload} disabled={loadingStates.handleFileUpload}>
+                  {loadingStates.handleFileUpload ? (
+                    <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                  ) : (
+                    "Upload Files"
+                  )}
                 </button>
               </div>
             </>
@@ -257,9 +253,13 @@ const ReviewApplicationModal = ({
                 <button
                   type="submit"
                   className="btn btn-success"
-                  disabled={submitting}
-                >
-                  {submitting ? "Submitting..." : "Submit"}
+                  disabled={loadingStates.handleSubmit}
+                  >
+                    {loadingStates.handleSubmit ? (
+                      <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    ) : (
+                      "Submit"
+                    )}
                 </button>
               </div>
             </form>

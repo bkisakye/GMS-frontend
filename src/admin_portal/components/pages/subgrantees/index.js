@@ -7,16 +7,18 @@ import Button from "react-bootstrap/Button";
 import InputGroup from "react-bootstrap/InputGroup";
 import Modal from "react-bootstrap/Modal";
 import Accordion from "react-bootstrap/Accordion";
+import useLoadingHandler from "../../../hooks/useLoadingHandler";
 
 const Index = () => {
   const [data, setData] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState(null);
+  const { loadingStates, handleLoading } = useLoadingHandler();
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
+      await handleLoading("fetchData", async () => {
         const response = await fetchWithAuth(
           `/api/subgrantees/subgrantee-profiles/`
         );
@@ -25,9 +27,7 @@ const Index = () => {
         }
         const result = await response.json();
         setData(result);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
+      });
     };
 
     fetchData();

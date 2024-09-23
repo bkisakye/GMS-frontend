@@ -6,6 +6,7 @@ import {
   removeTrailingSlash,
   setTokens,
 } from "../../../utils/helpers.js";
+import useLoadingHandler from "../../hooks/useLoadingHandler.js";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -14,6 +15,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const setUser = useUser(); // Uncomment if using UserContext
   const baseUrl = removeTrailingSlash(process.env.REACT_APP_API_BASE_URL);
+  const { loadingStates, handleLoading } = useLoadingHandler();
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -22,7 +24,7 @@ const LoginPage = () => {
       return;
     }
     console.log(email, password);
-    try {
+    await handleLoading("handleSubmit", async () => {
       const response = await fetch(`${baseUrl}/api/authentication/login/`, {
         method: "POST",
         headers: {
@@ -51,10 +53,7 @@ const LoginPage = () => {
       } else {
         setErrorMessage(data.error || "Invalid credentials");
       }
-    } catch (error) {
-      console.error("Login error:", error);
-      setErrorMessage("An error occurred. Please try again later.");
-    }
+    });
   };
 
   return (
@@ -118,8 +117,12 @@ const LoginPage = () => {
                     required
                   />
                 </div>
-                <button type="submit" className="btn btn-primary w-100 mb-2">
-                  Sign In
+                <button type="submit" className="btn btn-primary w-100 mb-2" disabled={loadingStates.handleSubmit}>
+                  {loadingStates.handleSubmit ? (
+                    <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                  ) : (
+                    "Sign In"
+                  )}
                 </button>
               </form>
             </div>

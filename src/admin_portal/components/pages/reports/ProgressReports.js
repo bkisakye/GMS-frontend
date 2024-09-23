@@ -14,6 +14,7 @@ import { toast } from "react-toastify";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import "jspdf-autotable";
+import useLoadingHandler from "../../../hooks/useLoadingHandler";
 
 const ProgressReports = () => {
   const [reports, setReports] = useState([]);
@@ -22,6 +23,7 @@ const ProgressReports = () => {
   const [selectedReport, setSelectedReport] = useState(null);
   const [reviewComments, setReviewComments] = useState("");
   const [reviewerStatus, setReviewerStatus] = useState("");
+  const { loadingStates, handleLoading } = useLoadingHandler();
 
   useEffect(() => {
     fetchReports();
@@ -54,7 +56,7 @@ const ProgressReports = () => {
   };
 
   const handleReviewSubmit = async () => {
-    try {
+    await handleLoading("handleReviewSubmit", async () => {
       const response = await fetchWithAuth(
         `/api/grants/progress-reports/${selectedReport.id}/review/`,
         {
@@ -77,10 +79,10 @@ const ProgressReports = () => {
           prevReports.map((report) =>
             report.id === selectedReport.id
               ? {
-                  ...report,
-                  review_status: "reviewed", // Update the status directly
-                  reviewer_name: data.reviewer, // Update with the actual reviewer if returned
-                }
+                ...report,
+                review_status: "reviewed", // Update the status directly
+                reviewer_name: data.reviewer, // Update with the actual reviewer if returned
+              }
               : report
           )
         );
@@ -88,10 +90,7 @@ const ProgressReports = () => {
         console.error("Error reviewing report:", response.statusText);
         toast.error("Error reviewing report.");
       }
-    } catch (error) {
-      console.error("Error reviewing report:", error);
-      toast.error("Error reviewing report.");
-    }
+    });
   };
 
   const exportReportToPDF = (report) => {
@@ -247,11 +246,8 @@ const ProgressReports = () => {
           </Form.Group>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowReviewModal(false)}>
-            Close
-          </Button>
-          <Button variant="primary" onClick={handleReviewSubmit}>
-            Submit Review
+          <Button variant="primary" onClick={handleReviewSubmit} disabled={loadingStates.handleReviewSubmit}>
+            {loadingStates.handleReviewSubmit ? "Submitting..." : "Submit"}
           </Button>
         </Modal.Footer>
       </Modal>

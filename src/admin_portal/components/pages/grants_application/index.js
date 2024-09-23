@@ -6,6 +6,7 @@ import ReviewApplicationModal from "./ReviewApplicationModal";
 import { fetchWithAuth } from "../../../../utils/helpers";
 import { Spinner, Button, Table, Form } from "react-bootstrap";
 import { format } from "date-fns";
+import useLoadingHandler from "../../../hooks/useLoadingHandler";
 
 export default class GrantsApplication extends Component {
   static propTypes = {

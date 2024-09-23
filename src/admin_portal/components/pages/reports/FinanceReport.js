@@ -14,11 +14,13 @@ import {
   Modal,
   Form,
   FormGroup,
+  Spinner,
 } from "react-bootstrap";
 import { toast } from "react-toastify";
 import jsPDF from "jspdf";
 import * as XLSX from "xlsx";
 import "jspdf-autotable";
+import useLoadingHandler from "../../../hooks/useLoadingHandler";
 
 const FinanceReport = () => {
   const [reports, setReports] = useState([]);
@@ -27,6 +29,7 @@ const FinanceReport = () => {
   const [selectedReport, setSelectedReport] = useState(null);
   const [reviewComments, setReviewComments] = useState("");
   const [reviewerStatus, setReviewerStatus] = useState("");
+  const { loadingStates, handleLoading } = useLoadingHandler();
 
   useEffect(() => {
     fetchReports();
@@ -59,7 +62,7 @@ const FinanceReport = () => {
   };
 
   const handleReviewSubmit = async () => {
-    try {
+    await handleLoading("handleReviewSubmit", async () => {
       const response = await fetchWithAuth(
         `/api/grants/finance-reports/${selectedReport.id}/review/`,
         {
@@ -82,10 +85,10 @@ const FinanceReport = () => {
           prevReports.map((report) =>
             report.id === selectedReport.id
               ? {
-                  ...report,
-                  review_status: "reviewed",
-                  reviewer_name: data.reviewer,
-                }
+                ...report,
+                review_status: "reviewed",
+                reviewer_name: data.reviewer,
+              }
               : report
           )
         );
@@ -93,10 +96,7 @@ const FinanceReport = () => {
         console.error("Error submitting review:", response.statusText);
         toast.error("Error submitting review. Please try again.");
       }
-    } catch (error) {
-      console.error("Error submitting review:", error);
-      toast.error("Error submitting review. Please try again.");
-    }
+    });
   };
 
   const exportToPDF = (report) => {
@@ -354,11 +354,13 @@ const FinanceReport = () => {
           </Form.Group>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowReviewModal(false)}>
-            Close
-          </Button>
-          <Button variant="primary" onClick={handleReviewSubmit}>
-            Submit Review
+          <Button variant="primary" onClick={handleReviewSubmit} disabled={loadingStates.handleReviewSubmit}>
+            {loadingStates.handleReviewSubmit ? (
+              <Spinner animation="border" size="sm" />
+            ) : (
+              "Submit Review"
+            )
+            }
           </Button>
         </Modal.Footer>
       </Modal>

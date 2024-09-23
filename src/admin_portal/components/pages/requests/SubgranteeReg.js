@@ -8,8 +8,10 @@ import {
   faTimes,
   faSearch,
   faTrash,
+  faSpinner,
 } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "react-toastify";
+import useLoadingHandler from "../../../hooks/useLoadingHandler";
 
 const SubgranteeReg = () => {
   const [subgrantees, setSubgrantees] = useState([]);
@@ -17,10 +19,11 @@ const SubgranteeReg = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const { loadingStates, handleLoading } = useLoadingHandler(); 
 
   useEffect(() => {
     const fetchSubgrantees = async () => {
-      try {
+      await handleLoading("fetchSubgrantees", async () => {
         const response = await fetchWithAuth(
           `/api/authentication/subgrantees/`
         );
@@ -28,11 +31,7 @@ const SubgranteeReg = () => {
         const data = await response.json();
         setSubgrantees(data);
         setFilteredSubgrantees(data);
-      } catch (error) {
-        setError("Error fetching data");
-      } finally {
-        setLoading(false);
-      }
+      });
     };
 
     fetchSubgrantees();
@@ -57,7 +56,7 @@ const SubgranteeReg = () => {
   }, [searchQuery, subgrantees]);
 
   const handleApproval = async (id) => {
-    try {
+    await handleLoading("handleApproval", async () => {
       const subgrantee = subgrantees.find((sg) => sg.id === id);
       const response = await fetchWithAuth(
         `/api/authentication/admin/approve/`,
@@ -76,13 +75,11 @@ const SubgranteeReg = () => {
       setSubgrantees(updatedSubgrantees);
       setFilteredSubgrantees(updatedSubgrantees);
       toast.success("Subgrantee approved successfully");
-    } catch (error) {
-      toast.error("Error approving subgrantee");
-    }
+    });
   };
 
   const handleDecline = async (id) => {
-    try {
+    await handleLoading("handleDecline", async () => {
       const subgrantee = subgrantees.find((sg) => sg.id === id);
       const response = await fetchWithAuth(
         `/api/authentication/admin/approve/`,
@@ -103,13 +100,11 @@ const SubgranteeReg = () => {
       setSubgrantees(updatedSubgrantees);
       setFilteredSubgrantees(updatedSubgrantees);
       toast.success("Subgrantee declined successfully");
-    } catch (error) {
-      toast.error("Error declining subgrantee");
-    }
+    });
   };
 
   const handleDelete = async (id) => {
-    try {
+    await handleLoading("handleDelete", async () => {
       const response = await fetchWithAuth(
         `/api/authentication/subgrantees/${id}/delete/`,
         { method: "DELETE" }
@@ -121,9 +116,7 @@ const SubgranteeReg = () => {
       setSubgrantees(updatedSubgrantees);
       setFilteredSubgrantees(updatedSubgrantees);
       toast.success("Subgrantee deleted successfully");
-    } catch (error) {
-      toast.error("Error deleting subgrantee");
-    }
+    });
   };
 
   if (loading) return <div className="text-center">Loading...</div>;
@@ -181,22 +174,38 @@ const SubgranteeReg = () => {
                       <button
                         className="btn btn-success btn-sm me-2"
                         onClick={() => handleApproval(subgrantee.id)}
+                        disabled={loadingStates.handleApproval}
                       >
-                        <FontAwesomeIcon icon={faCheck} />
+                        {loadingStates.handleApproval ? (
+                          <FontAwesomeIcon icon={faSpinner} spin />
+                        ) : (
+                          <FontAwesomeIcon icon={faCheck} />
+                        )}
                       </button>
                       <button
                         className="btn btn-danger btn-sm"
                         onClick={() => handleDecline(subgrantee.id)}
+                        disabled={loadingStates.handleDecline}
                       >
-                        <FontAwesomeIcon icon={faTimes} />
+                        {loadingStates.handleDecline ? (
+                          <FontAwesomeIcon icon={faSpinner} spin />
+                        ) : (
+                          <FontAwesomeIcon icon={faTimes} />
+                        )}
+                        
                       </button>
                     </>
                   ) : (
                     <button
                       className="btn btn-danger btn-sm"
-                      onClick={() => handleDelete(subgrantee.id)}
-                    >
-                      <FontAwesomeIcon icon={faTrash} />
+                        onClick={() => handleDelete(subgrantee.id)}
+                        disabled={loadingStates.handleDecline}
+                      >
+                        {loadingStates.handleDecline ? (
+                          <FontAwesomeIcon icon={faSpinner} spin />
+                        ) : (
+                          <FontAwesomeIcon icon={faTrash} />
+                        )}
                     </button>
                   )}
                 </td>

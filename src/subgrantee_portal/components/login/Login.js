@@ -3,13 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../UserContext.js";
 import { fetchWithAuth, removeTrailingSlash } from "../../../utils/helpers.js";
 import { toast } from "react-toastify";
+import useLoadingHandler from "../../hooks/useLoadingHandler.js";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errorMessage, setErrorMessage] = useState(null);
   const navigate = useNavigate();
-  const  setUser  = useUser();
+  const { loadingSates, handleLoading } = useLoadingHandler();
+  const setUser = useUser();
   const baseUrl = removeTrailingSlash(process.env.REACT_APP_API_BASE_URL);
 
   const handleSubmit = async (event) => {
@@ -20,7 +21,7 @@ const LoginPage = () => {
       return;
     }
 
-    try {
+    await handleLoading("Submit", async () => {
       const response = await fetch(`${baseUrl}/api/authentication/login/`, {
         method: "POST",
         headers: {
@@ -32,28 +33,28 @@ const LoginPage = () => {
       const data = await response.json();
 
       if (response.ok && data.access) {
-        // Ensure you're checking for access token or appropriate response
         localStorage.setItem("isAuthenticated", "true");
         localStorage.setItem("accessToken", data.access);
         localStorage.setItem("refreshToken", data.refresh);
         localStorage.setItem(
           "user",
-          JSON.stringify({ name: "User", email: email, user_id: data.user_id, organisation_name:data.organisation_name })
+          JSON.stringify({
+            name: "User",
+            email: email,
+            user_id: data.user_id,
+            organisation_name: data.organisation_name,
+          })
         );
 
         if (setUser) {
-          // Update user context if available
-          setUser({ email});
+          setUser({ email });
         }
 
         navigate("/");
       } else {
         toast.error(data.error || "Invalid credentials");
       }
-    } catch (error) {
-      console.error("Login error:", error);
-      toast.error("Your have not yet been approved. Please wait for approval");
-    }
+    });
   };
 
   return (
@@ -114,8 +115,12 @@ const LoginPage = () => {
                     required
                   />
                 </div>
-                <button type="submit" className="btn btn-primary w-100 mb-2">
-                  Log In
+                <button
+                  type="submit"
+                  className="btn btn-primary w-100 mb-2"
+                  disabled={loadingSates.Submit}
+                >
+                  {loadingSates.Submit ? "Loading..." : "Login"}
                 </button>
                 {/* Sign-Up and Terms Links */}
                 <div className="text-center mt-4">

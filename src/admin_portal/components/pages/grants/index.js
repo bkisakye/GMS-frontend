@@ -15,6 +15,7 @@ import {
 } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { toast } from "react-toastify";
+import useLoadingHandler from "../../../hooks/useLoadingHandler";
 
 const GrantsTable = () => {
   const [grants, setGrants] = useState([]);
@@ -28,6 +29,7 @@ const GrantsTable = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isEditing, setIsEditing] = useState(false);
+  const { loadingStates, handleLoading } = useLoadingHandler();
 
   useEffect(() => {
     fetchGrants();
@@ -42,7 +44,7 @@ const GrantsTable = () => {
   }, [searchTerm, grants]);
 
   const fetchGrants = async () => {
-    try {
+    await handleLoading("fetchGrants", async () => {
       const response = await fetchWithAuth(
         `/api/grants/list/?page=${currentPage}`
       );
@@ -53,11 +55,7 @@ const GrantsTable = () => {
       setGrants(data.results);
       setTotalPages(Math.ceil(data.count / 10)); // Assuming 10 items per page
       setFilteredGrants(data.results);
-    } catch (error) {
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
   const handleAddGrant = () => {
@@ -89,7 +87,7 @@ const GrantsTable = () => {
   };
 
   const handleGrantSubmit = async (updatedGrant) => {
-    try {
+    await handleLoading("handleGrantSubmit", async () => {
       if (isEditing) {
         // Update existing grant
         const response = await fetchWithAuth(
@@ -141,14 +139,7 @@ const GrantsTable = () => {
 
       handleCloseFormModal();
       fetchGrants(); // Refresh the grants list
-    } catch (error) {
-      console.error("Error submitting grant:", error);
-      toast.error(
-        isEditing
-          ? "Failed to update grant. Please try again."
-          : "Failed to create grant. Please try again."
-      );
-    }
+    });
   };
 
   const goToPage = (pageNumber) => {
