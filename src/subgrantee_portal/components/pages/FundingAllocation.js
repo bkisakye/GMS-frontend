@@ -78,46 +78,64 @@ const FundingAllocation = ({ grantAccountId }) => {
     return "Unknown";
   };
 
-const handleCreate = () => {
-  const disbursedItems = budgetItems.filter(
-    (item) =>
-      item.grant_account?.disbursed === "partially_disbursed" ||
-      item.grant_account?.disbursed === "fully_disbursed"
-  );
+  const handleCreate = () => {
+    const disbursedItems = budgetItems.filter(
+      (item) =>
+        item.grant_account?.disbursed === "partially_disbursed" ||
+        item.grant_account?.disbursed === "fully_disbursed"
+    );
 
-  if (disbursedItems.length === 0) {
-    toast.error("No disbursed accounts available for allocation.");
-    return;
-  }
+    if (disbursedItems.length === 0) {
+      toast.error("No disbursed accounts available for allocation.");
+      return;
+    }
 
-  setCurrentAllocation({
-    amount: "",
-    description: "",
-    item: "",
-  });
-  setShowModal(true);
-};
+    setCurrentAllocation({
+      amount: "",
+      description: "",
+      item: "",
+    });
+    setShowModal(true);
+  };
 
+  const handleEdit = (allocation) => {
+    const selectedItem = budgetItems.find(
+      (item) => item.id === allocation.item
+    );
 
-const handleEdit = (allocation) => {
-  const selectedItem = budgetItems.find((item) => item.id === allocation.item);
+    if (
+      !selectedItem ||
+      (selectedItem.grant_account?.disbursed !== "partially_disbursed" &&
+        selectedItem.grant_account?.disbursed !== "fully_disbursed")
+    ) {
+      toast.error(
+        "This account has not been disbursed. Editing is not allowed."
+      );
+      return;
+    }
 
-  if (
-    !selectedItem ||
-    (selectedItem.grant_account?.disbursed !== "partially_disbursed" &&
-      selectedItem.grant_account?.disbursed !== "fully_disbursed")
-  ) {
-    toast.error("This account has not been disbursed. Editing is not allowed.");
-    return;
-  }
-
-  setCurrentAllocation(allocation);
-  setShowModal(true);
-};
-
+    setCurrentAllocation(allocation);
+    setShowModal(true);
+  };
 
   const handleSubmit = async () => {
     try {
+      // Find the selected budget item based on the current allocation
+      const selectedItem = budgetItems.find(
+        (item) => item.id === parseInt(currentAllocation.item)
+      );
+
+      // Validate if the allocation amount exceeds the available item amount
+      if (
+        selectedItem &&
+        parseFloat(currentAllocation.amount) > parseFloat(selectedItem.amount)
+      ) {
+        toast.error(
+          `The allocation amount cannot exceed the available budget amount of ${selectedItem.amount}.`
+        );
+        return;
+      }
+
       const method = currentAllocation.id ? "PATCH" : "POST";
       const url = currentAllocation.id
         ? `/api/grants/funding/${userId}/allocations/${currentAllocation.id}/`
@@ -198,7 +216,7 @@ const handleEdit = (allocation) => {
           {filteredAllocations.length > 0 ? (
             filteredAllocations.map((allocation) => (
               <tr key={allocation.id}>
-                <td>{getBudgetItemDetails(allocation.item)}</td>
+                <td>{allocation.item?.category?.name}</td>
                 <td>{allocation.description}</td>
                 <td>{allocation.reference_number}</td>
                 <td>{allocation.amount}</td>
