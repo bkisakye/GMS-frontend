@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchWithAuth } from "../../../utils/helpers";
+import useLoadingHandler from "../../hooks/useLoadingHandler";
 
 const formStyle = {
   maxWidth: "800px",
@@ -68,13 +69,13 @@ const Staff = () => {
     finance_manager_details: "",
   });
 
+  const { loadingStates, handleLoading } = useLoadingHandler();
   const [errors, setErrors] = useState({});
     const navigate = useNavigate();
 
     useEffect(() => {
       const fetchData = async () => {
-        try {
-          // Fetch profile data
+        await handleLoading("fetchData", async () => {
           const profileResponse = await fetchWithAuth(
             "/api/subgrantees/profiles/me/"
           );
@@ -84,11 +85,8 @@ const Staff = () => {
             ...prevData,
             ...profileData,
           }));
-        } catch (error) {
-          console.error("Error:", error);
-        }
+        });
       };
-
       fetchData();
     }, []);
 
@@ -103,20 +101,21 @@ const Staff = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("Form Data:", formData);
-    const response = await fetchWithAuth("/api/subgrantees/profiles/", {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(formData),
+    await handleLoading("SubmitData", async () => {
+      const response = await fetchWithAuth("/api/subgrantees/profiles/", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+      if (response.ok) {
+        console.log("Profile updated successfully");
+        navigate('/profile/implementation');
+      } else {
+        console.error("Failed to update profile");
+      }
     });
-    if (response.ok) {
-      console.log("Profile updated successfully");
-      navigate('/profile/implementation');
-    } else {
-      console.error("Failed to update profile");
-    }
-    
   };
 
   return (
@@ -300,8 +299,8 @@ const Staff = () => {
           />
         </div>
       )}
-      <button type="submit" style={buttonStyle}>
-        Submit
+      <button type="submit" style={buttonStyle} disabled={loadingStates.SubmitData}>
+        {loadingStates.SubmitData ? "Submitting..." : "Submit"}
       </button>
     </form>
   );

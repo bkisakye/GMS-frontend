@@ -13,6 +13,7 @@ import {
   Modal,
 } from "react-bootstrap";
 import { toast } from "react-toastify";
+import useLoadingHandler from "../../hooks/useLoadingHandler";
 
 const Report = () => {
   const [grantAccounts, setGrantAccounts] = useState([]);
@@ -27,28 +28,27 @@ const Report = () => {
   const [modalLoading, setModalLoading] = useState(false);
   const user = JSON.parse(localStorage.getItem("user"));
   const userId = user?.user_id;
-    const totalAllocated =
-      financialReport?.budget_summary?.total_allocated || 0;
-    const remainingAmount =
-      financialReport?.budget_summary?.remaining_amount || 0;
-    const totalBudget = totalAllocated + remainingAmount;
-    const expenditurePercentage = (totalAllocated / totalBudget) * 100;
-    const remainingPercentage = (remainingAmount / totalBudget) * 100;
-    const statusClass = financialReport?.budget_summary?.is_over_budget
-      ? "danger"
-      : "success";
-    const statusText = financialReport?.budget_summary?.is_over_budget
-      ? "Over Budget"
-      : "On Budget";
 
+  const totalAllocated = financialReport?.budget_summary?.total_allocated || 0;
+  const remainingAmount =
+    financialReport?.budget_summary?.remaining_amount || 0;
+  const totalBudget = totalAllocated + remainingAmount;
+  const expenditurePercentage = (totalAllocated / totalBudget) * 100;
+  const remainingPercentage = (remainingAmount / totalBudget) * 100;
+  const statusClass = financialReport?.budget_summary?.is_over_budget
+    ? "danger"
+    : "success";
+  const statusText = financialReport?.budget_summary?.is_over_budget
+    ? "Over Budget"
+    : "On Budget";
+  const { loadingStates, handleLoading } = useLoadingHandler();
 
   useEffect(() => {
     fetchGrantAccounts();
   }, [userId]);
 
   const fetchGrantAccounts = async () => {
-    setLoading(true);
-    try {
+    await handleLoading("fetchGrantAccounts", async () => {
       const response = await fetchWithAuth(
         `/api/grants/grant-account/${userId}/`
       );
@@ -59,11 +59,7 @@ const Report = () => {
       } else {
         console.error("Failed to fetch grant accounts");
       }
-    } catch (error) {
-      console.error("Error fetching grant accounts:", error);
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
   const handleSearch = (e) => {
@@ -71,43 +67,35 @@ const Report = () => {
   };
 
   const fetchProgressReport = async (grantAccountId) => {
-    setModalLoading(true);
-    try {
+    await handleLoading("fetchProgressReport", async () => {
       const response = await fetchWithAuth(
         `/api/grants/most-recent-progress-report/${grantAccountId}/`
       );
       if (response.ok) {
         const data = await response.json();
-        setProgressReport(data);
+        setProgressReport(data.report); // Use the report key
         setShowProgressModal(true);
       } else {
-        console.error("Failed to fetch progress report");
+        const errorData = await response.json();
+        toast.error(errorData.error || "Failed to fetch progress report"); // Display error message
       }
-    } catch (error) {
-      console.error("Error fetching progress report:", error);
-    } finally {
-      setModalLoading(false);
-    }
+    });
   };
 
   const fetchFinancialReport = async (grantAccountId) => {
-    setModalLoading(true);
-    try {
+    await handleLoading("fetchFinancialReport", async () => {
       const response = await fetchWithAuth(
         `/api/grants/most-recent-financial-report/${grantAccountId}/`
       );
       if (response.ok) {
         const data = await response.json();
-        setFinancialReport(data);
+        setFinancialReport(data.report); // Use the report key
         setShowFinancialModal(true);
       } else {
-        console.error("Failed to fetch financial report");
+        const errorData = await response.json();
+        toast.error(errorData.error || "Failed to fetch financial report"); // Display error message
       }
-    } catch (error) {
-      console.error("Error fetching financial report:", error);
-    } finally {
-      setModalLoading(false);
-    }
+    });
   };
 
   const handleProgressReportClick = (account) => {
@@ -333,7 +321,7 @@ const Report = () => {
       >
         <Modal.Header closeButton className="bg-success text-white">
           <Modal.Title>
-            <i className="bi bi-cash-coin me-2"></i>
+            <i className="bi bi-file-earmark-text me-2"></i>
             Financial Report
           </Modal.Title>
         </Modal.Header>
@@ -365,6 +353,18 @@ const Report = () => {
                     </td>
                   </tr>
                   <tr>
+                    <th>Total Allocated</th>
+                    <td>{financialReport.budget_summary.total_allocated}</td>
+                  </tr>
+                  <tr>
+                    <th>Remaining Amount</th>
+                    <td>{financialReport.budget_summary.remaining_amount}</td>
+                  </tr>
+                  <tr>
+                    <th>Expenditure Percentage</th>
+                    <td>{expenditurePercentage.toFixed(2)}%</td>
+                  </tr>
+                  <tr>
                     <th>Status</th>
                     <td>
                       <span className={`badge bg-${statusClass}`}>
@@ -372,58 +372,18 @@ const Report = () => {
                       </span>
                     </td>
                   </tr>
-                  <tr>
-                    <th>Total Expenditure</th>
-                    <td className="fs-4">
-                      ${financialReport.budget_summary?.total_allocated}
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Remaining Balance</th>
-                    <td className="fs-4">
-                      ${financialReport.budget_summary?.remaining_amount}
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Budget Overview</th>
-                    <td>
-                      <div className="progress" style={{ height: "25px" }}>
-                        <div
-                          className="progress-bar bg-success"
-                          role="progressbar"
-                          style={{ width: `${expenditurePercentage}%` }}
-                          aria-valuenow={expenditurePercentage}
-                          aria-valuemin="0"
-                          aria-valuemax="100"
-                        >
-                          Expenditure
-                        </div>
-                        <div
-                          className="progress-bar bg-info"
-                          role="progressbar"
-                          style={{ width: `${remainingPercentage}%` }}
-                          aria-valuenow={remainingPercentage}
-                          aria-valuemin="0"
-                          aria-valuemax="100"
-                        >
-                          Remaining
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
                 </tbody>
               </table>
             </div>
           ) : (
-            <div
-              className="alert alert-info d-flex align-items-center"
-              role="alert"
-            >
-              <i className="bi bi-info-circle-fill me-2"></i>
-              No financial report found.
-            </div>
+            <p>No financial report available</p>
           )}
         </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseFinancialModal}>
+            Close
+          </Button>
+        </Modal.Footer>
       </Modal>
     </div>
   );

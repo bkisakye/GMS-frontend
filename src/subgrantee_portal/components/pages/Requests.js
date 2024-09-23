@@ -6,9 +6,11 @@ import {
   Alert,
   InputGroup,
   FormControl,
+  Spinner,
 } from "react-bootstrap";
 import { fetchWithAuth } from "../../../utils/helpers";
 import { toast } from "react-toastify";
+import useLoadingHandler from "../../hooks/useLoadingHandler";
 
 const Requests = () => {
   const [requests, setRequests] = useState([]);
@@ -31,26 +33,22 @@ const Requests = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const user = JSON.parse(localStorage.getItem("user"));
   const userId = user?.user_id;
+  const { loadingStates, handleLoading } = useLoadingHandler();
 
   useEffect(() => {
     const fetchRequests = async () => {
-      try {
+      await handleLoading("fetchRequests", async () => {
         const response = await fetchWithAuth(`/api/grants/requests/${userId}/`);
         const data = await response.json();
         setRequests(data);
-      } catch (error) {
-        console.error("Error fetching requests:", error);
-        setError("Failed to fetch requests. Please try again later.");
-      } finally {
-        setLoading(false);
-      }
+      });
     };
     fetchRequests();
   }, [userId]);
 
   useEffect(() => {
     const fetchGrantAccounts = async () => {
-      try {
+      await handleLoading("fetchGrantAccounts", async () => {
         const response = await fetchWithAuth(
           `/api/grants/grant-account/${userId}/`
         );
@@ -62,10 +60,7 @@ const Requests = () => {
         } else {
           setError("No valid grant accounts found.");
         }
-      } catch (error) {
-        console.error("Error fetching grant accounts:", error);
-        setError("Failed to fetch grant accounts. Please try again later.");
-      }
+      });
     };
     fetchGrantAccounts();
   }, [userId]);
@@ -121,7 +116,7 @@ const Requests = () => {
       ...formData,
     };
 
-    try {
+    await handleLoading("SubmitData", async () => {
       let endpoint = "";
       if (selectedRequestType === "requirements") {
         endpoint = `/api/grants/requirements/`;
@@ -147,9 +142,7 @@ const Requests = () => {
       toast.success("Request submitted successfully");
       setShowModal(false);
       window.location.reload();
-    } catch (error) {
-      toast.error("Failed to submit request. Please try again later.");
-    }
+    });
   };
 
   const handleSearchChange = (e) => setSearchQuery(e.target.value);
@@ -183,7 +176,7 @@ const Requests = () => {
         />
       </InputGroup>
 
-      {loading ? (
+      {loadingStates.fetchRequests ? (
         <p>Loading requests...</p>
       ) : error ? (
         <Alert variant="danger">{error}</Alert>
@@ -471,15 +464,18 @@ const Requests = () => {
             )}
 
             <div className="d-flex justify-content-end mt-3">
-              <Button
-                variant="secondary"
-                onClick={() => setShowModal(false)}
-                className="me-2"
-              >
-                Close
-              </Button>
-              <Button type="submit" className="btn btn-primary">
-                Submit Request
+              <Button type="submit" className="btn btn-primary" disabled={loadingStates.SubmitData}>
+                {loadingStates.SubmitData ? (
+                  <Spinner
+                    as="span"
+                    animation="border"
+                    size="sm"
+                    role="status"
+                    aria-hidden="true"
+                  />
+                ) : (
+                  "Submit Request"
+                )}
               </Button>
             </div>
           </Form>

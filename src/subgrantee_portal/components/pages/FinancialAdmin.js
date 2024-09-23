@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { fetchWithAuth } from "../../../utils/helpers";
 import { useNavigate } from "react-router-dom";
+import useLoadingHandler from "../../hooks/useLoadingHandler";
+import { toast } from "react-toastify";
 
 const formStyle = {
   maxWidth: "800px",
@@ -90,13 +92,12 @@ const FinancialAdmin = () => {
     finance_and_admin_dtl_forensic_audit: "",
     finance_and_admin_dtl_forensic_audit_details: "",
   });
-
+  const { loadingStates, handleLoading } = useLoadingHandler();
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        // Fetch profile data
+      await handleLoading("fetchData", async () => {
         const profileResponse = await fetchWithAuth(
           "/api/subgrantees/profiles/me/"
         );
@@ -106,11 +107,8 @@ const FinancialAdmin = () => {
           ...prevData,
           ...profileData,
         }));
-      } catch (error) {
-        console.error("Error:", error);
-      }
+      });
     };
-
     fetchData();
   }, []);
 
@@ -126,20 +124,22 @@ const handleChange = (e) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("Form Data:", formData);
-    const response = await fetchWithAuth("/api/subgrantees/profiles/", {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(formData),
+    await handleLoading("SubmitData", async () => {
+      const response = await fetchWithAuth("/api/subgrantees/profiles/", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+      if (response.ok) {
+        console.log("Profile updated successfully");
+        navigate('/profile/technicalskills');
+      } else {
+        console.error("Failed to update profile");
+      }
+      e.preventDefault();
     });
-    if (response.ok) {
-      console.log("Profile updated successfully");
-      navigate('/profile/technicalskills');
-    } else {
-      console.error("Failed to update profile");
-    }
-    e.preventDefault();
   };
 
   return (
@@ -480,8 +480,8 @@ const handleChange = (e) => {
           />
         </div>
       )}
-      <button type="submit" style={buttonStyle}>
-        Submit
+      <button type="submit" style={buttonStyle} disabled={loadingStates.SubmitData}>
+        {loadingStates.SubmitData ? "Submitting..." : "Submit"}
       </button>
     </form>
   );

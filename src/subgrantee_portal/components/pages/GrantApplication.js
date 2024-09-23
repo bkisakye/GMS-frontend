@@ -11,9 +11,11 @@ import {
   Alert,
   OverlayTrigger,
   Tooltip,
+  Spinner,
 } from "react-bootstrap";
 import { toast } from "react-toastify";
 import Loading from './Loading'
+import useLoadingHandler from "../../hooks/useLoadingHandler";
 
 const ApplicationPage = () => {
   const { grantName } = useParams();
@@ -36,6 +38,7 @@ const ApplicationPage = () => {
   const [inputValues, setInputValues] = useState({});
   const [visibleQuestions, setVisibleQuestions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const { loadingStates, handleLoading } = useLoadingHandler();
 
   const questionRefs = useRef({});
 
@@ -120,7 +123,7 @@ const ApplicationPage = () => {
 
   useEffect(() => {
     const fetchQuestionsAndResponses = async () => {
-      try {
+      await handleLoading("fetchingQuestionsAndResponses", async () => {
         const questionsResponse = await fetchWithAuth("/api/grants/questions/");
         const questionsData = await questionsResponse.json();
         setQuestions(questionsData);
@@ -140,9 +143,7 @@ const ApplicationPage = () => {
 
         setAnswers({ answers: initialAnswers });
         setApplicationId(responsesData.application_id);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
+      });
     };
 
     fetchQuestionsAndResponses();
@@ -150,7 +151,7 @@ const ApplicationPage = () => {
 
   useEffect(() => {
     const fetchReviewStatus = async () => {
-      try {
+      await ("fetchingReviewStatus", async () => {
         const reviewResponse = await fetchWithAuth(
           `/api/grants/reviews/?grant=${applicationId}`
         );
@@ -158,9 +159,7 @@ const ApplicationPage = () => {
         const status = reviewData.status || "";
         setReviewStatus(status);
         setIsReadOnly(status !== "negotiate");
-      } catch (error) {
-        console.error("Error fetching review status:", error);
-      }
+      });
     };
 
     if (applicationId) {
@@ -171,7 +170,7 @@ const ApplicationPage = () => {
   useEffect(() => {
     if (applicationId && userId) {
       const fetchChoicesData = async () => {
-        try {
+        await ("fetchingChoicesData", async () => {
           const choicesResponse = await fetchWithAuth(
             `/api/grants/filtered-responses/?application_id=${applicationId}&user_id=${userId}`
           );
@@ -183,9 +182,7 @@ const ApplicationPage = () => {
           }, {});
 
           setChoicesData(choicesMap);
-        } catch (error) {
-          console.error("Error fetching choices data:", error);
-        }
+        });
       };
 
       fetchChoicesData();
@@ -195,15 +192,13 @@ const ApplicationPage = () => {
   useEffect(() => {
     if (applicationId && userId) {
       const fetchExistingDocuments = async () => {
-        try {
+        await ("fetchingExistingDocuments", async () => {
           const existingDocsResponse = await fetch(
             `http://127.0.0.1:8000/api/grants/applications/documents/?user_id=${userId}&application_id=${applicationId}`
           );
           const documentsData = await existingDocsResponse.json();
           setExistingDocuments(documentsData);
-        } catch (error) {
-          console.error("Error fetching existing documents:", error);
-        }
+        });
       };
 
       fetchExistingDocuments();
@@ -413,7 +408,7 @@ const handleSubmit = async (e) => {
   if (confirmSubmit) {
     const method = answers.answers.length > 0 ? "PATCH" : "POST"; // Use PATCH if answers already exist
 
-    try {
+    await handleLoading("SubmitData", async () => {
       await new Promise((resolve) => setTimeout(resolve, 2000));
       const response = await fetchWithAuth(
         `/api/grants/responses/${grantId}/`,
@@ -436,12 +431,7 @@ const handleSubmit = async (e) => {
       } else {
         console.error("Error submitting application:", response);
       }
-    } catch (error) {
-      console.error("Error submitting application:", error);
-      toast.error(
-        "An error occurred while submitting your application. Please try again later."
-      );
-    }
+    });
   } else {
     navigate(-1);
   }
@@ -450,7 +440,7 @@ const handleSubmit = async (e) => {
   const handleFileUpload = async () => {
     if (!applicationId) return;
 
-    try {
+    await handleLoading("FileUpload", async () => {
       const formData = new FormData();
       Object.keys(files).forEach((key) => {
         const fileArray = Array.isArray(files[key]) ? files[key] : [files[key]];
@@ -474,10 +464,7 @@ const handleSubmit = async (e) => {
       } else {
         console.error("Error uploading files:", await uploadResponse.json());
       }
-    } catch (error) {
-      console.error("Error handling file upload:", error);
-      toast.error("Failed to submit ypur application, please try again!");
-    }
+    });
   };
 
   const handleFileChange = (event, choice) => {
@@ -896,9 +883,19 @@ const handleSubmit = async (e) => {
               handleFileUpload(applicationId, files);
             }
           }}
-          disabled={isReadOnly}
+          disabled={loadingStates.SubmitData}
         >
-          Submit
+          {loadingStates.SubmitData ? (
+            <Spinner
+              as="span"
+              animation="border"
+              size="sm"
+              role="status"
+              aria-hidden="true"
+            />
+          ) : (
+            "Submit"
+          )}
         </Button>
       </Form>
       <Modal
@@ -932,15 +929,22 @@ const handleSubmit = async (e) => {
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Close
-          </Button>
           <Button
             variant="primary"
             onClick={handleFileUpload}
-            // disabled={isReadOnly}
+            disabled={loadingStates.FileUpload}
           >
-            Upload
+            {loadingStates.FileUpload ? (
+              <Spinner
+                as="span"
+                animation="border"
+                size="sm"
+                role="status"
+                aria-hidden="true"
+              />
+            ) : (
+                "Upload"
+                )}
           </Button>
         </Modal.Footer>
       </Modal>

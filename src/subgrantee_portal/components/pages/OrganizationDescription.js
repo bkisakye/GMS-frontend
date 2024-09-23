@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { fetchWithAuth } from "../../../utils/helpers";
 import { useNavigate } from "react-router-dom";
+import useLoadingHandler from "../../hooks/useLoadingHandler";
 
 const formStyle = {
   maxWidth: "800px",
@@ -48,11 +49,11 @@ const CapacityForm = () => {
     last_three_meetings_of_board: "",
   });
   const navigate = useNavigate();
+  const { loadingStates, handleLoading } = useLoadingHandler();
 
-    useEffect(() => {
+  useEffect(() => {
     const fetchData = async () => {
-      try {
-        // Fetch profile data
+      await handleLoading("fetchData", async () => {
         const profileResponse = await fetchWithAuth(
           "/api/subgrantees/profiles/me/"
         );
@@ -62,12 +63,9 @@ const CapacityForm = () => {
           ...prevData,
           ...profileData,
         }));
-      } catch (error) {
-        console.error("Error:", error);
-      }
+      });
     };
-
-           fetchData();
+    fetchData();
   }, []);
 
   const handleChange = (e) => {
@@ -81,20 +79,22 @@ const CapacityForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("Form Data:", formData);
-    const response = await fetchWithAuth("/api/subgrantees/profiles/", {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(formData),
+    await handleLoading("SubmitData", async () => {
+      const response = await fetchWithAuth("/api/subgrantees/profiles/", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+      if (response.ok) {
+        console.log("Profile updated successfully");
+        navigate("/profile/financial");
+      } else {
+        console.error("Failed to update profile");
+      }
+      e.preventDefault();
     });
-    if (response.ok) {
-      console.log("Profile updated successfully");
-      navigate('/profile/financial');
-    } else {
-      console.error("Failed to update profile");
-    }
-    e.preventDefault();
   };
 
   return (
@@ -158,8 +158,8 @@ const CapacityForm = () => {
         />
       </div>
 
-      <button type="submit" style={buttonStyle}>
-        Submit
+      <button type="submit" style={buttonStyle} disabled={loadingStates.SubmitData}>
+        {loadingStates.SubmitData ? "Submitting..." : "Submit"}
       </button>
     </form>
   );

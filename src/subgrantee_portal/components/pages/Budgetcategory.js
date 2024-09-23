@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { fetchWithAuth } from "../../../utils/helpers";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { Eye, PlusCircle, Trash } from "react-bootstrap-icons"; 
+import { Eye, PlusCircle, Trash } from "react-bootstrap-icons";
 import { Form, OverlayTrigger } from "react-bootstrap";
 import { toast } from "react-toastify";
 import { Tooltip } from "react-bootstrap";
+import useLoadingHandler from "../../hooks/useLoadingHandler";
 
 const BudgetCategory = () => {
   const [categories, setCategories] = useState([]);
@@ -22,55 +23,48 @@ const BudgetCategory = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isItemListModalOpen, setIsItemListModalOpen] = useState(false);
   const [budgetItems, setBudgetItems] = useState([]);
+  const { loadingStates, handleLoading } = useLoadingHandler();
 
   const user = JSON.parse(localStorage.getItem("user"));
   const userId = user?.user_id;
 
   useEffect(() => {
     const fetchCategories = async () => {
-      try {
+      await handleLoading("fetchActegories", async () => {
         const response = await fetchWithAuth(
           `/api/grants/budget_category/${userId}/`
         );
         const data = await response.json();
         setCategories(data);
-      } catch (err) {
-        setError("Failed to fetch categories. Please try again.");
-      }
+      });
     };
 
-const fetchGrants = async () => {
-  try {
-    const response = await fetchWithAuth(
-      `/api/grants/grant-account/${userId}/`
-    );
-    const data = await response.json();
-    if (Array.isArray(data)) {
-      setGrants(data);
-      console.log("Array of grants:", data);
-    } else if (data.grant) {
-      setGrants([data]); 
-    } else {
-      console.error("Unexpected data format:", data);
-      setError("Failed to load grants.");
-    }
-  } catch (error) {
-    console.error("Error fetching grants:", error);
-    setError("Failed to load grants.");
-  }
-};
-
+    const fetchGrants = async () => {
+      await handleLoading("fetchGrants", async () => {
+        const response = await fetchWithAuth(
+          `/api/grants/grant-account/${userId}/`
+        );
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          setGrants(data);
+          console.log("Array of grants:", data);
+        } else if (data.grant) {
+          setGrants([data]);
+        } else {
+          console.error("Unexpected data format:", data);
+          setError("Failed to load grants.");
+        }
+      });
+    };
 
     fetchCategories();
     fetchGrants();
   }, [userId]);
 
-  
-
   const handleCategorySubmit = async (event) => {
     event.preventDefault();
 
-    try {
+    await handleLoading("handleCategorySubmit", async () => {
       const response = await fetchWithAuth(
         `/api/grants/budget_category/${userId}/`,
         {
@@ -84,24 +78,22 @@ const fetchGrants = async () => {
 
       if (response.ok) {
         const newCategory = await response.json();
-        setCategories([...categories, newCategory]); 
-        
+        setCategories([...categories, newCategory]);
+
         setName("");
         setDescription("");
-        
-        setIsCategoryModalOpen(false); 
-toast.success("Budget Category added successfully!");
+
+        setIsCategoryModalOpen(false);
+        toast.success("Budget Category added successfully!");
       } else {
         toast.error("Failed to add category. Please try again.");
       }
-    } catch (err) {
-      toast.error("Failed to add category. Please try again.");
-    }
+    });
   };
 
   useEffect(() => {
     const fetchItems = async () => {
-      try {
+      await handleLoading("fetchItems", async () => {
         const response = await fetchWithAuth(
           `/api/grants/budget_item/${userId}/${selectedCategory}/`,
           {
@@ -119,9 +111,7 @@ toast.success("Budget Category added successfully!");
         } else {
           console.error("Failed to fetch budget items");
         }
-      } catch (error) {
-        console.error("Error:", error);
-      }
+      });
     };
     fetchItems();
   }, [selectedCategory, userId]);
@@ -129,7 +119,7 @@ toast.success("Budget Category added successfully!");
   const handleBudgetItemSubmit = async (event) => {
     event.preventDefault();
 
-    try {
+    await handleLoading("handleBudgetItemSubmit", async () => {
       const response = await fetchWithAuth(
         `/api/grants/budget_item/${userId}/${selectedCategory}/`,
         {
@@ -148,25 +138,23 @@ toast.success("Budget Category added successfully!");
 
       if (response.ok) {
         const newBudgetItem = await response.json();
-       
+
         setAmount("");
-        setFiscalYear(new Date().getFullYear()); 
+        setFiscalYear(new Date().getFullYear());
         setDescription("");
-        setSelectedGrant(""); 
-       
-        setIsBudgetItemModalOpen(false); 
+        setSelectedGrant("");
+
+        setIsBudgetItemModalOpen(false);
         toast.success("Budget Item added successfully!");
         window.location.reload();
       } else {
         toast.error("Failed to add budget item. Please try again.");
       }
-    } catch (err) {
-toast.error("Budget item exceeds the grant's total budget");
-    }
+    });
   };
 
   const handleDelete = async (categoryId) => {
-    try {
+    await handleLoading("handleDelete", async () => {
       const response = await fetchWithAuth(
         `/api/grants/budget_category/${userId}/${categoryId}/`,
         {
@@ -182,9 +170,7 @@ toast.error("Budget item exceeds the grant's total budget");
       } else {
         toast.error("Failed to delete category. Please try again.");
       }
-    } catch (err) {
-      toast.error("Failed to delete category. Please try again.");
-    }
+    });
   };
 
   const toggleCategoryModal = () =>
@@ -328,8 +314,14 @@ toast.error("Budget item exceeds the grant's total budget");
                     />
                   </div>
                   <div className="d-flex justify-content-end">
-                    <button type="submit" className="btn btn-primary">
-                      Add Category
+                    <button type="submit" className="btn btn-primary" disabled={loadingStates.handleCategorySubmit}>
+                      {loadingStates.handleCategorySubmit ? (
+                        <div className="spinner-border spinner-border-sm" role="status">
+                          <span className="visually-hidden">Loading...</span>
+                        </div>
+                      ) : (
+                        "Add Category"
+                      )}
                     </button>
                   </div>
                 </form>
@@ -407,14 +399,14 @@ toast.error("Budget item exceeds the grant's total budget");
                     <Form.Control
                       as="select"
                       value={selectedGrant}
-                      onChange={(e) => setSelectedGrant(e.target.value)} 
+                      onChange={(e) => setSelectedGrant(e.target.value)}
                       required
                     >
                       <option value="">Select a grant</option>
                       {grants &&
                         grants.map((grantObj) => (
                           <option key={grantObj.id} value={grantObj.id}>
-                            {grantObj.grant.name} 
+                            {grantObj.grant.name}
                           </option>
                         ))}
                     </Form.Control>
@@ -458,8 +450,14 @@ toast.error("Budget item exceeds the grant's total budget");
                     />
                   </div>
                   <div className="d-flex justify-content-end">
-                    <button type="submit" className="btn btn-primary">
-                      Add Budget Item
+                    <button type="submit" className="btn btn-primary" disabled={loadingStates.handleBudgetItemSubmit}>
+                      {loadingStates.handleBudgetItemSubmit ? (
+                        <div className="spinner-border spinner-border-sm" role="status">
+                          <span className="visually-hidden">Loading...</span>
+                        </div>
+                      ) : (
+                        "Add Budget Item"
+                      )}
                     </button>
                   </div>
                 </form>

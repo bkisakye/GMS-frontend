@@ -2,8 +2,10 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchWithAuth } from "../../../utils/helpers";
 import { toast } from "react-toastify";
+import useLoadingHandler from "../../hooks/useLoadingHandler";
 
 const Partnership = () => {
+  const { loadingStates, handleLoading } = useLoadingHandler();
   const [partnerships, setPartnerships] = useState([
     { name: "", description: "", period: "" },
   ]);
@@ -14,7 +16,7 @@ const Partnership = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
+      await handleLoading("fetchData", async () => {
         const response = await fetchWithAuth(`/api/subgrantees/profiles/me/`);
         if (response.ok) {
           const data = await response.json();
@@ -29,10 +31,7 @@ const Partnership = () => {
           console.error("Error fetching data:", errorData);
           toast.error("Error fetching data: " + errorData.message);
         }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        toast.error("Error fetching data: " + error.message);
-      }
+      });
     };
 
     fetchData();
@@ -77,7 +76,7 @@ const Partnership = () => {
       subgrants: subgrants,
     };
 
-    try {
+    await handleLoading("SubmitData", async () => {
       const response = await fetchWithAuth(`/api/subgrantees/profiles/`, {
         method: "PUT",
         body: JSON.stringify(formData),
@@ -93,10 +92,7 @@ const Partnership = () => {
         console.error("Error saving data:", errorData);
         toast.error("Error saving data: " + errorData.message);
       }
-    } catch (error) {
-      console.error("Error saving data:", error);
-      toast.error("Error saving data: " + error.message);
-    }
+    });
   };
 
   return (
@@ -241,8 +237,12 @@ const Partnership = () => {
           Add Subgrant Row
         </button>
 <br />
-        <button type="submit" className="btn btn-success">
-          Save Projects
+        <button type="submit" className="btn btn-success" disabled={loadingStates.SubmitData}>
+          {loadingStates.SubmitData ? (
+            <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          ) : (
+            "Submit"
+          )}
         </button>
       </form>
     </div>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { fetchWithAuth } from "../../../utils/helpers";
 import { useNavigate } from "react-router-dom";
+import useLoadingHandler from "../../hooks/useLoadingHandler";
 
 const formStyle = {
   maxWidth: "800px",
@@ -79,13 +80,13 @@ const SubgranteeForm = () => {
   });
 
   const navigate = useNavigate();
+  const { loadingStates, handleLoading} = useLoadingHandler();
   const [districts, setDistricts] = useState([]);
   const [categories, setCategories] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        // Fetch profile data
+      await handleLoading("fetchData", async () => {
         const profileResponse = await fetchWithAuth(
           "/api/subgrantees/profiles/me/"
         );
@@ -127,9 +128,7 @@ const SubgranteeForm = () => {
         } else {
           console.error("Invalid categories data format:", categoryData);
         }
-      } catch (error) {
-        console.error("Failed to fetch data:", error);
-      }
+        });
     };
     fetchData();
   }, []);
@@ -164,20 +163,22 @@ const SubgranteeForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("Form Data:", formData);
-    const response = await fetchWithAuth("/api/subgrantees/profiles/", {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(formData),
+    await handleLoading("SubmitData", async () => {
+      const response = await fetchWithAuth("/api/subgrantees/profiles/", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+      if (response.ok) {
+        console.log("Profile updated successfully");
+        navigate('/profile/organizationdescription');
+      } else {
+        console.error("Failed to update profile");
+      }
+      e.preventDefault();
     });
-    if (response.ok) {
-      console.log("Profile updated successfully");
-      navigate('/profile/organizationdescription');
-    } else {
-      console.error("Failed to update profile");
-    }
-    e.preventDefault();
   };
 
   return (
@@ -487,8 +488,8 @@ const SubgranteeForm = () => {
         </>
       )}
 
-      <button type="submit" style={buttonStyle}>
-        Submit
+      <button type="submit" style={buttonStyle} disabled={loadingStates.SubmitData}>
+        {loadingStates.SubmitData ? "Submitting..." : "Submit"}
       </button>
     </form>
   );

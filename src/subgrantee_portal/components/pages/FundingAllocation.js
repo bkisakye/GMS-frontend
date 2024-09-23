@@ -8,10 +8,12 @@ import {
   FormControl,
   Tooltip,
   OverlayTrigger,
+  Spinner,
 } from "react-bootstrap";
 import { fetchWithAuth } from "../../../utils/helpers";
 import { AiFillEdit } from "react-icons/ai";
 import { toast } from "react-toastify";
+import useLoadingHandler from "../../hooks/useLoadingHandler";
 
 const FundingAllocation = ({ grantAccountId }) => {
   const [allocations, setAllocations] = useState([]);
@@ -19,7 +21,7 @@ const FundingAllocation = ({ grantAccountId }) => {
   const [currentAllocation, setCurrentAllocation] = useState(null);
   const [budgetItems, setBudgetItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-
+const  { loadingStates, handleLoading } = useLoadingHandler();
   const user = JSON.parse(localStorage.getItem("user"));
   const userId = user?.user_id;
 
@@ -29,7 +31,7 @@ const FundingAllocation = ({ grantAccountId }) => {
   }, [grantAccountId]);
 
   const fetchAllocations = async () => {
-    try {
+    await handleLoading("fetchAllocations", async () => {
       const response = await fetchWithAuth(
         `/api/grants/funding/${userId}/allocations/`
       );
@@ -39,13 +41,11 @@ const FundingAllocation = ({ grantAccountId }) => {
       } else {
         console.error("Failed to fetch allocations");
       }
-    } catch (error) {
-      console.error("Error:", error);
-    }
+    });
   };
 
   const fetchBudgetItems = async () => {
-    try {
+    await handleLoading("fetchBudgetItems", async () => {
       const response = await fetchWithAuth(
         `/api/grants/budget_item/${userId}/`
       );
@@ -55,9 +55,7 @@ const FundingAllocation = ({ grantAccountId }) => {
       } else {
         console.error("Failed to fetch budget items");
       }
-    } catch (error) {
-      console.error("Error:", error);
-    }
+    });
   };
 
   const getBudgetItemDetails = (itemId) => {
@@ -119,7 +117,7 @@ const FundingAllocation = ({ grantAccountId }) => {
   };
 
   const handleSubmit = async () => {
-    try {
+    await handleLoading("handleSubmit", async () => {
       // Find the selected budget item based on the current allocation
       const selectedItem = budgetItems.find(
         (item) => item.id === parseInt(currentAllocation.item)
@@ -165,10 +163,7 @@ const FundingAllocation = ({ grantAccountId }) => {
       fetchAllocations();
       setShowModal(false);
       toast.success("Funds allocated successfully");
-    } catch (error) {
-      console.error("Error:", error);
-      toast.error("Funds allocation failed");
-    }
+    });
   };
 
   const getBudgetItemName = (itemId) => {
@@ -216,7 +211,7 @@ const FundingAllocation = ({ grantAccountId }) => {
           {filteredAllocations.length > 0 ? (
             filteredAllocations.map((allocation) => (
               <tr key={allocation.id}>
-                <td>{allocation.item?.category?.name}</td>
+                <td>{allocation.item?.grant_account?.grant?.name} - {allocation.item.description}</td>
                 <td>{allocation.description}</td>
                 <td>{allocation.reference_number}</td>
                 <td>{allocation.amount}</td>
@@ -278,7 +273,7 @@ const FundingAllocation = ({ grantAccountId }) => {
                     )
                     .map((item) => (
                       <option key={item.id} value={item.id}>
-                        {item.category.name} - {item.grant_account?.grant?.name}
+                        {item.grant_account?.grant?.name} - {item.description}
                       </option>
                     ))}
                 </Form.Control>
@@ -313,8 +308,18 @@ const FundingAllocation = ({ grantAccountId }) => {
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="primary" onClick={handleSubmit}>
-            Save Changes
+          <Button variant="primary" onClick={handleSubmit} disabled={loadingStates.handleSubmit}>
+            {loadingStates.handleSubmit ? (
+              <Spinner
+                as="span"
+                animation="border"
+                size="sm"
+                role="status"
+                aria-hidden="true"
+              />
+            ) : (
+              "Allocate"
+            )}
           </Button>
         </Modal.Footer>
       </Modal>

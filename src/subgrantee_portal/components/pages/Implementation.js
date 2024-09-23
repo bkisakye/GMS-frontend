@@ -3,8 +3,10 @@ import { fetchWithAuth } from "../../../utils/helpers";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
+import useLoadingHandler from "../../hooks/useLoadingHandler";
 
 const Implementation = () => {
+  const { loadingStates, handleLoading } = useLoadingHandler();
   const [pastProjects, setPastProjects] = useState([
     { name: "", time_frame: "", budget: "", outcomes: "", contact: "" },
   ]);
@@ -16,7 +18,7 @@ const Implementation = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
+      await handleLoading("fetchData", async () => {
         const response = await fetchWithAuth(`/api/subgrantees/profiles/me/`);
         if (response.ok) {
           const data = await response.json();
@@ -34,10 +36,7 @@ const Implementation = () => {
           console.error("Error fetching data:", errorData);
           toast.error(errorData.message || "Error fetching project data");
         }
-      } catch (error) {
-                console.error("Fetch error:", error);
-                toast.error("Error fetching project data");
-      }
+      });
     };
     fetchData();
   }, []);
@@ -91,7 +90,7 @@ const Implementation = () => {
 
     console.log("Submitting form data:", formData);
 
-    try {
+    await handleLoading("submitData", async () => {
       const response = await fetchWithAuth(`/api/subgrantees/profiles/`, {
         method: "PUT",
         body: JSON.stringify(formData),
@@ -103,17 +102,13 @@ const Implementation = () => {
       if (response.ok) {
         const data = await response.json();
         console.log("Response data:", data);
-        toast.success("Projects updated successfully");
         navigate("/profile/partnership");
       } else {
         const errorData = await response.json();
         console.error("Error data:", errorData);
         toast.error(errorData.message || "Error updating profile");
       }
-    } catch (error) {
-      console.error("Submit Error:", error);
-      toast.error("Error updating profile");
-    }
+    });
   };
 
   return (
@@ -281,8 +276,12 @@ const Implementation = () => {
           />
         </div>
 
-        <button type="submit" className="btn btn-success">
-          Save Projects
+        <button type="submit" className="btn btn-success" disabled={loadingStates.submitData}>
+          {loadingStates.submitData ? (
+            <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          ) : (
+            "Save Projects"
+          )}
         </button>
       </form>
     </div>

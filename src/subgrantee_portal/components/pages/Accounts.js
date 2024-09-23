@@ -13,6 +13,7 @@ import {
   OverlayTrigger,
 } from "react-bootstrap";
 import { toast } from "react-toastify";
+import useLoadingHandler from "../../hooks/useLoadingHandler";
 
 const Accounts = () => {
   const [grantAccount, setGrantAccount] = useState([]);
@@ -22,7 +23,7 @@ const Accounts = () => {
   const [checkedKpis, setCheckedKpis] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState(null);
-
+  const { loadingStates, handleLoading } = useLoadingHandler();
   const user = JSON.parse(localStorage.getItem("user"));
   const userId = user?.user_id;
 
@@ -31,8 +32,10 @@ const Accounts = () => {
   }, [userId]);
 
   const fetchGrantAccounts = async () => {
-    try {
-      const response = await fetchWithAuth(`/api/grants/grant-account/${userId}/`);
+    await handleLoading("fetchGrantAccounts", async () => {
+      const response = await fetchWithAuth(
+        `/api/grants/grant-account/${userId}/`
+      );
       if (response.ok) {
         const data = await response.json();
         setGrantAccount(data);
@@ -45,44 +48,39 @@ const Accounts = () => {
       } else {
         console.error("Failed to fetch grant accounts");
       }
-    } catch (error) {
-      console.error("Error fetching grant accounts:", error);
-    }
+    });
   };
 
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
   };
 
-  const filteredAccount = grantAccount.filter(account =>
+  const filteredAccount = grantAccount.filter((account) =>
     account.grant?.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleOpenModal = async (account) => {
-   console.log("Opening modal for account:", account);
-  setSelectedAccount(account);
-  setShowModal(true);
+    console.log("Opening modal for account:", account);
+    setSelectedAccount(account);
+    setShowModal(true);
 
-  // Set the KPIs for the selected grant
-  setKpis(
-    account.grant?.kpis
-      ? account.grant.kpis.split("\n").map((kpi) => kpi.trim()) // Split by newline instead of commas if needed
-      : []
-  );
-console.log("kpi", kpis)
-  try {
-    const response = await fetchWithAuth(
-      `/api/grants/progress-report/${account.id}/`
+    // Set the KPIs for the selected grant
+    setKpis(
+      account.grant?.kpis
+        ? account.grant.kpis.split("\n").map((kpi) => kpi.trim()) // Split by newline instead of commas if needed
+        : []
     );
-    if (response.ok) {
-      const data = await response.json();
-      setCheckedKpis(data.completed_kpis || []);
-    }
-  } catch (error) {
-    console.error("Error fetching latest progress report:", error);
-  }
-};
-
+    console.log("kpi", kpis);
+    await handleLoading("handleOpenModal", async () => {
+      const response = await fetchWithAuth(
+        `/api/grants/progress-report/${account.id}/`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setCheckedKpis(data.completed_kpis || []);
+      }
+    });
+  };
 
   const handleCloseModal = () => {
     setShowModal(false);
@@ -95,44 +93,36 @@ console.log("kpi", kpis)
     );
   };
 
-const generateFinancialReport = async () => {
-  if (!selectedAccount) {
-    console.error("No account selected");
-    toast.error("No account selected");
-    return;
-  }
-
-  setLoading(true);
-  try {
-    const response = await fetchWithAuth(
-      `/api/grants/generate-report/${selectedAccount.id}/`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    if (response.ok) {
-      console.log("Financial report generated successfully");
-      toast.success("Financial Report generated successfully");
-    } else {
-      console.error("Failed to generate financial report");
-      toast.error("Failed to generate financial report");
+  const generateFinancialReport = async () => {
+    if (!selectedAccount) {
+      console.error("No account selected");
+      toast.error("No account selected");
+      return;
     }
-  } catch (error) {
-    console.error("Error generating financial report:", error);
-    toast.error("Error generating financial report");
-  } finally {
-    setLoading(false);
-  }
-};
 
+    await handleLoading("generateFinancialReport", async () => {
+      const response = await fetchWithAuth(
+        `/api/grants/generate-report/${selectedAccount.id}/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        console.log("Financial report generated successfully");
+        toast.success("Financial Report generated successfully");
+      } else {
+        console.error("Failed to generate financial report");
+        toast.error("Failed to generate financial report");
+      }
+    });
+  };
 
   const handleSubmit = async () => {
-    setLoading(true);
-    try {
+    await handleLoading("SubmitData", async () => {
       const response = await fetchWithAuth(
         `/api/grants/progress-report/${selectedAccount.id}/`,
         {
@@ -148,16 +138,13 @@ const generateFinancialReport = async () => {
 
       if (response.ok) {
         console.log("Progress report submitted successfully");
+        toast.success("Progress report submitted successfully");
         handleCloseModal();
         fetchGrantAccounts();
       } else {
         console.error("Failed to submit progress report");
       }
-    } catch (error) {
-      console.error("Error submitting progress report:", error);
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
   if (!grantAccount) {
@@ -208,7 +195,9 @@ const generateFinancialReport = async () => {
                   <OverlayTrigger
                     placement="top"
                     overlay={
-                      <Tooltip id="submit-report-tooltip">Submit Report</Tooltip>
+                      <Tooltip id="submit-report-tooltip">
+                        Submit Report
+                      </Tooltip>
                     }
                   >
                     <Button
@@ -230,9 +219,9 @@ const generateFinancialReport = async () => {
                     <Button
                       variant="success"
                       onClick={generateFinancialReport}
-                      disabled={loading}
+                      disabled={loadingStates.generateFinancialReport}
                     >
-                      {loading ? (
+                      {loadingStates.generateFinancialReport ? (
                         <Spinner animation="border" size="sm" />
                       ) : (
                         <BsFileBarGraph />
@@ -271,8 +260,8 @@ const generateFinancialReport = async () => {
           <Button variant="secondary" onClick={handleCloseModal}>
             Close
           </Button>
-          <Button variant="primary" onClick={handleSubmit} disabled={loading}>
-            {loading ? "Submitting..." : "Submit"}
+          <Button variant="primary" onClick={handleSubmit} disabled={loadingStates.SubmitData}>
+            {loadingStates.SubmitData ? "Submitting..." : "Submit"}
           </Button>
         </Modal.Footer>
       </Modal>
