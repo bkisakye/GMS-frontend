@@ -158,7 +158,7 @@ toast.success("Budget Category added successfully!");
         toast.success("Budget Item added successfully!");
         window.location.reload();
       } else {
-toast.error("Failed to add budget item. Please try again.");
+        toast.error("Failed to add budget item. Please try again.");
       }
     } catch (err) {
 toast.error("Budget item exceeds the grant's total budget");
