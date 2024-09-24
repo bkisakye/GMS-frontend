@@ -101,13 +101,16 @@ export default class GrantsApplication extends Component {
   getFilteredApplications = () => {
     const { applications, searchQuery } = this.state;
     const searchLower = searchQuery.toLowerCase();
+
     return applications.filter((application) => {
+      const organisationName = application.subgrantee?.organisation_name || "";
+      const grantName = application.grant?.name || "";
+      const status = application.status || "";
+
       return (
-        application.subgrantee?.organisation_name
-          .toLowerCase()
-          .includes(searchLower) ||
-        application.grant?.name.toLowerCase().includes(searchLower) ||
-        application.status.toLowerCase().includes(searchLower)
+        organisationName.toLowerCase().includes(searchLower) ||
+        grantName.toLowerCase().includes(searchLower) ||
+        status.toLowerCase().includes(searchLower)
       );
     });
   };
@@ -156,7 +159,7 @@ export default class GrantsApplication extends Component {
               <Table striped bordered hover>
                 <thead className="table-light">
                   <tr>
-                    <th>Subgrantee Name</th>
+                    <th>Subgrantee </th>
                     <th>Grant</th>
                     <th>Application Deadline</th>
                     <th>Submission Date</th>
@@ -203,7 +206,9 @@ export default class GrantsApplication extends Component {
                           {!application.reviewed && (
                             <Button
                               variant="outline-secondary"
-                              onClick={() => this.handleOpenModal(application.id)}
+                              onClick={() =>
+                                this.handleOpenModal(application.id)
+                              }
                               title="Review Application"
                             >
                               <AiFillStar />

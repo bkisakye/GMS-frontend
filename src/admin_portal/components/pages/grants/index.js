@@ -29,7 +29,7 @@ const GrantsTable = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isEditing, setIsEditing] = useState(false);
-  const { loadingStates, handleLoading } = useLoadingHandler();
+  const { handleLoading } = useLoadingHandler();
 
   useEffect(() => {
     fetchGrants();
@@ -45,16 +45,22 @@ const GrantsTable = () => {
 
   const fetchGrants = async () => {
     await handleLoading("fetchGrants", async () => {
-      const response = await fetchWithAuth(
-        `/api/grants/list/?page=${currentPage}`
-      );
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      try {
+        const response = await fetchWithAuth(
+          `/api/grants/list/?page=${currentPage}`
+        );
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setGrants(data.results);
+        setTotalPages(Math.ceil(data.count / 10)); // Assuming 10 items per page
+        setFilteredGrants(data.results);
+      } catch (error) {
+        setError(error.message);
+      } finally {
+        setLoading(false);
       }
-      const data = await response.json();
-      setGrants(data.results);
-      setTotalPages(Math.ceil(data.count / 10)); // Assuming 10 items per page
-      setFilteredGrants(data.results);
     });
   };
 
@@ -88,57 +94,62 @@ const GrantsTable = () => {
 
   const handleGrantSubmit = async (updatedGrant) => {
     await handleLoading("handleGrantSubmit", async () => {
-      if (isEditing) {
-        // Update existing grant
-        const response = await fetchWithAuth(
-          `/api/grants/update-grant/${updatedGrant.id}/`,
-          {
-            method: "PATCH",
+      try {
+        let response;
+        if (isEditing) {
+          // Update existing grant
+          response = await fetchWithAuth(
+            `/api/grants/update-grant/${updatedGrant.id}/`,
+            {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(updatedGrant),
+            }
+          );
+        } else {
+          // Add new grant
+          response = await fetchWithAuth("/api/grants/grants/", {
+            method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
             body: JSON.stringify(updatedGrant),
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          });
         }
-
-        const updatedGrantData = await response.json();
-        setGrants(
-          grants.map((grant) =>
-            grant.id === updatedGrantData.id ? updatedGrantData : grant
-          )
-        );
-        setFilteredGrants(
-          filteredGrants.map((grant) =>
-            grant.id === updatedGrantData.id ? updatedGrantData : grant
-          )
-        );
-        toast.success("Grant updated successfully!");
-      } else {
-        // Add new grant
-        const response = await fetchWithAuth("/api/grants/grants/", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(updatedGrant),
-        });
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const newGrantData = await response.json();
-        setGrants([...grants, newGrantData]);
-        setFilteredGrants([...filteredGrants, newGrantData]);
-        toast.success("Grant created successfully!");
-      }
+        if (isEditing) {
+          setGrants((prevGrants) =>
+            prevGrants.map((grant) =>
+              grant.id === newGrantData.id ? newGrantData : grant
+            )
+          );
+          setFilteredGrants((prevFilteredGrants) =>
+            prevFilteredGrants.map((grant) =>
+              grant.id === newGrantData.id ? newGrantData : grant
+            )
+          );
+          toast.success("Grant updated successfully!");
+        } else {
+          setGrants((prevGrants) => [...prevGrants, newGrantData]);
+          setFilteredGrants((prevFilteredGrants) => [
+            ...prevFilteredGrants,
+            newGrantData,
+          ]);
+          toast.success("Grant created successfully!");
+        }
 
-      handleCloseFormModal();
-      fetchGrants(); // Refresh the grants list
+        handleCloseFormModal();
+        fetchGrants(); // Refresh the grants list
+      } catch (error) {
+        toast.error(error.message);
+      }
     });
   };
 
@@ -146,61 +157,6 @@ const GrantsTable = () => {
     if (pageNumber >= 1 && pageNumber <= totalPages) {
       setCurrentPage(pageNumber);
     }
-  };
-
-  const buttonStyle = {
-    backgroundColor: "#007bff",
-    color: "white",
-    border: "none",
-    padding: "10px 20px",
-    margin: "0 5px",
-    cursor: "pointer",
-    borderRadius: "5px",
-    fontSize: "16px",
-  };
-
-  const disabledButtonStyle = {
-    backgroundColor: "#c0c0c0",
-    color: "#6c757d",
-    cursor: "not-allowed",
-  };
-
-  const paginationNumbersStyle = {
-    display: "flex",
-    alignItems: "center",
-    margin: "0 10px",
-  };
-
-  const paginationNumberStyle = (isActive) => ({
-    backgroundColor: isActive ? "#0056b3" : "#e9ecef",
-    color: isActive ? "white" : "#495057",
-    border: isActive ? "1px solid #0056b3" : "1px solid #dee2e6",
-    padding: "5px 15px",
-    margin: "0 5px",
-    cursor: "pointer",
-    borderRadius: "5px",
-    fontSize: "16px",
-    fontWeight: isActive ? "bold" : "normal",
-  });
-
-  const arrowStyle = {
-    backgroundColor: "#007bff",
-    color: "white",
-    border: "none",
-    padding: "10px",
-    cursor: "pointer",
-    borderRadius: "50%",
-    margin: "0 5px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "18px",
-  };
-
-  const disabledArrowStyle = {
-    backgroundColor: "#c0c0c0",
-    color: "#6c757d",
-    cursor: "not-allowed",
   };
 
   if (loading) return <Spinner animation="border" />;
@@ -244,7 +200,6 @@ const GrantsTable = () => {
                 <td>{grant.end_date}</td>
                 <td>{grant.amount}</td>
                 <td>{grant.is_open ? "✓" : "✗"}</td>
-
                 <td>
                   <Button
                     variant="info"
@@ -264,7 +219,7 @@ const GrantsTable = () => {
             ))
           ) : (
             <tr>
-              <td colSpan="6" className="text-center">
+              <td colSpan="7" className="text-center">
                 No grants available
               </td>
             </tr>
@@ -305,7 +260,7 @@ const GrantsTable = () => {
       {/* Grant Form Modal */}
       <Modal show={isFormModalOpen} onHide={handleCloseFormModal} size="lg">
         <Modal.Header closeButton>
-          <Modal.Title></Modal.Title>
+          <Modal.Title>{isEditing ? "Edit Grant" : "Add Grant"}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <GrantsForm grant={selectedGrant} onSubmit={handleGrantSubmit} />

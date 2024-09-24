@@ -29,54 +29,60 @@ const ViewApplicationModal = ({ isOpen, onClose, applicationId }) => {
   const contentRef = useRef(null);
   const { loadingStates, handleLoading } = useLoadingHandler();
 
-  useEffect(() => {
-    if (applicationId) {
-      Promise.all([
+useEffect(() => {
+  const fetchApplicationData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const [applicationResponse, documentsResponse] = await Promise.all([
         fetchWithAuth(
           `/api/grants/grant-applications/${applicationId}/specific/`
         ),
         fetchWithAuth(
           `/api/grants/applications/${applicationId}/documents/list/`
         ),
-      ])
-        .then(([applicationResponse, documentsResponse]) => {
-          if (!applicationResponse.ok || !documentsResponse.ok) {
-            throw new Error("Network response was not ok.");
-          }
-          return Promise.all([
-            applicationResponse.json(),
-            documentsResponse.json(),
-          ]);
-        })
-        .then(([applicationData, documentsData]) => {
-          const grant_id = applicationData.grant?.id || null;
-          const user_id = applicationData.subgrantee?.id || null;
+      ]);
 
-          if (grant_id && user_id) {
-            return fetchWithAuth(
-              `/api/grants/transformed-data/?user_id=${user_id}&grant_id=${grant_id}`
-            )
-              .then((response) =>
-                response.ok
-                  ? response.json()
-                  : Promise.reject("Failed to fetch transformed data.")
-              )
-              .then((transformedData) => {
-                setApplicationData(transformedData[0] || {});
-                setDocuments(documentsData.documents || []);
-                setLoading(false);
-              });
-          } else {
-            throw new Error("Grant ID or User ID is missing");
-          }
-        })
-        .catch((err) => {
-          console.error(err);
-          setError(err.message);
-          setLoading(false);
-        });
+      if (!applicationResponse.ok || !documentsResponse.ok) {
+        throw new Error("Network response was not ok.");
+      }
+
+      const [applicationData, documentsData] = await Promise.all([
+        applicationResponse.json(),
+        documentsResponse.json(),
+      ]);
+
+      const grant_id = applicationData.grant?.id;
+      const user_id = applicationData.subgrantee?.id;
+
+      if (grant_id && user_id) {
+        const transformedData = await fetchWithAuth(
+          `/api/grants/transformed-data/?user_id=${user_id}&grant_id=${grant_id}`
+        ).then((response) =>
+          response.ok
+            ? response.json()
+            : Promise.reject("Failed to fetch transformed data.")
+        );
+
+        setApplicationData(transformedData[0] || {});
+        setDocuments(documentsData.documents || []);
+      } else {
+        throw new Error("Grant ID or User ID is missing");
+      }
+    } catch (err) {
+      setError(err.message);
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
-  }, [applicationId]);
+  };
+
+  if (applicationId) {
+    fetchApplicationData();
+  }
+}, [applicationId]);
+
 
   const renderQuestion = (question) => {
     const { question_type, text, answer, choices } = question;
@@ -140,9 +146,9 @@ const ViewApplicationModal = ({ isOpen, onClose, applicationId }) => {
                   <span>{fileName}</span>
                   <a
                     href={documentUrl}
-                    download={fileName}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="btn btn-sm btn-outline-primary"
-                    onClick={(e) => e.stopPropagation()}
                   >
                     <FontAwesomeIcon icon={faEye} className="me-2" />
                     Preview

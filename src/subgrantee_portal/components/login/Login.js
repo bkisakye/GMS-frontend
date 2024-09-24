@@ -9,7 +9,7 @@ const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
-  const { loadingSates, handleLoading } = useLoadingHandler();
+  const { loadingStates, handleLoading } = useLoadingHandler();
   const setUser = useUser();
   const baseUrl = removeTrailingSlash(process.env.REACT_APP_API_BASE_URL);
 
@@ -21,7 +21,7 @@ const LoginPage = () => {
       return;
     }
 
-    await handleLoading("Submit", async () => {
+    await handleLoading("SubmitData", async () => {
       const response = await fetch(`${baseUrl}/api/authentication/login/`, {
         method: "POST",
         headers: {
@@ -118,9 +118,9 @@ const LoginPage = () => {
                 <button
                   type="submit"
                   className="btn btn-primary w-100 mb-2"
-                  disabled={loadingSates.Submit}
+                  disabled={loadingStates.SubmitData}
                 >
-                  {loadingSates.Submit ? "Loading..." : "Login"}
+                  {loadingStates.SubmitData ? "Loading..." : "Login"}
                 </button>
                 {/* Sign-Up and Terms Links */}
                 <div className="text-center mt-4">

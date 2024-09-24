@@ -151,7 +151,7 @@ const ApplicationPage = () => {
 
   useEffect(() => {
     const fetchReviewStatus = async () => {
-      await ("fetchingReviewStatus", async () => {
+      await handleLoading("fetchingReviewStatus", async () => {
         const reviewResponse = await fetchWithAuth(
           `/api/grants/reviews/?grant=${applicationId}`
         );
@@ -170,7 +170,7 @@ const ApplicationPage = () => {
   useEffect(() => {
     if (applicationId && userId) {
       const fetchChoicesData = async () => {
-        await ("fetchingChoicesData", async () => {
+        await handleLoading("fetchingChoicesData", async () => {
           const choicesResponse = await fetchWithAuth(
             `/api/grants/filtered-responses/?application_id=${applicationId}&user_id=${userId}`
           );
@@ -192,7 +192,7 @@ const ApplicationPage = () => {
   useEffect(() => {
     if (applicationId && userId) {
       const fetchExistingDocuments = async () => {
-        await ("fetchingExistingDocuments", async () => {
+        await handleLoading("fetchingExistingDocuments", async () => {
           const existingDocsResponse = await fetch(
             `http://127.0.0.1:8000/api/grants/applications/documents/?user_id=${userId}&application_id=${applicationId}`
           );
