@@ -12,7 +12,6 @@ import { fetchWithAuth } from "../../../utils/helpers";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
-
 const LandingPage = () => {
   const [grantOpportunities, setGrantOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -69,7 +68,9 @@ const LandingPage = () => {
       const profileData = await profileResponse.json();
 
       if (!profileData.has_profile) {
-        toast.error("Please complete your profile before applying for a grant.");
+        toast.error(
+          "Please complete your profile before applying for a grant."
+        );
         navigate("/profile");
         return;
       }
@@ -80,7 +81,6 @@ const LandingPage = () => {
       navigate(`/application/${grantName}`, { state: { grantId } });
     } catch (error) {
       console.error("Error handling application:", error);
-      
     } finally {
       setLoading(false);
     }
@@ -104,7 +104,7 @@ const LandingPage = () => {
 
   return (
     <Container className="mt-5">
-      <div className="text-center mb-4">
+      <div className="text-center mb-4" style={{ padding: "20px" }}>
         <h1 className="display-4 text-primary">
           Discover Our Grant Opportunities
         </h1>
@@ -121,24 +121,36 @@ const LandingPage = () => {
         ) : (
           grantOpportunities.map((grant) => (
             <Col key={grant.id} md={6} lg={4} className="mb-4">
-              <Card className="h-100 shadow-sm">
-                <Card.Header className="bg-primary text-white text-center">
+              <Card
+                className="h-100 shadow-sm"
+                style={{ borderRadius: "10px" }}
+              >
+                <Card.Header
+                  className="bg-primary text-white text-center"
+                  style={{
+                    borderTopLeftRadius: "10px",
+                    borderTopRightRadius: "10px",
+                  }}
+                >
                   <h5 className="mb-0">{grant.name}</h5>
                 </Card.Header>
                 <Card.Body>
-                  <Card.Text>
+                  <Card.Text style={{ minHeight: "80px", fontSize: "1.1rem" }}>
                     {grant.description}
                   </Card.Text>
                   <Button
                     variant="outline-primary"
                     className="w-100"
+                    style={{ borderRadius: "5px" }}
                     onClick={() => handleShow(grant)}
                   >
                     More Details
                   </Button>
                 </Card.Body>
                 <Card.Footer className="text-center">
-                  <Badge bg="success">Open</Badge>
+                  <Badge bg="success" style={{ fontSize: "0.9rem" }}>
+                    Open
+                  </Badge>
                 </Card.Footer>
               </Card>
             </Col>
@@ -188,7 +200,12 @@ const LandingPage = () => {
           </p>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="primary" onClick={handleApplyNow} disabled={loading}>
+          <Button
+            variant="primary"
+            onClick={handleApplyNow}
+            disabled={loading}
+            style={{ borderRadius: "5px" }}
+          >
             {loading ? "Checking..." : "Apply Now"}
           </Button>
         </Modal.Footer>

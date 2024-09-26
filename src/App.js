@@ -50,6 +50,7 @@ import SubgranteeReg from "./admin_portal/components/pages/requests/SubgranteeRe
 import Budgetcategory from "./subgrantee_portal/components/pages/Budgetcategory";
 import Report from "./subgrantee_portal/components/pages/Report";
 import FinanceReport from "./admin_portal/components/pages/reports/FinanceReport";
+import Applications from "./subgrantee_portal/components/pages/Applications";
 
 function App() {
   return (
@@ -97,7 +98,8 @@ function App() {
         >
           <Route index element={<LandingPage />} />
           <Route path="application/:grantName" element={<GrantApplication />} />
-          <Route path="application" element={<GrantApplication />} />
+          {/* <Route path="application" element={<GrantApplication />} /> */}
+          <Route path="applications" element={<Applications />} />
           <Route path="budget" element={<Budgetcategory />} />
           <Route path="funding-allocation" element={<FundingAllocation />} />
           <Route path="grant-accounts" element={<Accounts />} />

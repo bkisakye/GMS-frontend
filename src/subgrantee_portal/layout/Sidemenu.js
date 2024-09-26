@@ -3,7 +3,7 @@ import { NavLink } from "react-router-dom";
 import { Home, FileText, BarChart2, Settings } from "lucide-react";
 import { AiFillMoneyCollect } from "react-icons/ai";
 import { FaInbox, FaMoneyBill, FaMoneyBillWave } from "react-icons/fa";
-import { CurrencyBitcoin } from "react-bootstrap-icons";
+import { CurrencyBitcoin, Folder } from "react-bootstrap-icons";
 
 const Sidemenu = () => {
   return (
@@ -26,6 +26,19 @@ const Sidemenu = () => {
           <span>Dashboard</span>
         </NavLink>
         <NavLink
+          to="/applications"
+          className="list-group-item list-group-item-action border-0 py-3 d-flex align-items-center"
+          activeClassName="active"
+          style={({ isActive }) => ({
+            backgroundColor: isActive ? "#f8f9fa" : "transparent",
+            fontWeight: isActive ? "bold" : "normal",
+            color: isActive ? "#007bff" : "#333",
+          })}
+        >
+          <Folder size={20} className="me-3" />
+          <span>My Applications</span>
+        </NavLink>
+        <NavLink
           to="/grant-accounts"
           className="list-group-item list-group-item-action border-0 py-3 d-flex align-items-center"
           activeClassName="active"
@@ -36,7 +49,7 @@ const Sidemenu = () => {
           })}
         >
           <FileText size={20} className="me-3" />
-          <span>My Grants</span>
+          <span>My Opportunities</span>
         </NavLink>
         <NavLink
           to="/budget"
@@ -87,9 +100,7 @@ const Sidemenu = () => {
             color: isActive ? "#007bff" : "#333",
           })}
         >
-          <FaInbox size={20} className="me-3" />{" "}
-          
-          <span>Requests</span>
+          <FaInbox size={20} className="me-3" /> <span>Requests</span>
         </NavLink>
       </div>
     </div>
