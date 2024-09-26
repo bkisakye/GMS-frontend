@@ -203,7 +203,7 @@ export default class GrantsApplication extends Component {
                           >
                             <AiFillEye />
                           </Button>
-                          {!application.reviewed && (
+                          {application.status === "under_review" && (
                             <Button
                               variant="outline-secondary"
                               onClick={() =>

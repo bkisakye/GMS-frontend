@@ -14,7 +14,7 @@ import {
   Spinner,
 } from "react-bootstrap";
 import { toast } from "react-toastify";
-import Loading from './Loading'
+import Loading from "./Loading";
 import useLoadingHandler from "../../hooks/useLoadingHandler";
 
 const ApplicationPage = () => {
@@ -39,6 +39,8 @@ const ApplicationPage = () => {
   const [visibleQuestions, setVisibleQuestions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const { loadingStates, handleLoading } = useLoadingHandler();
+  const [isSigned, setIsSigned] = useState(false);
+  const [canEdit, setCanEdit] = useState(true);
 
   const questionRefs = useRef({});
 
@@ -150,32 +152,18 @@ const ApplicationPage = () => {
   }, [grantId]);
 
   useEffect(() => {
-    const fetchReviewStatus = async () => {
-      await handleLoading("fetchingReviewStatus", async () => {
-        const reviewResponse = await fetchWithAuth(
-          `/api/grants/reviews/?grant=${applicationId}`
-        );
-        const reviewData = await reviewResponse.json();
-        const status = reviewData.status || "";
-        setReviewStatus(status);
-        setIsReadOnly(status !== "negotiate");
-      });
-    };
-
-    if (applicationId) {
-      fetchReviewStatus();
-    }
-  }, [applicationId]);
-
-  useEffect(() => {
-    if (applicationId && userId) {
-      const fetchChoicesData = async () => {
+    const fetchChoicesData = async () => {
+      if (applicationId && userId) {
         await handleLoading("fetchingChoicesData", async () => {
           const choicesResponse = await fetchWithAuth(
             `/api/grants/filtered-responses/?application_id=${applicationId}&user_id=${userId}`
           );
-          const choicesData = await choicesResponse.json();
 
+          if (!choicesResponse.ok) {
+            throw new Error("Failed to fetch choices data");
+          }
+
+          const choicesData = await choicesResponse.json();
           const choicesMap = choicesData.reduce((acc, item) => {
             acc[item.question] = item.choices;
             return acc;
@@ -183,11 +171,53 @@ const ApplicationPage = () => {
 
           setChoicesData(choicesMap);
         });
-      };
+      }
 
-      fetchChoicesData();
-    }
+      if (applicationId) {
+        await handleLoading("fetchingSigned", async () => {
+          const signedResponse = await fetchWithAuth(
+            `/api/grants/grant-applications/${applicationId}/specific/`
+          );
+
+          if (!signedResponse.ok) {
+            throw new Error("Failed to fetch signed data");
+          }
+
+          const signedData = await signedResponse.json();
+          setIsSigned(signedData.signed);
+          setCanEdit(signedData.negotiate);
+        });
+      }
+    };
+
+    fetchChoicesData();
   }, [applicationId, userId]);
+
+//   useEffect(() => {
+//     const fetchReviewStatus = async () => {
+//       if (applicationId) {
+//         await handleLoading("fetchingReviewStatus", async () => {
+//           const reviewResponse = await fetchWithAuth(
+//             `/api/grants/reviews/?grant=${applicationId}`
+//           );
+
+//           if (!reviewResponse.ok) {
+//             throw new Error("Failed to fetch review status");
+//           }
+
+//           const reviewData = await reviewResponse.json();
+//           setReviewStatus(reviewData.status);
+// console.log(reviewData)
+//           setCanEdit(
+//             reviewData.status === "negotiate" ||
+//               reviewData.status === "pending"
+//           );
+//         });
+//       }
+//     };
+
+//     fetchReviewStatus();
+//   }, [applicationId, isSigned]);
 
   useEffect(() => {
     if (applicationId && userId) {
@@ -322,120 +352,120 @@ const ApplicationPage = () => {
     }));
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  const errors = {};
-  const missingFields = visibleQuestions.filter((question) => {
-    const answer = answers.answers.find(
-      (answer) => answer.question_id === question.id
-    );
-
-    if (!answer) {
-      errors[question.id] = "This field is required";
-      return true;
-    }
-
-    switch (question.question_type) {
-      case "text":
-      case "number":
-      case "date":
-        if (!answer.answer) {
-          errors[question.id] = "This field is required";
-          return true;
-        }
-        break;
-
-      case "checkbox":
-        if (
-          !Array.isArray(answer.choice_answers) ||
-          answer.choice_answers.length === 0
-        ) {
-          errors[question.id] = "Please select at least one option";
-          return true;
-        }
-        break;
-
-      case "radio":
-        if (!answer.answer) {
-          errors[question.id] = "Please select an option";
-          return true;
-        }
-        break;
-
-      case "table":
-        const choiceAnswersTable = Array.isArray(answer.choice_answers)
-          ? answer.choice_answers
-          : [];
-        if (
-          choiceAnswersTable.some((row) =>
-            Object.values(row).some((value) => !value)
-          )
-        ) {
-          errors[question.id] = "Please fill all cells in the table";
-          return true;
-        }
-        break;
-
-      default:
-        errors[question.id] = "Invalid question type";
-        return true;
-    }
-
-    return false;
-  });
-
-  if (Object.keys(errors).length > 0) {
-    setValidationErrors(errors);
-    toast.error("Please fill in all required fields before submitting.");
-    // Scroll to the first unfilled field
-    const firstUnfilledFieldId = visibleQuestions.find(
-      (question) => errors[question.id]
-    )?.id;
-    if (firstUnfilledFieldId) {
-      const fieldElement = questionRefs.current[firstUnfilledFieldId];
-      if (fieldElement) {
-        fieldElement.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
-    }
-    return;
-  }
-
-  const confirmSubmit = window.confirm(
-    "By confirming, you agree to the terms of the agreement. Are you ready to submit the application?"
-  );
-
-  if (confirmSubmit) {
-    const method = answers.answers.length > 0 ? "PATCH" : "POST"; // Use PATCH if answers already exist
-
-    await handleLoading("SubmitData", async () => {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      const response = await fetchWithAuth(
-        `/api/grants/responses/${grantId}/`,
-        {
-          method: method,
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(answers),
-        }
+    const errors = {};
+    const missingFields = visibleQuestions.filter((question) => {
+      const answer = answers.answers.find(
+        (answer) => answer.question_id === question.id
       );
 
-      if (response.ok) {
-        toast.success(
-          "Your application has been saved. Please proceed to upload necessary documents in order to submit."
-        );
-        const responseData = await response.json();
-        setApplicationId(responseData.application_id);
-        setShowModal(true);
-      } else {
-        console.error("Error submitting application:", response);
+      if (!answer) {
+        errors[question.id] = "This field is required";
+        return true;
       }
+
+      switch (question.question_type) {
+        case "text":
+        case "number":
+        case "date":
+          if (!answer.answer) {
+            errors[question.id] = "This field is required";
+            return true;
+          }
+          break;
+
+        case "checkbox":
+          if (
+            !Array.isArray(answer.choice_answers) ||
+            answer.choice_answers.length === 0
+          ) {
+            errors[question.id] = "Please select at least one option";
+            return true;
+          }
+          break;
+
+        case "radio":
+          if (!answer.answer) {
+            errors[question.id] = "Please select an option";
+            return true;
+          }
+          break;
+
+        case "table":
+          const choiceAnswersTable = Array.isArray(answer.choice_answers)
+            ? answer.choice_answers
+            : [];
+          if (
+            choiceAnswersTable.some((row) =>
+              Object.values(row).some((value) => !value)
+            )
+          ) {
+            errors[question.id] = "Please fill all cells in the table";
+            return true;
+          }
+          break;
+
+        default:
+          errors[question.id] = "Invalid question type";
+          return true;
+      }
+
+      return false;
     });
-  } else {
-    navigate(-1);
-  }
-};
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      toast.error("Please fill in all required fields before submitting.");
+      // Scroll to the first unfilled field
+      const firstUnfilledFieldId = visibleQuestions.find(
+        (question) => errors[question.id]
+      )?.id;
+      if (firstUnfilledFieldId) {
+        const fieldElement = questionRefs.current[firstUnfilledFieldId];
+        if (fieldElement) {
+          fieldElement.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }
+      return;
+    }
+
+    const confirmSubmit = window.confirm(
+      "By confirming, you agree to the terms of the agreement. Are you ready to submit the application?"
+    );
+
+    if (confirmSubmit) {
+      const method = answers.answers.length > 0 ? "PATCH" : "POST"; // Use PATCH if answers already exist
+
+      await handleLoading("SubmitData", async () => {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        const response = await fetchWithAuth(
+          `/api/grants/responses/${grantId}/`,
+          {
+            method: method,
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(answers),
+          }
+        );
+
+        if (response.ok) {
+          toast.success(
+            "Your application has been saved. Please proceed to upload necessary documents in order to submit."
+          );
+          const responseData = await response.json();
+          setApplicationId(responseData.application_id);
+          setShowModal(true);
+        } else {
+          console.error("Error submitting application:", response);
+        }
+      });
+    } else {
+      navigate(-1);
+    }
+  };
 
   const handleFileUpload = async () => {
     if (!applicationId) return;
@@ -559,8 +589,13 @@ const handleSubmit = async (e) => {
   return (
     <div style={containerStyle}>
       <h1 className="mb-4">
-        Application for Grant: {decodeURIComponent(grantName)}
+        Application for Funding Opportunity: {decodeURIComponent(grantName)}
       </h1>
+      <Alert variant="info">
+        {!canEdit
+          ? "This application has been submitted and is currently under review. You cannot edit it at this time."
+          : "You can edit this application."}
+      </Alert>
       {isLoading && <Loading />}
       <Form onSubmit={handleSubmit}>
         {Object.keys(groupedQuestions).map((section) => (
@@ -596,6 +631,7 @@ const handleSubmit = async (e) => {
                                       answer.question_id === question.id
                                   )?.answer || ""
                                 }
+                                disabled={!canEdit}
                                 onChange={(e) => handleInputChange(e, question)}
                                 onFocus={() => handleFocus(question.id)}
                                 onBlur={() => handleBlur(question.id)}
@@ -639,6 +675,7 @@ const handleSubmit = async (e) => {
                                       answer.question_id === question.id
                                   )?.answer || ""
                                 }
+                                disabled={!canEdit}
                                 onChange={(e) => handleInputChange(e, question)}
                                 onFocus={() => handleFocus(question.id)}
                                 onBlur={() => handleBlur(question.id)}
@@ -676,6 +713,7 @@ const handleSubmit = async (e) => {
                                       answer.question_id === question.id
                                   )?.answer || ""
                                 }
+                                disabled={!canEdit}
                                 onChange={(e) => handleInputChange(e, question)}
                                 onFocus={() => handleFocus(question.id)}
                                 onBlur={() => handleBlur(question.id)}
@@ -720,10 +758,10 @@ const handleSubmit = async (e) => {
                                       label={choice}
                                       value={choice}
                                       checked={isChecked}
+                                      disabled={!canEdit}
                                       onChange={(e) =>
                                         handleChange(e, question)
                                       }
-                                      disabled={isReadOnly}
                                     />
                                   );
                                 })}
@@ -766,7 +804,7 @@ const handleSubmit = async (e) => {
                                       )?.answer === choice
                                     }
                                     onChange={(e) => handleChange(e, question)}
-                                    disabled={isReadOnly}
+                                    disabled={!canEdit}
                                   />
                                 ))}
                               </div>
@@ -822,6 +860,7 @@ const handleSubmit = async (e) => {
                                                     column
                                                   ] || ""
                                                 }
+                                                disabled={!canEdit}
                                                 onChange={(e) =>
                                                   handleChange(
                                                     e,
@@ -883,7 +922,7 @@ const handleSubmit = async (e) => {
               handleFileUpload(applicationId, files);
             }
           }}
-          disabled={loadingStates.SubmitData}
+          disabled={loadingStates.SubmitData || !canEdit}
         >
           {loadingStates.SubmitData ? (
             <Spinner
@@ -943,8 +982,8 @@ const handleSubmit = async (e) => {
                 aria-hidden="true"
               />
             ) : (
-                "Upload"
-                )}
+              "Upload"
+            )}
           </Button>
         </Modal.Footer>
       </Modal>

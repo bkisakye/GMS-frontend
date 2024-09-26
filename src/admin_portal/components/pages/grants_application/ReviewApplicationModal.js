@@ -75,7 +75,9 @@ const ReviewApplicationModal = ({
       if (window.confirm("Would you like to upload supporting files?")) {
         setShowUploadModal(true);
       } else {
+        toast.success("Review submitted successfully!");
         onClose();
+        window.location.reload();
       }
     });
   };
@@ -127,6 +129,7 @@ const ReviewApplicationModal = ({
       if (uploadResponse.ok) {
         toast.success("Review Submitted Successfully");
         setShowUploadModal(false);
+        window.location.reload();
       } else {
         console.error("Error uploading files:", await uploadResponse.json());
         toast.error("Error uploading files");

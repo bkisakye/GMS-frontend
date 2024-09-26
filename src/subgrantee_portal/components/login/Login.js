@@ -3,13 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../UserContext.js";
 import { fetchWithAuth, removeTrailingSlash } from "../../../utils/helpers.js";
 import { toast } from "react-toastify";
-import useLoadingHandler from "../../hooks/useLoadingHandler.js";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
-  const { loadingStates, handleLoading } = useLoadingHandler();
   const setUser = useUser();
   const baseUrl = removeTrailingSlash(process.env.REACT_APP_API_BASE_URL);
 
@@ -21,7 +19,7 @@ const LoginPage = () => {
       return;
     }
 
-    await handleLoading("SubmitData", async () => {
+    try {
       const response = await fetch(`${baseUrl}/api/authentication/login/`, {
         method: "POST",
         headers: {
@@ -54,7 +52,10 @@ const LoginPage = () => {
       } else {
         toast.error(data.error || "Invalid credentials");
       }
-    });
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("You have not yet been approved. Please wait for approval.");
+    }
   };
 
   return (
@@ -115,12 +116,8 @@ const LoginPage = () => {
                     required
                   />
                 </div>
-                <button
-                  type="submit"
-                  className="btn btn-primary w-100 mb-2"
-                  disabled={loadingStates.SubmitData}
-                >
-                  {loadingStates.SubmitData ? "Loading..." : "Login"}
+                <button type="submit" className="btn btn-primary w-100 mb-2">
+                  Log In
                 </button>
                 {/* Sign-Up and Terms Links */}
                 <div className="text-center mt-4">
