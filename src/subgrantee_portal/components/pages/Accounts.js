@@ -77,7 +77,7 @@ const Accounts = () => {
       );
       if (response.ok) {
         const data = await response.json();
-        setCheckedKpis(data.completed_kpis || []);
+        setCheckedKpis(data.completed_pkis || []);
       }
     });
   };
