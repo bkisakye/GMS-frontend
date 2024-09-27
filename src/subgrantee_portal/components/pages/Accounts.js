@@ -93,8 +93,9 @@ const Accounts = () => {
     );
   };
 
-  const generateFinancialReport = async () => {
-    if (!selectedAccount) {
+  const generateFinancialReport = async (account) => {
+    setSelectedAccount(account);
+    if (!account) {
       console.error("No account selected");
       toast.error("No account selected");
       return;
@@ -102,7 +103,7 @@ const Accounts = () => {
 
     await handleLoading("generateFinancialReport", async () => {
       const response = await fetchWithAuth(
-        `/api/grants/generate-report/${selectedAccount.id}/`,
+        `/api/grants/generate-report/${account.id}/`,
         {
           method: "POST",
           headers: {
@@ -196,7 +197,7 @@ const Accounts = () => {
                     placement="top"
                     overlay={
                       <Tooltip id="submit-report-tooltip">
-                        Submit Report
+                        Generate Progress Report
                       </Tooltip>
                     }
                   >
@@ -218,7 +219,7 @@ const Accounts = () => {
                   >
                     <Button
                       variant="success"
-                      onClick={generateFinancialReport}
+                      onClick={() => generateFinancialReport(account)}
                       disabled={loadingStates.generateFinancialReport}
                     >
                       {loadingStates.generateFinancialReport ? (

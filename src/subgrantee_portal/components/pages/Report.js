@@ -73,11 +73,11 @@ const Report = () => {
       );
       if (response.ok) {
         const data = await response.json();
-        setProgressReport(data.report); // Use the report key
+        setProgressReport(data); 
         setShowProgressModal(true);
       } else {
         const errorData = await response.json();
-        toast.error(errorData.error || "Failed to fetch progress report"); // Display error message
+        toast.error(errorData.error || "Failed to fetch progress report"); 
       }
     });
   };
@@ -89,11 +89,11 @@ const Report = () => {
       );
       if (response.ok) {
         const data = await response.json();
-        setFinancialReport(data.report); // Use the report key
+        setFinancialReport(data); 
         setShowFinancialModal(true);
       } else {
         const errorData = await response.json();
-        toast.error(errorData.error || "Failed to fetch financial report"); // Display error message
+        toast.error(errorData.error || "Failed to fetch financial report"); 
       }
     });
   };
@@ -362,7 +362,7 @@ const Report = () => {
                   </tr>
                   <tr>
                     <th>Expenditure Percentage</th>
-                    <td>{expenditurePercentage.toFixed(2)}%</td>
+                    <td>{expenditurePercentage}%</td>
                   </tr>
                   <tr>
                     <th>Status</th>

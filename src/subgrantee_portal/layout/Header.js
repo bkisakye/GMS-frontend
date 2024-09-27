@@ -75,6 +75,9 @@ const handleNotificationClick = async (notification) => {
       case "request_review":
         navigate('/requests'); 
         break;
+      case "financial_report":
+        navigate('/reports');
+        break;
       default:
         console.error(
           "Unknown notification category:",
