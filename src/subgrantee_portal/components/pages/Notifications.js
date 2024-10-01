@@ -41,7 +41,7 @@ const Notifications = () => {
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action, is_read: true }), // Mark as read in the request body
+          body: JSON.stringify({ action, is_read: true, text: action }), // Mark as read in the request body
         }
       );
 
