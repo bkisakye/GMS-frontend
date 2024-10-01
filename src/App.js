@@ -23,7 +23,7 @@ import { BrowserRouter } from "react-router-dom";
 import GrantsForm from "./admin_portal/components/pages/grants/grant_form";
 import Signup from "./subgrantee_portal/components/login/Signup";
 import "bootstrap/dist/css/bootstrap.min.css";
-import Notifications from "./admin_portal/components/pages/Notifications";
+import Notifications from "./admin_portal/components/pages/notifications/Notifications";
 // import grant_form from './admin_portal/components/pages/grants/grant_form';
 import GrantApplication from "./subgrantee_portal/components/pages/GrantApplication";
 import ProfileCreation from "./subgrantee_portal/components/pages/ProfileCreation";

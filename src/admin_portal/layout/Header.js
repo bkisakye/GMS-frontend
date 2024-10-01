@@ -48,63 +48,8 @@ function Header({ toggleSidebar }) {
     }
   };
 
-  const handleNotificationClose = (id) => {
-    setVisibleNotifications((prevNotifications) =>
-      prevNotifications.filter((notification) => notification.id !== id)
-    );
-  };
 
-  const handleNotificationsClick = () => {
-    setNotificationsOpen(!notificationsOpen);
-    if (!notificationsOpen) {
-      fetchNotifications();
-    }
-  };
 
-  const handleNotificationClick = async (notification) => {
-      console.log("Notification Category:", notification.notification_category);
-  try {
-    if (notification.notification_category === "new_subgrantee") {
-      navigate('/admin/subgrantee-registration-request');
-    } else if (notification.notification_category === "grant_application") {
-      navigate('/admin/applications_list');
-    } else if (notification.notification_category === "requests") {
-      navigate('/admin/closeout-requests');
-    } else {
-      console.error(
-        "Unknown notification category:",
-        notification.notification_category
-      );
-    }
-  } catch (error) {
-    console.error("Navigation error:", error);
-  }
-    try {
-      const response = await fetchWithAuth(
-        `/api/notifications/${notification.id}/read/`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.ok) {
-        setNotifications((prevNotifications) =>
-          prevNotifications.map((notif) =>
-            notif.id === notification.id ? { ...notif, is_read: true } : notif
-          )
-        );
-        fetchNotificationCount(); 
-        window.location.reload();
-      } else {
-        console.error("Failed to mark notification as read:", response.status);
-      }
-    } catch (error) {
-      console.error("Error marking notification as read:", error);
-    }
-  };
 
   useEffect(() => {
     fetchNotificationCount();
@@ -159,7 +104,7 @@ function Header({ toggleSidebar }) {
               data-toggle="dropdown"
               aria-haspopup="true"
               aria-expanded="false"
-              onClick={handleNotificationsClick}
+              
             >
               <i className="icon-bell2"></i>
               {notificationCount > 0 && (
@@ -168,47 +113,7 @@ function Header({ toggleSidebar }) {
                 </span>
               )}
             </a>
-            <div
-              className="dropdown-menu dropdown-menu-right"
-              aria-labelledby="notificationsDropdown"
-            >
-              <h6 className="dropdown-header">Notifications</h6>
-              <div className="dropdown-divider"></div>
-              <div className="dropdown-menu-body">
-                {notifications.length > 0 ? (
-                  notifications.map((notification) => (
-                    <a
-                      key={notification.id}
-                      className="dropdown-item"
-                      onClick={() => handleNotificationClick(notification)}
-                    >
-                      <div className="media">
-                        <img
-                          src="global_assets/images/placeholders/placeholder.jpg"
-                          className="mr-3 rounded-circle"
-                          width="36"
-                          height="36"
-                          alt="Notification"
-                        />
-                        <div className="media-body">
-                          <h6 className="mt-0 font-weight-bold">
-                            {notification.text}
-                          </h6>
-                          <small className="text-muted">
-                            {new Date(
-                              notification.timestamp
-                            ).toLocaleTimeString()}
-                          </small>
-                        </div>
-                      </div>
-                    </a>
-                  ))
-                ) : (
-                  <a className="dropdown-item">No notifications</a>
-                )}
-              </div>
-              <div className="dropdown-divider"></div>
-            </div>
+           
           </li>
           <li className="nav-item dropdown">
             <a
@@ -244,19 +149,6 @@ function Header({ toggleSidebar }) {
           </li>
         </ul>
       </div>
-      <ToastContainer position="top-end" className="p-3">
-        {visibleNotifications.map((notification) => (
-          <Toast
-            key={notification.id}
-            onClose={() => handleNotificationClose(notification.id)}
-            bg="light"
-            delay={5000}
-            autohide
-          >
-            <Toast.Body>{notification.text}</Toast.Body>
-          </Toast>
-        ))}
-      </ToastContainer>
     </nav>
   );
 }

@@ -2,8 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Bell, User, Check, X, MessageSquare, Upload } from "lucide-react";
-import { fetchWithAuth } from "../../../utils/helpers";
+
 import "react-toastify/dist/ReactToastify.css";
+import { fetchWithAuth } from "../../../../utils/helpers";
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
@@ -64,7 +65,6 @@ const Notifications = () => {
       toast.error("Error submitting decision");
     }
   };
-
 
   return (
     <div className="container py-5">

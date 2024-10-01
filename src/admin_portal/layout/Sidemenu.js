@@ -10,7 +10,7 @@ import {
   Gift,
   GitPullRequest,
 } from "lucide-react";
-import { FaInbox } from "react-icons/fa";
+import { FaFacebookMessenger, FaInbox } from "react-icons/fa";
 
 const Sidemenu = () => {
   const [activeSubMenu, setActiveSubMenu] = useState(null);
@@ -206,6 +206,14 @@ const Sidemenu = () => {
             <FaInbox size={20} className="me-3" />
             <span className={isSidebarOpen ? "" : "d-none"}>Requests</span>
           </NavLink>
+          <NavLink
+            to=""
+            className="nav-link d-flex align-items-center py-3 text-light"
+            activeClassName="active bg-primary"
+          >
+            <FaFacebookMessenger size={20} className="me-3" />
+            <span className={isSidebarOpen ? "" : "d-none"}>Messages</span>
+            </NavLink>
         </div>
       </div>
     </div>
