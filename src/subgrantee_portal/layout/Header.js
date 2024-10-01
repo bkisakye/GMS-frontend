@@ -33,20 +33,6 @@ const Header = () => {
     }
   };
 
-  const fetchNotifications = async () => {
-    try {
-      const response = await fetchWithAuth("/api/notifications/unread/");
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      setNotifications(data);
-      setUnreadNotifications(data.filter((notif) => !notif.is_read));
-    } catch (error) {
-      console.error("Error fetching notifications:", error);
-    }
-  };
-
   const fetchNotificationsCount = async () => {
     try {
       const response = await fetchWithAuth("/api/notifications/count/");
@@ -60,70 +46,8 @@ const Header = () => {
     }
   };
 
-const handleNotificationClick = async (notification) => {
-  try {
-    switch (notification.notification_category) {
-      case "new_grant":
-        navigate("/"); 
-        break;
-      case "grant_review":
-        navigate('/budget'); 
-        break;
-      case "disbursement_received":
-        navigate('/funding-allocation'); 
-        break;
-      case "request_review":
-        navigate('/requests'); 
-        break;
-      case "financial_report":
-        navigate('/reports');
-        break;
-      default:
-        console.error(
-          "Unknown notification category:",
-          notification.notification_category
-        );
-        break;
-    }
-
-   
-    toggleModal();
-
-   
-    const response = await fetchWithAuth(
-      `/api/notifications/${notification.id}/read/`,
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    if (response.ok) {
-      setNotifications((prevNotifications) =>
-        prevNotifications.map((notif) =>
-          notif.id === notification.id ? { ...notif, is_read: true } : notif
-        )
-      );
-      fetchNotificationsCount();
-      window.location.reload();
-    } else {
-      console.error("Failed to mark notification as read:", response.status);
-    }
-  } catch (error) {
-    console.error("Error handling notification click:", error);
-  }
-};
-
-
-  const toggleModal = () => {
-    setIsModalOpen(!isModalOpen);
-  };
-
   useEffect(() => {
     fetchGrants();
-    fetchNotifications();
     fetchNotificationsCount();
   }, []);
 
@@ -171,7 +95,10 @@ const handleNotificationClick = async (notification) => {
                 <a
                   href="#"
                   className="nav-link position-relative"
-                  onClick={toggleModal}
+                  onClick={(e) => {
+                    e.preventDefault(); // Prevent default anchor behavior
+                    navigate("/notifications"); // Navigate to the notifications page
+                  }}
                 >
                   <Bell className="text-secondary" size={20} />
                   {notificationsCount > 0 && (
@@ -232,54 +159,6 @@ const handleNotificationClick = async (notification) => {
           </div>
         </div>
       </nav>
-
-      {/* Modal for Notifications */}
-      {isModalOpen && (
-        <div
-          className="modal fade show"
-          tabIndex="-1"
-          style={{ display: "block" }}
-        >
-          <div className="modal-dialog modal-dialog-top">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Unread Notifications</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  aria-label="Close"
-                  onClick={toggleModal}
-                ></button>
-              </div>
-              <div className="modal-body">
-                {unreadNotifications.length > 0 ? (
-                  unreadNotifications.map((notification) => (
-                    <div
-                      key={notification.id}
-                      className="card mb-3 notification-item"
-                      style={{ cursor: "pointer" }}
-                      onClick={() => handleNotificationClick(notification)}
-                    >
-                      <div className="card-body">
-                        <h5 className="card-title">{notification.text}</h5>
-                        <p className="card-text">
-                          <small className="text-muted">
-                            {new Date(
-                              notification.timestamp
-                            ).toLocaleTimeString()}
-                          </small>
-                        </p>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p>No unread notifications</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

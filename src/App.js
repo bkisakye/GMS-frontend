@@ -51,6 +51,7 @@ import Budgetcategory from "./subgrantee_portal/components/pages/Budgetcategory"
 import Report from "./subgrantee_portal/components/pages/Report";
 import FinanceReport from "./admin_portal/components/pages/reports/FinanceReport";
 import Applications from "./subgrantee_portal/components/pages/Applications";
+import SNotifications from "./subgrantee_portal/components/pages/Notifications";
 
 function App() {
   return (
@@ -105,6 +106,7 @@ function App() {
           <Route path="grant-accounts" element={<Accounts />} />
           <Route path="requests" element={<Requests />} />
           <Route path="reports" element={<Report />} />
+          <Route path="notifications" element={<SNotifications />} />
           <Route path="profile" element={<ProfileCreation />}>
             <Route index element={<GeneralInfo />} />
             <Route path="generalinfo" element={<GeneralInfo />} />

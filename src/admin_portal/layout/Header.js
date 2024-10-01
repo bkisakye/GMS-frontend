@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"; // Import useNavigate
 import Logout from "../../subgrantee_portal/components/login/Logout";
 import { fetchWithAuth } from "../../utils/helpers";
 import { Toast, ToastContainer } from "react-bootstrap";
+import { FaEnvelopeOpenText } from "react-icons/fa";
 
 function Header({ toggleSidebar }) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -147,6 +148,7 @@ function Header({ toggleSidebar }) {
             </button>
           </li>
         </ul>
+
         <ul className="navbar-nav ml-auto">
           <li className="nav-item dropdown">
             <a
