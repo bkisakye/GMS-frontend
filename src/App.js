@@ -52,6 +52,7 @@ import Report from "./subgrantee_portal/components/pages/Report";
 import FinanceReport from "./admin_portal/components/pages/reports/FinanceReport";
 import Applications from "./subgrantee_portal/components/pages/Applications";
 import SNotifications from "./subgrantee_portal/components/pages/Notifications";
+import Messages from "./subgrantee_portal/components/pages/Messages";
 
 function App() {
   return (
@@ -107,6 +108,7 @@ function App() {
           <Route path="requests" element={<Requests />} />
           <Route path="reports" element={<Report />} />
           <Route path="notifications" element={<SNotifications />} />
+          <Route path="messages" element={<Messages />} />
           <Route path="profile" element={<ProfileCreation />}>
             <Route index element={<GeneralInfo />} />
             <Route path="generalinfo" element={<GeneralInfo />} />

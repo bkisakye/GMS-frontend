@@ -103,7 +103,7 @@ const Sidemenu = () => {
           <FaInbox size={20} className="me-3" /> <span>Requests</span>
         </NavLink>
         <NavLink
-          to=""
+          to="/messages"
           className="list-group-item list-group-item-action border-0 py-3 d-flex align-items-center"
           activeClassName="active"
           style={({ isActive }) => ({
