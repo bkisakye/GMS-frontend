@@ -33,6 +33,7 @@ const Notifications = () => {
     fetchNotifications();
   }, [userId]);
 
+  // Define the handleDecision function to approve or decline actions
   const handleDecision = async (notificationId, action) => {
     try {
       // Send the action to the backend
@@ -41,7 +42,7 @@ const Notifications = () => {
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action, is_read: true, text: action }), // Mark as read in the request body
+          body: JSON.stringify({ action, is_read: true }), // Mark as read in the request body
         }
       );
 
@@ -65,6 +66,51 @@ const Notifications = () => {
     }
   };
 
+  const handleNotificationClick = async (notification) => {
+    try {
+      // Mark the notification as read
+      const response = await fetchWithAuth(
+        `/api/notifications/${notification.id}/read/`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ is_read: true }), // Mark as read
+        }
+      );
+
+      if (response.ok) {
+        // After marking as read, remove the notification from the state
+        setNotifications(notifications.filter((n) => n.id !== notification.id));
+
+        // Navigate based on notification category
+        switch (notification.notification_category) {
+          case "financial_report":
+            navigate("/reports");
+            break;
+          case "messages":
+            navigate("/messages");
+            break;
+          case "new_grant":
+            navigate("");
+            break;
+          case "disbursement_received":
+            navigate("/budget");
+            break;
+          case "status_report_due":
+            navigate("/grant-accounts")
+          default:
+            break;
+        }
+        window.location.reload();
+      } else {
+        console.error("Failed to mark notification as read");
+        toast.error("Error marking notification as read");
+      }
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      toast.error("Error marking notification as read");
+    }
+  };
 
   return (
     <div className="container py-5">
@@ -83,6 +129,8 @@ const Notifications = () => {
             <div
               key={notification.id}
               className={`card mb-4 shadow ${isNegotiating ? "bg-light" : ""}`}
+              onClick={() => handleNotificationClick(notification)} // Click event to mark as read and navigate
+              style={{ cursor: "pointer" }}
             >
               <div className="card-header bg-primary text-white">
                 <div className="d-flex justify-content-between align-items-center">
@@ -125,18 +173,20 @@ const Notifications = () => {
                     <div className="d-flex justify-content-end">
                       <button
                         className="btn btn-success me-2 d-flex align-items-center"
-                        onClick={() =>
-                          handleDecision(notification.id, "approve")
-                        }
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent the notification click from firing
+                          handleDecision(notification.id, "approve");
+                        }}
                         aria-label="Approve"
                       >
                         <Check size={20} />
                       </button>
                       <button
                         className="btn btn-danger d-flex align-items-center"
-                        onClick={() =>
-                          handleDecision(notification.id, "decline")
-                        }
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent the notification click from firing
+                          handleDecision(notification.id, "decline");
+                        }}
                         aria-label="Decline"
                       >
                         <X size={20} />
