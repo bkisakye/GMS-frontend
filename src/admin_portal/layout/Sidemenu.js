@@ -207,7 +207,7 @@ const Sidemenu = () => {
             <span className={isSidebarOpen ? "" : "d-none"}>Requests</span>
           </NavLink>
           <NavLink
-            to=""
+            to="messages"
             className="nav-link d-flex align-items-center py-3 text-light"
             activeClassName="active bg-primary"
           >

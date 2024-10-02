@@ -53,6 +53,7 @@ import FinanceReport from "./admin_portal/components/pages/reports/FinanceReport
 import Applications from "./subgrantee_portal/components/pages/Applications";
 import SNotifications from "./subgrantee_portal/components/pages/Notifications";
 import Messages from "./subgrantee_portal/components/pages/Messages";
+import AMessages from "./admin_portal/components/pages/messages/Messages"
 
 function App() {
   return (
@@ -87,6 +88,7 @@ function App() {
           <Route path="finance-reports" element={<FinanceReport />} />
           <Route path="grant-accounts" element={<GrantAccounts />} />
           <Route path="closeout-requests" element={<GrantCloseOut />} />
+          <Route path="messages" element={<AMessages />} />
         </Route>
 
         {/* Subgrantee routes */}
