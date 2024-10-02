@@ -1,24 +1,40 @@
 import React, { useEffect, useState, useRef } from "react";
 import { fetchWithAuth } from "../../../utils/helpers";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { Send } from "react-bootstrap-icons";
+import { Send, ArrowClockwise } from "react-bootstrap-icons";
 
 const Messages = () => {
   const user = JSON.parse(localStorage.getItem("user"));
   const userId = user?.user_id;
   const [room, setRoom] = useState(null);
-  const [roomId, setRoomId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
-  // Fetch the chat room for the user
+  const fetchMessages = async () => {
+    if (!room) return;
+    setIsLoading(true);
+    try {
+      const response = await fetchWithAuth(
+        `/api/chat-room/${room.id}/messages/`
+      );
+      if (!response.ok) throw new Error("Network response was not ok");
+      const data = await response.json();
+      setMessages(data.results.reverse());
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     const fetchRoom = async () => {
       try {
         const response = await fetchWithAuth(`/api/chat-room/${userId}/`);
+        if (!response.ok) throw new Error("Network response was not ok");
         const data = await response.json();
-        setRoomId(data.id);
         setRoom(data);
       } catch (error) {
         console.error("Error fetching room:", error);
@@ -30,63 +46,38 @@ const Messages = () => {
     }
   }, [userId]);
 
-  // Fetch messages for the chat room
   useEffect(() => {
-    const fetchMessages = async () => {
-      if (!roomId) return;
-      try {
-        const response = await fetchWithAuth(
-          `/api/chat-room/${roomId}/messages/`
-        );
-        const data = await response.json();
-        setMessages(data.results);
-      } catch (error) {
-        console.error("Error fetching messages:", error);
-      }
-    };
-
-    if (roomId) {
+    if (room) {
       fetchMessages();
     }
-  }, [roomId]);
+  }, [room]);
 
-  // Scroll to the bottom of the messages when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Handle sending a new message
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim()) {
-      return; // Prevent sending empty messages
-    }
+    if (!newMessage.trim() || !room) return;
+
     try {
       const response = await fetchWithAuth(
-        `/api/chat-room/${roomId}/send_message/`,
+        `/api/chat-room/${room.id}/send_message/`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ content: newMessage }),
         }
       );
-
-      if (!response.ok) {
-        throw new Error("Failed to send message");
-      }
-
-      const data = await response.json();
-      setMessages((prevMessages) => [...prevMessages, data.message]);
-      setNewMessage(""); // Clear the input field after sending
+      if (!response.ok) throw new Error("Network response was not ok");
+      setNewMessage("");
+      await fetchMessages();
     } catch (error) {
       console.error("Error sending message:", error);
     }
   };
 
-  // Show a loading spinner if roomId is not yet available
-  if (!roomId) {
+  if (!room) {
     return (
       <div
         className="d-flex justify-content-center align-items-center"
@@ -101,50 +92,61 @@ const Messages = () => {
 
   return (
     <div className="container mt-4">
-      <div className="card">
-        <div className="card-header bg-primary text-white">
-          <h5 className="mb-0">
-            Chat Room For:{" "}
-            {room.subgrantee?.organisation_name || "Unknown Organization"}
-          </h5>
+      <div className="card shadow">
+        <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+          <h5 className="mb-0">Chat Support</h5>
+          <button
+            className="btn btn-light btn-sm"
+            onClick={fetchMessages}
+            disabled={isLoading}
+          >
+            <ArrowClockwise className={isLoading ? "spin" : ""} />
+          </button>
         </div>
         <div
-          className="card-body"
+          className="card-body bg-light"
           style={{ height: "400px", overflowY: "auto" }}
         >
-          {messages.map((msg) => (
+          {messages.map((message) => (
             <div
-              key={msg.id}
+              key={message.id}
               className={`mb-3 ${
-                msg.sender === userId ? "text-end" : "text-start"
+                message.sender === userId ? "text-end" : "text-start"
               }`}
             >
               <div
-                className={`d-inline-block p-2 rounded ${
-                  msg.sender === userId ? "bg-primary text-white" : "bg-light"
+                className={`d-inline-block p-2 rounded-3 shadow-sm ${
+                  message.sender === userId
+                    ? "bg-primary text-white"
+                    : "bg-white"
                 }`}
                 style={{ maxWidth: "75%" }}
               >
-                {msg.content}
+                <p className="mb-1">{message.content}</p>
+                <small
+                  className={
+                    message.sender === userId ? "text-light" : "text-muted"
+                  }
+                >
+                  {new Date(message.timestamp).toLocaleTimeString()}
+                </small>
               </div>
             </div>
           ))}
           <div ref={messagesEndRef} />
         </div>
-        <div className="card-footer">
-          <form onSubmit={handleSendMessage}>
-            <div className="input-group">
-              <input
-                type="text"
-                className="form-control"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Type your message..."
-              />
-              <button className="btn btn-primary" type="submit">
-                <Send />
-              </button>
-            </div>
+        <div className="card-footer bg-white">
+          <form onSubmit={handleSendMessage} className="d-flex">
+            <input
+              type="text"
+              className="form-control me-2 shadow-sm"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder="Type your message..."
+            />
+            <button type="submit" className="btn btn-primary shadow-sm">
+              <Send />
+            </button>
           </form>
         </div>
       </div>
