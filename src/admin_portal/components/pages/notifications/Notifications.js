@@ -71,7 +71,7 @@ const Notifications = () => {
             navigate("/admin/applications-list");
             break;
           case "new_subgrantee":
-            navigate("/admin/subgrantee-registration");
+            navigate("/admin/subgrantee-registration-request");
             break;
           case "requests":
             navigate("/admin/closeout-requests");

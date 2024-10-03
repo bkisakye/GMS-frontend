@@ -19,40 +19,50 @@ const SubgranteeReg = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const { loadingStates, handleLoading } = useLoadingHandler(); 
+  const { loadingStates, handleLoading } = useLoadingHandler();
 
   useEffect(() => {
     const fetchSubgrantees = async () => {
-      await handleLoading("fetchSubgrantees", async () => {
-        const response = await fetchWithAuth(
-          `/api/authentication/subgrantees/`
-        );
-        if (!response.ok) throw new Error("Network response was not ok");
-        const data = await response.json();
-        setSubgrantees(data);
-        setFilteredSubgrantees(data);
-      });
+      try {
+        await handleLoading("fetchSubgrantees", async () => {
+          const response = await fetchWithAuth(
+            `/api/authentication/subgrantees/`
+          );
+          if (!response.ok) throw new Error("Network response was not ok");
+          const data = await response.json();
+          setSubgrantees(data);
+          setFilteredSubgrantees(data);
+        });
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchSubgrantees();
-  }, []);
+  }, [handleLoading]);
 
   useEffect(() => {
-    if (searchQuery) {
-      setFilteredSubgrantees(
-        subgrantees.filter(
-          (subgrantee) =>
-            subgrantee.organisation_name
-              .toLowerCase()
-              .includes(searchQuery.toLowerCase()) ||
-            `${subgrantee.fname} ${subgrantee.lname}`
-              .toLowerCase()
-              .includes(searchQuery.toLowerCase())
-        )
-      );
-    } else {
-      setFilteredSubgrantees(subgrantees);
-    }
+    const filterSubgrantees = () => {
+      if (searchQuery) {
+        setFilteredSubgrantees(
+          subgrantees.filter(
+            (subgrantee) =>
+              subgrantee.organisation_name
+                .toLowerCase()
+                .includes(searchQuery.toLowerCase()) ||
+              `${subgrantee.fname} ${subgrantee.lname}`
+                .toLowerCase()
+                .includes(searchQuery.toLowerCase())
+          )
+        );
+      } else {
+        setFilteredSubgrantees(subgrantees);
+      }
+    };
+
+    filterSubgrantees();
   }, [searchQuery, subgrantees]);
 
   const handleApproval = async (id) => {
@@ -69,8 +79,9 @@ const SubgranteeReg = () => {
         }
       );
       if (!response.ok) throw new Error("Network response was not ok");
-      const updatedSubgrantees = subgrantees.map((subgrantee) =>
-        subgrantee.id === id ? { ...subgrantee, is_approved: true } : subgrantee
+
+      const updatedSubgrantees = subgrantees.map((sg) =>
+        sg.id === id ? { ...sg, is_approved: true } : sg
       );
       setSubgrantees(updatedSubgrantees);
       setFilteredSubgrantees(updatedSubgrantees);
@@ -92,10 +103,9 @@ const SubgranteeReg = () => {
         }
       );
       if (!response.ok) throw new Error("Network response was not ok");
-      const updatedSubgrantees = subgrantees.map((subgrantee) =>
-        subgrantee.id === id
-          ? { ...subgrantee, is_approved: false }
-          : subgrantee
+
+      const updatedSubgrantees = subgrantees.map((sg) =>
+        sg.id === id ? { ...sg, is_approved: false } : sg
       );
       setSubgrantees(updatedSubgrantees);
       setFilteredSubgrantees(updatedSubgrantees);
@@ -110,6 +120,7 @@ const SubgranteeReg = () => {
         { method: "DELETE" }
       );
       if (!response.ok) throw new Error("Network response was not ok");
+
       const updatedSubgrantees = subgrantees.filter(
         (subgrantee) => subgrantee.id !== id
       );
@@ -192,20 +203,19 @@ const SubgranteeReg = () => {
                         ) : (
                           <FontAwesomeIcon icon={faTimes} />
                         )}
-                        
                       </button>
                     </>
                   ) : (
                     <button
                       className="btn btn-danger btn-sm"
-                        onClick={() => handleDelete(subgrantee.id)}
-                        disabled={loadingStates.handleDecline}
-                      >
-                        {loadingStates.handleDecline ? (
-                          <FontAwesomeIcon icon={faSpinner} spin />
-                        ) : (
-                          <FontAwesomeIcon icon={faTrash} />
-                        )}
+                      onClick={() => handleDelete(subgrantee.id)}
+                      disabled={loadingStates.handleDecline}
+                    >
+                      {loadingStates.handleDecline ? (
+                        <FontAwesomeIcon icon={faSpinner} spin />
+                      ) : (
+                        <FontAwesomeIcon icon={faTrash} />
+                      )}
                     </button>
                   )}
                 </td>
