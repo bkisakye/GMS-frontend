@@ -1,7 +1,17 @@
 import React, { useEffect, useState, useRef } from "react";
 import { fetchWithAuth } from "../../../../utils/helpers";
-import { Send, ArrowClockwise, PersonCircle } from "react-bootstrap-icons";
+import {
+  Send,
+  ArrowClockwise,
+  PersonCircle,
+  ChatLeftDots,
+  Chat,
+  ChatDots,
+  Person,
+} from "react-bootstrap-icons";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { BsChatDots } from "react-icons/bs";
+
 
 const Messages = () => {
   const [rooms, setRooms] = useState([]);
@@ -78,33 +88,47 @@ const Messages = () => {
   };
 
   return (
-    <div className="container-fluid mt-4">
-      <div className="row mb-4">
-        <div className="col">
-          <div className="d-flex justify-content-center flex-wrap">
-            {rooms.map((room) => (
-              <div
-                key={room.id}
-                className={`mx-2 text-center p-2 border rounded ${
-                  selectedRoom?.id === room.id
-                    ? "border-primary"
-                    : "border-light"
-                }`}
-                onClick={() => handleRoomSelect(room)}
-                style={{ cursor: "pointer", width: "80px" }}
-              >
-                <PersonCircle size={40} className="text-primary mb-1" />
-                <div style={{ fontSize: "0.8rem" }}>
-                  {room.subgrantee.organisation_name}
-                </div>
-              </div>
-            ))}
+    <div className="container-fluid py-4 h-100 bg-light">
+      <div className="row h-100">
+        <div className="col-md-3 mb-4">
+          <div className="card h-90 shadow-sm border-0">
+            <div className="card-header bg-primary text-white rounded-top d-flex align-items-center justify-content-between">
+              <h5 className="mb-0 d-flex align-items-center">
+                <BsChatDots className="me-2" /> Chats
+              </h5>
+            </div>
+            <div className="card-body p-0 overflow-auto">
+            
+                {rooms.map((room) => (
+                  <card
+                    key={room.id}
+                    className={`list-group-item list-group-item-action d-flex align-items-center ${
+                      selectedRoom?.id === room.id
+                        ? "active bg-primary text-white"
+                        : ""
+                    }`}
+                    onClick={() => handleRoomSelect(room)}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <Person
+                      size={24}
+                      className={`me-3 ${
+                        selectedRoom?.id === room.id
+                          ? "text-white"
+                          : "text-dark"
+                      }`}
+                    />
+                    <span className="text-truncate">
+                      {room.subgrantee.organisation_name}
+                    </span>
+                  </card>
+                ))}
+            
+            </div>
           </div>
         </div>
-      </div>
-      <div className="row">
-        <div className="col">
-          <div className="card shadow">
+        <div className="col-md-9">
+          <div className="card h-100 shadow-sm border-0">
             <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
               <h5 className="mb-0">
                 {selectedRoom
@@ -113,17 +137,20 @@ const Messages = () => {
               </h5>
               {selectedRoom && (
                 <button
-                  className="btn btn-light btn-sm"
+                  className="btn btn-light btn-sm d-flex align-items-center"
                   onClick={() => fetchMessages(selectedRoom.id)}
                   disabled={isLoading}
                 >
-                  <ArrowClockwise className={isLoading ? "spin" : ""} />
+                  <ArrowClockwise
+                    className={`me-2 ${isLoading ? "spin" : ""}`}
+                  />
+                  Refresh
                 </button>
               )}
             </div>
             <div
-              className="card-body bg-light"
-              style={{ height: "400px", overflowY: "auto" }}
+              className="card-body bg-light p-3 overflow-auto"
+              style={{ height: "calc(100vh - 250px)" }}
             >
               {messages.map((message) => (
                 <div
@@ -135,34 +162,37 @@ const Messages = () => {
                   }`}
                 >
                   <div
-                    className={`d-inline-block p-2 rounded-3 shadow-sm ${
+                    className={`p-3 rounded-3 shadow-sm ${
                       message.sender.id === userId
                         ? "bg-primary text-white"
                         : "bg-white"
                     }`}
                     style={{ maxWidth: "75%" }}
                   >
-                    {/* <small className="d-block mb-1">
+                    <small className="d-block mb-1 fw-bold">
                       {message.sender.id === userId
-                        ? message.sender.user_name
+                        ? "You"
                         : message.sender.organisation_name}
-                    </small> */}
+                    </small>
                     <p className="mb-1">{message.content}</p>
                     <small
-                      className={
+                      className={`text-muted ${
                         message.sender.id === userId
                           ? "text-light"
                           : "text-muted"
-                      }
+                      }`}
                     >
-                      {new Date(message.timestamp).toLocaleTimeString()}
+                      {new Date(message.timestamp).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </small>
                   </div>
                 </div>
               ))}
               <div ref={messagesEndRef} />
             </div>
-            <div className="card-footer bg-white">
+            <div className="card-footer bg-white rounded-bottom">
               <form onSubmit={handleSendMessage} className="d-flex">
                 <input
                   type="text"
@@ -177,7 +207,7 @@ const Messages = () => {
                   className="btn btn-primary shadow-sm"
                   disabled={!selectedRoom}
                 >
-                  <Send />
+                  <Send className="me-2" /> Send
                 </button>
               </form>
             </div>
