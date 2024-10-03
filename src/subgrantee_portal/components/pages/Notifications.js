@@ -1,7 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { Bell, User, Check, X, MessageSquare, Upload } from "lucide-react";
+import {
+  Bell,
+  User,
+  Check,
+  X,
+  MessageSquare,
+  Upload,
+  FileText,
+  DollarSign,
+  Clipboard,
+  Calendar,
+} from "lucide-react";
 import { fetchWithAuth } from "../../../utils/helpers";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -27,27 +38,25 @@ const Notifications = () => {
         setNotifications(unreadNotifications);
       } catch (error) {
         console.error("Error fetching notifications:", error);
+        toast.error("Failed to fetch notifications");
       }
     };
 
     fetchNotifications();
   }, [userId]);
 
-  // Define the handleDecision function to approve or decline actions
   const handleDecision = async (notificationId, action) => {
     try {
-      // Send the action to the backend
       const response = await fetchWithAuth(
         `/api/notifications/${notificationId}/review-action/`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action, is_read: true }), // Mark as read in the request body
+          body: JSON.stringify({ action, is_read: true }),
         }
       );
 
       if (response.ok) {
-        // Update the local state to remove the notification
         setNotifications(notifications.filter((n) => n.id !== notificationId));
 
         if (action === "approve") {
@@ -68,21 +77,18 @@ const Notifications = () => {
 
   const handleNotificationClick = async (notification) => {
     try {
-      // Mark the notification as read
       const response = await fetchWithAuth(
         `/api/notifications/${notification.id}/read/`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ is_read: true }), // Mark as read
+          body: JSON.stringify({ is_read: true }),
         }
       );
 
       if (response.ok) {
-        // After marking as read, remove the notification from the state
         setNotifications(notifications.filter((n) => n.id !== notification.id));
 
-        // Navigate based on notification category
         switch (notification.notification_category) {
           case "financial_report":
             navigate("/reports");
@@ -107,6 +113,7 @@ const Notifications = () => {
             break;
           case "status_report_due":
             navigate("/grant-accounts");
+            break;
           default:
             break;
         }
@@ -121,12 +128,39 @@ const Notifications = () => {
     }
   };
 
+  const getNotificationIcon = (category) => {
+    switch (category) {
+      case "financial_report":
+        return <FileText size={24} className="text-primary" />;
+      case "messages":
+        return <MessageSquare size={24} className="text-info" />;
+      case "new_grant":
+        return <Clipboard size={24} className="text-success" />;
+      case "disbursement_received":
+        return <DollarSign size={24} className="text-warning" />;
+      case "grant_submission":
+        return <Upload size={24} className="text-secondary" />;
+      case "status_report_reviewed":
+        return <Check size={24} className="text-success" />;
+      case "request_review":
+        return <Clipboard size={24} className="text-primary" />;
+      case "status_report_due":
+        return <Calendar size={24} className="text-danger" />;
+      default:
+        return <Bell size={24} className="text-secondary" />;
+    }
+  };
+
   return (
     <div className="container py-5">
+      <h2 className="mb-4">Notifications</h2>
       {notifications.length === 0 ? (
-        <div className="alert alert-info text-center" role="alert">
+        <div
+          className="alert alert-info d-flex align-items-center"
+          role="alert"
+        >
           <Bell className="me-2" />
-          No unread notifications to display.
+          <span>No unread notifications to display.</span>
         </div>
       ) : (
         notifications.map((notification) => {
@@ -137,33 +171,35 @@ const Notifications = () => {
           return (
             <div
               key={notification.id}
-              className={`card mb-4 shadow ${isNegotiating ? "bg-light" : ""}`}
-              onClick={() => handleNotificationClick(notification)} // Click event to mark as read and navigate
+              className={`card mb-4 shadow-sm ${
+                isNegotiating ? "border-warning" : ""
+              }`}
+              onClick={() => handleNotificationClick(notification)}
               style={{ cursor: "pointer" }}
             >
-              <div className="card-header bg-primary text-white">
+              <div className="card-header bg-light">
                 <div className="d-flex justify-content-between align-items-center">
                   <div className="d-flex align-items-center">
-                    <div className="bg-white rounded-circle p-2 me-3">
-                      <User size={24} className="text-primary" />
+                    <div className="rounded-circle p-2 me-3 bg-primary bg-opacity-10">
+                      {getNotificationIcon(notification.notification_category)}
                     </div>
                     <div>
                       <h5 className="mb-0">
                         {notification.user[0].fname}{" "}
                         {notification.user[0].lname}
                       </h5>
-                      <small>{notification.user[0].organisation_name}</small>
+                      <small className="text-muted">
+                        {notification.user[0].organisation_name}
+                      </small>
                     </div>
                   </div>
-                  <span>
+                  <span className="text-muted">
                     {new Date(notification.timestamp).toLocaleString()}
                   </span>
                 </div>
               </div>
               <div className="card-body">
-                <p className="card-text lead">
-                  <b>{notification.text}</b>
-                </p>
+                <p className="card-text lead">{notification.text}</p>
                 {notification.review?.comments && (
                   <div className="d-flex align-items-center text-muted mb-3">
                     <MessageSquare size={16} className="me-2" />
@@ -181,24 +217,26 @@ const Notifications = () => {
                   <div className="mt-4">
                     <div className="d-flex justify-content-end">
                       <button
-                        className="btn btn-success me-2 d-flex align-items-center"
+                        className="btn btn-outline-success me-2 d-flex align-items-center"
                         onClick={(e) => {
-                          e.stopPropagation(); // Prevent the notification click from firing
+                          e.stopPropagation();
                           handleDecision(notification.id, "approve");
                         }}
                         aria-label="Approve"
                       >
-                        <Check size={20} />
+                        <Check size={20} className="me-2" />
+                        Approve
                       </button>
                       <button
-                        className="btn btn-danger d-flex align-items-center"
+                        className="btn btn-outline-danger d-flex align-items-center"
                         onClick={(e) => {
-                          e.stopPropagation(); // Prevent the notification click from firing
+                          e.stopPropagation();
                           handleDecision(notification.id, "decline");
                         }}
                         aria-label="Decline"
                       >
-                        <X size={20} />
+                        <X size={20} className="me-2" />
+                        Decline
                       </button>
                     </div>
                   </div>
