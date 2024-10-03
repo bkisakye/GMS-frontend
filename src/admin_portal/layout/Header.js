@@ -48,9 +48,6 @@ function Header({ toggleSidebar }) {
     }
   };
 
-
-
-
   useEffect(() => {
     fetchNotificationCount();
     fetchNotifications();
@@ -96,15 +93,12 @@ function Header({ toggleSidebar }) {
 
         <ul className="navbar-nav ml-auto">
           <li className="nav-item dropdown">
-            <a
-              className="nav-link dropdown-toggle"
-              href="#"
+            <button
+              className="btn nav-link dropdown-toggle"
               id="notificationsDropdown"
-              role="button"
-              data-toggle="dropdown"
+              onClick={() => navigate('/admin/notifications')} // Use onClick to navigate
               aria-haspopup="true"
               aria-expanded="false"
-              
             >
               <i className="icon-bell2"></i>
               {notificationCount > 0 && (
@@ -112,8 +106,7 @@ function Header({ toggleSidebar }) {
                   {notificationCount}
                 </span>
               )}
-            </a>
-           
+            </button>
           </li>
           <li className="nav-item dropdown">
             <a
@@ -137,7 +130,7 @@ function Header({ toggleSidebar }) {
               <a className="dropdown-item" href="/admin/profile">
                 <i className="icon-user-plus"></i> My Profile
               </a>
-              <a className="dropdown-item" href="/admin/notifications">
+              <a className="dropdown-item" href="/admin/messages">
                 <i className="icon-bubbles4"></i> Messages
               </a>
               <a className="dropdown-item" href="/admin/settings">

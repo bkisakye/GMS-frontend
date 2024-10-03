@@ -34,37 +34,56 @@ const Notifications = () => {
     fetchNotifications();
   }, [userId]);
 
-  const handleDecision = async (notificationId, action) => {
-    try {
-      // Send the action to the backend
-      const response = await fetchWithAuth(
-        `/api/notifications/${notificationId}/review-action/`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action, is_read: true, text: action }), // Mark as read in the request body
-        }
-      );
-
-      if (response.ok) {
-        // Update the local state to remove the notification
-        setNotifications(notifications.filter((n) => n.id !== notificationId));
-
-        if (action === "approve") {
-          toast.success("Please go ahead and update your application form");
-          navigate("/applications");
-        } else {
-          toast.info("The notification has been declined");
-        }
-      } else {
-        console.error("Failed to submit decision");
-        toast.error("Error submitting decision");
+const handleNotificationClick = async (notification) => {
+  try {
+    // Mark the notification as read
+    const response = await fetchWithAuth(
+      `/api/notifications/${notification.id}/read/`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_read: true }), // Mark as read
       }
-    } catch (error) {
-      console.error("Error submitting decision:", error);
-      toast.error("Error submitting decision");
+    );
+
+    if (response.ok) {
+      // After marking as read, remove the notification from the state
+      setNotifications(notifications.filter((n) => n.id !== notification.id));
+
+      // Navigate based on notification category
+      switch (notification.notification_category) {
+        case "requests":
+          navigate("/admin/reports");
+          break;
+        case "messages":
+          navigate("/admin/messages");
+          break;
+        case "status_report_submitted":
+          navigate("/admin/progress-reports");
+          break;
+        case "grant_application":
+          navigate("/admin/applications-list");
+          break;
+        case "new_subgrantee":
+          navigate("/admin/subgrantee-registration");
+          break;
+        case "requests":
+          navigate("/admin/closeout-requests");
+          break;
+        default:
+          break;
+      }
+      window.location.reload();
+    } else {
+      console.error("Failed to mark notification as read");
+      toast.error("Error marking notification as read");
     }
-  };
+  } catch (error) {
+    console.error("Error marking notification as read:", error);
+    toast.error("Error marking notification as read");
+  }
+};
+
 
   return (
     <div className="container py-5">
@@ -83,6 +102,8 @@ const Notifications = () => {
             <div
               key={notification.id}
               className={`card mb-4 shadow ${isNegotiating ? "bg-light" : ""}`}
+              onClick={() => handleNotificationClick(notification)}
+              style={{ cursor: "pointer" }}
             >
               <div className="card-header bg-primary text-white">
                 <div className="d-flex justify-content-between align-items-center">
@@ -95,7 +116,7 @@ const Notifications = () => {
                         {notification.user[0].fname}{" "}
                         {notification.user[0].lname}
                       </h5>
-                      <small>{notification.user[0].organisation_name}</small>
+                      <small>{notification.user[0].email}</small>
                     </div>
                   </div>
                   <span>
@@ -117,31 +138,6 @@ const Notifications = () => {
                   <div className="d-flex align-items-center text-muted mb-3">
                     <Upload size={16} className="me-2" />
                     <span>{notification.uploads.uploads}</span>
-                  </div>
-                )}
-
-                {isNegotiating && (
-                  <div className="mt-4">
-                    <div className="d-flex justify-content-end">
-                      <button
-                        className="btn btn-success me-2 d-flex align-items-center"
-                        onClick={() =>
-                          handleDecision(notification.id, "approve")
-                        }
-                        aria-label="Approve"
-                      >
-                        <Check size={20} />
-                      </button>
-                      <button
-                        className="btn btn-danger d-flex align-items-center"
-                        onClick={() =>
-                          handleDecision(notification.id, "decline")
-                        }
-                        aria-label="Decline"
-                      >
-                        <X size={20} />
-                      </button>
-                    </div>
                   </div>
                 )}
               </div>

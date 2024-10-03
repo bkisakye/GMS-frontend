@@ -96,8 +96,17 @@ const Notifications = () => {
           case "disbursement_received":
             navigate("/budget");
             break;
+          case "grant_submission":
+            navigate("/applications");
+            break;
+          case "status_report_reviewed":
+            navigate("/reports");
+            break;
+          case "request_review":
+            navigate("/requests");
+            break;
           case "status_report_due":
-            navigate("/grant-accounts")
+            navigate("/grant-accounts");
           default:
             break;
         }
