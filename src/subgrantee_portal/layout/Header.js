@@ -85,19 +85,19 @@ const Header = () => {
           <div className="collapse navbar-collapse" id="navbarSupportedContent">
             <ul className="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
               <li className="nav-item me-3">
-                <span className="badge bg-primary rounded-pill">
+                {/* <span className="badge bg-primary rounded-pill">
                   {activeGrantsCount === 0
                     ? "Loading..."
                     : `${activeGrantsCount} Active Grants`}
-                </span>
+                </span> */}
               </li>
               <li className="nav-item me-3">
                 <a
                   href="#"
                   className="nav-link position-relative"
                   onClick={(e) => {
-                    e.preventDefault(); // Prevent default anchor behavior
-                    navigate("/notifications"); // Navigate to the notifications page
+                    e.preventDefault(); 
+                    navigate("/notifications"); 
                   }}
                 >
                   <Bell className="text-secondary" size={20} />

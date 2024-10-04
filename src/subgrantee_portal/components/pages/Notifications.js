@@ -3,18 +3,18 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
   Bell,
-  User,
-  Check,
-  X,
   MessageSquare,
   Upload,
+  Check,
   FileText,
   DollarSign,
   Clipboard,
   Calendar,
+  X,
 } from "lucide-react";
 import { fetchWithAuth } from "../../../utils/helpers";
 import "react-toastify/dist/ReactToastify.css";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
@@ -117,7 +117,6 @@ const Notifications = () => {
           default:
             break;
         }
-        window.location.reload();
       } else {
         console.error("Failed to mark notification as read");
         toast.error("Error marking notification as read");
@@ -129,31 +128,71 @@ const Notifications = () => {
   };
 
   const getNotificationIcon = (category) => {
+    const iconClasses = "me-2";
     switch (category) {
       case "financial_report":
-        return <FileText size={24} className="text-primary" />;
+        return <FileText size={24} className={`${iconClasses} text-primary`} />;
       case "messages":
-        return <MessageSquare size={24} className="text-info" />;
+        return (
+          <MessageSquare size={24} className={`${iconClasses} text-info`} />
+        );
       case "new_grant":
-        return <Clipboard size={24} className="text-success" />;
+        return (
+          <Clipboard size={24} className={`${iconClasses} text-success`} />
+        );
       case "disbursement_received":
-        return <DollarSign size={24} className="text-warning" />;
+        return (
+          <DollarSign size={24} className={`${iconClasses} text-warning`} />
+        );
       case "grant_submission":
-        return <Upload size={24} className="text-secondary" />;
+        return <Upload size={24} className={`${iconClasses} text-secondary`} />;
       case "status_report_reviewed":
-        return <Check size={24} className="text-success" />;
+        return <Check size={24} className={`${iconClasses} text-success`} />;
       case "request_review":
-        return <Clipboard size={24} className="text-primary" />;
+        return (
+          <Clipboard size={24} className={`${iconClasses} text-primary`} />
+        );
       case "status_report_due":
-        return <Calendar size={24} className="text-danger" />;
+        return <Calendar size={24} className={`${iconClasses} text-danger`} />;
       default:
-        return <Bell size={24} className="text-secondary" />;
+        return <Bell size={24} className={`${iconClasses} text-secondary`} />;
     }
+  };
+
+  const getCategory = (notification) => {
+    switch (notification.notification_category) {
+      case "financial_report":
+        return "Financial Report";
+      case "messages":
+        return "Messages";
+      case "new_grant":
+        return "New Funding Opportunity";
+      case "disbursement_received":
+        return "Disbursement Received";
+      case "grant_submission":
+        return "Funding Opportunity Application Submission";
+      case "status_report_reviewed":
+        return "Progress Report Review";
+      case "request_review":
+        return "Request Review";
+      case "status_report_due":
+        return "Status Report Due";
+      case "grant_review":
+        return "Funding Opportunity Application Review";
+      default:
+        return "Notification";
+    }
+  };
+
+  const getComments = (notification) => {
+    if (notification.review?.comments) {
+      return notification.review.comments;
+    }
+    return notification.progress_report?.review_comments || null;
   };
 
   return (
     <div className="container py-5">
-      <h2 className="mb-4">Notifications</h2>
       {notifications.length === 0 ? (
         <div
           className="alert alert-info d-flex align-items-center"
@@ -167,43 +206,36 @@ const Notifications = () => {
           const isNegotiating =
             notification.notification_category === "grant_review" &&
             notification.review?.status === "negotiate";
-
           return (
             <div
               key={notification.id}
               className={`card mb-4 shadow-sm ${
                 isNegotiating ? "border-warning" : ""
               }`}
-              onClick={() => handleNotificationClick(notification)}
-              style={{ cursor: "pointer" }}
             >
-              <div className="card-header bg-light">
-                <div className="d-flex justify-content-between align-items-center">
-                  <div className="d-flex align-items-center">
-                    <div className="rounded-circle p-2 me-3 bg-primary bg-opacity-10">
-                      {getNotificationIcon(notification.notification_category)}
-                    </div>
-                    <div>
-                      <h5 className="mb-0">
-                        {notification.user[0].fname}{" "}
-                        {notification.user[0].lname}
-                      </h5>
-                      <small className="text-muted">
-                        {notification.user[0].organisation_name}
-                      </small>
-                    </div>
+              <div className="card-header d-flex justify-content-between align-items-center bg-light">
+                <div className="d-flex align-items-center">
+                  <div className="icon-container p-2 me-3 rounded-circle bg-primary bg-opacity-10">
+                    {getNotificationIcon(notification.notification_category)}
                   </div>
-                  <span className="text-muted">
-                    {new Date(notification.timestamp).toLocaleString()}
-                  </span>
+                  <div>
+                    <h5 className="mb-0">{getCategory(notification)}</h5>
+                  </div>
                 </div>
+                <span className="text-muted">
+                  {new Date(notification.timestamp).toLocaleString()}
+                </span>
               </div>
               <div className="card-body">
-                <p className="card-text lead">{notification.text}</p>
-                {notification.review?.comments && (
+                <p className="card-text">
+                  <strong>Notification:</strong> {notification.text}
+                </p>
+                {getComments(notification) && (
                   <div className="d-flex align-items-center text-muted mb-3">
                     <MessageSquare size={16} className="me-2" />
-                    <span>{notification.review.comments}</span>
+                    <span>
+                      <strong>Comments:</strong> {getComments(notification)}
+                    </span>
                   </div>
                 )}
                 {notification.uploads?.uploads && (
@@ -212,7 +244,6 @@ const Notifications = () => {
                     <span>{notification.uploads.uploads}</span>
                   </div>
                 )}
-
                 {isNegotiating && (
                   <div className="mt-4">
                     <div className="d-flex justify-content-end">

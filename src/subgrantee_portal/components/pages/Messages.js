@@ -136,7 +136,7 @@ const Messages = () => {
                       <small className="d-block mb-1 fw-bold">
                         {message.sender.id === userId
                           ? "You"
-                          : message.sender.organisation_name ||
+                          : message.sender.email ||
                             message.sender.user_name}
                       </small>
                       <p className="mb-1">{message.content}</p>

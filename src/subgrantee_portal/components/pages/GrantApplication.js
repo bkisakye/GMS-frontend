@@ -121,10 +121,10 @@ const ApplicationPage = () => {
   };
 
   const handleInputChange = (e, question) => {
-    if (!canEdit) {
-      console.log("Attempted to edit when canEdit is false");
-      return;
-    }
+    // if (!canEdit) {
+    //   console.log("Attempted to edit when canEdit is false");
+    //   return;
+    // }
     handleChange(e, question);
     setInputValues((prev) => ({ ...prev, [question.id]: e.target.value }));
   };
@@ -352,11 +352,11 @@ const ApplicationPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!canEdit) {
-      console.log("Attemptedcto submit when canEdit is false");
-      toast.error("You can not edit your application at this time.");
-      return;
-    }
+    // if (!canEdit) {
+    //   console.log("Attempted to submit when canEdit is false");
+    //   toast.error("You can not edit your application at this time.");
+    //   return;
+    // }
 
     const errors = {};
     const missingFields = visibleQuestions.filter((question) => {
@@ -599,9 +599,9 @@ const ApplicationPage = () => {
         Application for Funding Opportunity: {decodeURIComponent(grantName)}
       </h1>
       <Alert variant="info">
-        {!canEdit
+        {/* {canEdit
           ? "You can edit this application."
-          : "This application has been submitted and is currently under review. You cannot edit it at this time."}
+          : "This application has been submitted and is currently under review. You cannot edit it at this time."} */}
           
       </Alert>
       {isLoading && <Loading />}
@@ -639,12 +639,12 @@ const ApplicationPage = () => {
                                       answer.question_id === question.id
                                   )?.answer || ""
                                 }
-                                disabled={!canEdit}
+                                // disabled={!canEdit}
                                 onChange={(e) => handleInputChange(e, question)}
                                 onFocus={() => handleFocus(question.id)}
                                 onBlur={() => handleBlur(question.id)}
                                 rows={3}
-                                readOnly={!canEdit}
+                                // readOnly={!canEdit}
                                 maxLength={CHARACTER_LIMITS.text}
                                 isInvalid={!!validationErrors[question.id]}
                                 style={{
@@ -683,11 +683,11 @@ const ApplicationPage = () => {
                                       answer.question_id === question.id
                                   )?.answer || ""
                                 }
-                                disabled={!canEdit}
+                                // disabled={!canEdit}
                                 onChange={(e) => handleInputChange(e, question)}
                                 onFocus={() => handleFocus(question.id)}
                                 onBlur={() => handleBlur(question.id)}
-                                readOnly={isReadOnly}
+                                // readOnly={isReadOnly}
                                 maxLength={CHARACTER_LIMITS.number}
                                 isInvalid={!!validationErrors[question.id]}
                               />
@@ -721,11 +721,11 @@ const ApplicationPage = () => {
                                       answer.question_id === question.id
                                   )?.answer || ""
                                 }
-                                disabled={!canEdit}
+                                // disabled={!canEdit}
                                 onChange={(e) => handleInputChange(e, question)}
                                 onFocus={() => handleFocus(question.id)}
                                 onBlur={() => handleBlur(question.id)}
-                                readOnly={isReadOnly}
+                                // readOnly={isReadOnly}
                                 isInvalid={!!validationErrors[question.id]}
                               />
                               {(focusedQuestionId === question.id ||
@@ -766,7 +766,7 @@ const ApplicationPage = () => {
                                       label={choice}
                                       value={choice}
                                       checked={isChecked}
-                                      disabled={!canEdit}
+                                      // disabled={!canEdit}
                                       onChange={(e) =>
                                         handleChange(e, question)
                                       }
@@ -812,7 +812,7 @@ const ApplicationPage = () => {
                                       )?.answer === choice
                                     }
                                     onChange={(e) => handleChange(e, question)}
-                                    disabled={!canEdit}
+                                    // disabled={!canEdit}
                                   />
                                 ))}
                               </div>
@@ -868,7 +868,7 @@ const ApplicationPage = () => {
                                                     column
                                                   ] || ""
                                                 }
-                                                disabled={!canEdit}
+                                                // disabled={!canEdit}
                                                 onChange={(e) =>
                                                   handleChange(
                                                     e,
@@ -883,7 +883,7 @@ const ApplicationPage = () => {
                                                 onBlur={() =>
                                                   handleBlur(question.id)
                                                 }
-                                                readOnly={isReadOnly}
+                                                // readOnly={isReadOnly}
                                               />
                                             </td>
                                           )
@@ -930,7 +930,7 @@ const ApplicationPage = () => {
               handleFileUpload(applicationId, files);
             }
           }}
-          disabled={loadingStates.SubmitData || !canEdit}
+          // disabled={loadingStates.SubmitData || !canEdit}
         >
           {loadingStates.SubmitData ? (
             <Spinner

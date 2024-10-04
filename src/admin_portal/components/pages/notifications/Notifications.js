@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
   Bell,
-  User,
   MessageSquare,
   Upload,
   FileText,
@@ -73,7 +72,7 @@ const Notifications = () => {
           case "new_subgrantee":
             navigate("/admin/subgrantee-registration-request");
             break;
-          case "requests":
+          case "closeout_requests":
             navigate("/admin/closeout-requests");
             break;
           default:
@@ -100,81 +99,75 @@ const Notifications = () => {
         return <CheckCircle size={24} className="text-info" />;
       case "new_subgrantee":
         return <Users size={24} className="text-warning" />;
+      case "requests":
+        return <Upload size={24} className="text-danger" />;
       default:
         return <Bell size={24} className="text-secondary" />;
     }
   };
 
+  const getCategory = (notification) => {
+    switch (notification.notification_category) {
+      case "messages":
+        return "Messages";
+      case "status_report_submitted":
+        return "Progress Report";
+      case "grant_application":
+        return "Grant Application";
+      case "new_subgrantee":
+        return "New Subgrantee";
+      case "requests":
+        return "Requests";
+      default:
+        return "Notification";
+    }
+  };
+
   return (
     <div className="container py-5">
-      <h2 className="mb-4">Notifications</h2>
+      
       {notifications.length === 0 ? (
         <div
-          className="alert alert-info d-flex align-items-center"
+          className="alert alert-info d-flex align-items-center justify-content-center"
           role="alert"
         >
           <Bell className="me-2" />
           <span>No unread notifications to display.</span>
         </div>
       ) : (
-        notifications.map((notification) => {
-          const isNegotiating =
-            notification.notification_category === "grant_review" &&
-            notification.review?.status === "negotiate";
+        <div className="list-group">
+          {notifications.map((notification) => {
+            const isNegotiating =
+              notification.notification_category === "grant_review" &&
+              notification.review?.status === "negotiate";
 
-          return (
-            <div
-              key={notification.id}
-              className={`card mb-4 shadow-sm ${
-                isNegotiating ? "border-warning" : ""
-              }`}
-              onClick={() => handleNotificationClick(notification)}
-              style={{ cursor: "pointer" }}
-            >
-              <div className="card-header bg-light">
-                <div className="d-flex justify-content-between align-items-center">
-                  <div className="d-flex align-items-center">
-                    <div className="rounded-circle p-2 me-3 bg-primary bg-opacity-10">
+            return (
+              <div
+                key={notification.id}
+                className={`list-group-item list-group-item-action ${
+                  isNegotiating ? "border-warning" : ""
+                }`}
+                onClick={() => handleNotificationClick(notification)}
+                style={{ cursor: "pointer" }}
+              >
+                <div className="d-flex align-items-center">
+                  <div className="me-3">
+                    <div className="rounded-circle p-2 bg-light">
                       {getNotificationIcon(notification.notification_category)}
                     </div>
-                    <div>
-                      <h5 className="mb-0">
-                        {notification.user[0].fname}{" "}
-                        {notification.user[0].lname}
-                      </h5>
-                      <small className="text-muted">
-                        {notification.user[0].email}
-                      </small>
-                    </div>
                   </div>
-                  <span className="text-muted">
-                    {new Date(notification.timestamp).toLocaleString()}
-                  </span>
+                  <div className="flex-grow-1">
+                    <h5 className="mb-1">{getCategory(notification)}</h5>
+                    <p className="mb-1">{notification.text}</p>
+                    <small className="text-muted">
+                      {new Date(notification.timestamp).toLocaleString()}
+                    </small>
+                  </div>
                 </div>
               </div>
-              <div className="card-body">
-                <p className="card-text lead">{notification.text}</p>
-                {notification.review?.comments && (
-                  <div className="d-flex align-items-center text-muted mb-2">
-                    <MessageSquare size={16} className="me-2" />
-                    <span>{notification.review.comments}</span>
-                  </div>
-                )}
-                {notification.uploads?.uploads && (
-                  <div className="d-flex align-items-center text-muted">
-                    <Upload size={16} className="me-2" />
-                    <span>{notification.uploads.uploads}</span>
-                  </div>
-                )}
-              </div>
-              {isNegotiating && (
-                <div className="card-footer bg-warning bg-opacity-10 text-warning">
-                  <small>This grant application requires negotiation</small>
-                </div>
-              )}
-            </div>
-          );
-        })
+            );
+          })}
+        </div>
       )}
     </div>
   );
