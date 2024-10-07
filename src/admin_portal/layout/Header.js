@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom"; // Import useNavigate
-import Logout from "../../subgrantee_portal/components/login/Logout";
 import { fetchWithAuth } from "../../utils/helpers";
 import { Toast, ToastContainer } from "react-bootstrap";
 import { FaEnvelopeOpenText } from "react-icons/fa";
@@ -14,6 +13,11 @@ function Header({ toggleSidebar }) {
   const user = JSON.parse(localStorage.getItem("user"));
   const authToken = localStorage.getItem("accessToken");
   const navigate = useNavigate(); // Initialize the navigate function
+
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate("/admin-login");
+}
 
   const fetchNotificationCount = async () => {
     if (!authToken) return;
@@ -137,7 +141,10 @@ function Header({ toggleSidebar }) {
                 <i className="icon-cog5"></i> Settings
               </a>
               <div className="dropdown-divider"></div>
-              <Logout />
+              <a className="dropdown-item" href="" onClick={handleLogout}>
+                <i className="icon-switch2"></i>
+                Logout
+                </a>
             </div>
           </li>
         </ul>

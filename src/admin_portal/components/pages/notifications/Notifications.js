@@ -35,7 +35,7 @@ const Notifications = () => {
         setNotifications(unreadNotifications);
       } catch (error) {
         console.error("Error fetching notifications:", error);
-        toast.error("Failed to fetch notifications");
+        // toast.error("Failed to fetch notifications");
       }
     };
 
@@ -44,7 +44,6 @@ const Notifications = () => {
 
   const handleNotificationClick = async (notification) => {
     try {
-      // Mark the notification as read
       const response = await fetchWithAuth(
         `/api/notifications/${notification.id}/read/`,
         {
@@ -55,16 +54,12 @@ const Notifications = () => {
       );
 
       if (response.ok) {
-        // Remove the notification from state
         setNotifications(notifications.filter((n) => n.id !== notification.id));
-
-        // Check the notification category
+        let path = "";
         switch (notification.notification_category) {
           case "messages":
-            // Extract room_id from the notification's chats object
-            const roomId = notification.chats.room.id; // Accessing the room ID
-            console.log("room", roomId);
-            navigate(`/admin/messages/${roomId}`); // Navigate to the messages page with the room ID
+            const roomId = notification.chats.room.id;
+            navigate(`/admin/messages/${roomId}`);
             break;
           case "requests":
             navigate("/admin/closeout-requests");
@@ -73,7 +68,7 @@ const Notifications = () => {
             navigate("/admin/progress-reports");
             break;
           case "grant_application":
-            navigate("/admin/applications-list");
+            navigate("/admin/applications_list");
             break;
           case "new_subgrantee":
             navigate("/admin/subgrantee-registration-request");
@@ -84,7 +79,7 @@ const Notifications = () => {
           default:
             break;
         }
-        window.location.reload();
+        window.location.href = path;
       } else {
         console.error("Failed to mark notification as read");
         toast.error("Error marking notification as read");
@@ -98,17 +93,17 @@ const Notifications = () => {
   const getNotificationIcon = (category) => {
     switch (category) {
       case "messages":
-        return <MessageSquare size={24} className="text-primary" />;
+        return <MessageSquare size={20} className="text-primary" />;
       case "status_report_submitted":
-        return <FileText size={24} className="text-success" />;
+        return <FileText size={20} className="text-success" />;
       case "grant_application":
-        return <CheckCircle size={24} className="text-info" />;
+        return <CheckCircle size={20} className="text-info" />;
       case "new_subgrantee":
-        return <Users size={24} className="text-warning" />;
+        return <Users size={20} className="text-warning" />;
       case "requests":
-        return <Upload size={24} className="text-danger" />;
+        return <Upload size={20} className="text-danger" />;
       default:
-        return <Bell size={24} className="text-secondary" />;
+        return <Bell size={20} className="text-secondary" />;
     }
   };
 
@@ -131,12 +126,13 @@ const Notifications = () => {
 
   return (
     <div className="container py-5">
+      <h2 className="mb-4">Notifications</h2>
       {notifications.length === 0 ? (
         <div
-          className="alert alert-info d-flex align-items-center justify-content-center"
+          className="alert alert-info d-flex align-items-center"
           role="alert"
         >
-          <Bell className="me-2" />
+          <Bell className="me-2" size={20} />
           <span>No unread notifications to display.</span>
         </div>
       ) : (

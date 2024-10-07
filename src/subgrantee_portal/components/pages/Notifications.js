@@ -15,6 +15,7 @@ import {
 import { fetchWithAuth } from "../../../utils/helpers";
 import "react-toastify/dist/ReactToastify.css";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { FaComment } from "react-icons/fa";
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
@@ -38,7 +39,7 @@ const Notifications = () => {
         setNotifications(unreadNotifications);
       } catch (error) {
         console.error("Error fetching notifications:", error);
-        toast.error("Failed to fetch notifications");
+        // toast.error("Failed to fetch notifications");
       }
     };
 
@@ -114,6 +115,9 @@ const Notifications = () => {
           case "status_report_due":
             navigate("/grant-accounts");
             break;
+          case "grant_review":
+            navigate("/budget");
+            break;
           default:
             break;
         }
@@ -187,8 +191,9 @@ const Notifications = () => {
   const getComments = (notification) => {
     if (notification.review?.comments) {
       return notification.review.comments;
-    }
-    return notification.progress_report?.review_comments || null;
+    } else if (notification.requests?.comments) {
+      return notification.requests.comments;
+    } return notification.progress_report?.review_comments || null;
   };
 
   return (
@@ -234,7 +239,7 @@ const Notifications = () => {
                 </p>
                 {getComments(notification) && (
                   <div className="d-flex align-items-center text-muted mb-3">
-                    <MessageSquare size={16} className="me-2" />
+                    <FaComment size={16} className="me-2" />
                     <span>
                       <strong>Comments:</strong> {getComments(notification)}
                     </span>

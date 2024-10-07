@@ -148,7 +148,7 @@ const BudgetCategory = () => {
         toast.success("Budget Item added successfully!");
         window.location.reload();
       } else {
-        toast.error("Failed to add budget item. Please try again.");
+        toast.error("The amount set for the item can not exceed your budget.");
       }
     });
   };

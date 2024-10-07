@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { fetchWithAuth } from "../../utils/helpers";
-import Logout from "../components/login/Logout";
 import { useNavigate } from "react-router-dom";
 import {
   Bell,
@@ -10,6 +9,7 @@ import {
   QuestionCircleFill,
 } from "react-bootstrap-icons";
 
+
 const Header = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeGrantsCount, setActiveGrantsCount] = useState(0);
@@ -17,8 +17,14 @@ const Header = () => {
   const [notifications, setNotifications] = useState([]);
   const [unreadNotifications, setUnreadNotifications] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
 
   const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate("/login");
+  };
 
   const fetchGrants = async () => {
     try {
@@ -96,8 +102,8 @@ const Header = () => {
                   href="#"
                   className="nav-link position-relative"
                   onClick={(e) => {
-                    e.preventDefault(); 
-                    navigate("/notifications"); 
+                    e.preventDefault();
+                    navigate("/notifications");
                   }}
                 >
                   <Bell className="text-secondary" size={20} />
@@ -149,8 +155,9 @@ const Header = () => {
                     <hr className="dropdown-divider" />
                   </li>
                   <li>
-                    <a className="dropdown-item" href="#">
-                      <BoxArrowRight className="me-2" /> <Logout />
+                    <a className="dropdown-item" href="#" onClick={handleLogout}>
+                      <BoxArrowRight className="me-2" />
+                      Logout
                     </a>
                   </li>
                 </ul>
