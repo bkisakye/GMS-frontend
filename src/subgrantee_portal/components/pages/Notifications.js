@@ -212,6 +212,8 @@ const Notifications = () => {
               className={`card mb-4 shadow-sm ${
                 isNegotiating ? "border-warning" : ""
               }`}
+              onClick={() => handleNotificationClick(notification)}
+              style={{ cursor: "pointer" }}
             >
               <div className="card-header d-flex justify-content-between align-items-center bg-light">
                 <div className="d-flex align-items-center">

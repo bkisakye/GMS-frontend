@@ -3,9 +3,11 @@ import { fetchWithAuth } from "../../../../utils/helpers";
 import { Send, ArrowClockwise, Search } from "react-bootstrap-icons";
 import { BsChatDots } from "react-icons/bs";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { useParams } from "react-router-dom";
 
 const Messages = () => {
   const [rooms, setRooms] = useState([]);
+  const { chatRoomId } = useParams();
   const [filteredRooms, setFilteredRooms] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -16,6 +18,12 @@ const Messages = () => {
   const messageListRef = useRef(null);
   const user = JSON.parse(localStorage.getItem("user"));
   const userId = user?.user_id;
+
+//   useEffect(() => {
+//     if (chatRoomId) {
+//     fetchChatRoom(chatRoomId);
+//   }
+// }, [chatRoomId]);
 
   const fetchRooms = useCallback(async () => {
     try {

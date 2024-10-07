@@ -44,6 +44,7 @@ const Notifications = () => {
 
   const handleNotificationClick = async (notification) => {
     try {
+      // Mark the notification as read
       const response = await fetchWithAuth(
         `/api/notifications/${notification.id}/read/`,
         {
@@ -54,14 +55,18 @@ const Notifications = () => {
       );
 
       if (response.ok) {
+        // Remove the notification from state
         setNotifications(notifications.filter((n) => n.id !== notification.id));
 
+        // Check the notification category
         switch (notification.notification_category) {
-          case "requests":
-            navigate("/admin/reports");
-            break;
           case "messages":
-            navigate("/admin/messages");
+            // Extract room_id from the notification's chats object
+            const roomId = notification.chats.room.id; // Accessing the room ID
+            navigate(`/admin/messages/${roomId}`); // Navigate to the messages page with the room ID
+            break;
+          case "requests":
+            navigate("/admin/closeout-requests");
             break;
           case "status_report_submitted":
             navigate("/admin/progress-reports");
@@ -125,7 +130,6 @@ const Notifications = () => {
 
   return (
     <div className="container py-5">
-      
       {notifications.length === 0 ? (
         <div
           className="alert alert-info d-flex align-items-center justify-content-center"
