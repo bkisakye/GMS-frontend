@@ -88,7 +88,7 @@ function App() {
           <Route path="finance-reports" element={<FinanceReport />} />
           <Route path="grant-accounts" element={<GrantAccounts />} />
           <Route path="closeout-requests" element={<GrantCloseOut />} />
-          <Route path="messages" element={<AMessages />} />
+          <Route path="messages/:chatRoomId?" element={<AMessages />} />
         </Route>
 
         {/* Subgrantee routes */}

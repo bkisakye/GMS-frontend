@@ -63,6 +63,7 @@ const Notifications = () => {
           case "messages":
             // Extract room_id from the notification's chats object
             const roomId = notification.chats.room.id; // Accessing the room ID
+            console.log("room", roomId);
             navigate(`/admin/messages/${roomId}`); // Navigate to the messages page with the room ID
             break;
           case "requests":

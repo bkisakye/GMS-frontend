@@ -19,11 +19,6 @@ const Messages = () => {
   const user = JSON.parse(localStorage.getItem("user"));
   const userId = user?.user_id;
 
-//   useEffect(() => {
-//     if (chatRoomId) {
-//     fetchChatRoom(chatRoomId);
-//   }
-// }, [chatRoomId]);
 
   const fetchRooms = useCallback(async () => {
     try {
@@ -39,6 +34,15 @@ const Messages = () => {
   useEffect(() => {
     fetchRooms();
   }, [fetchRooms]);
+
+  useEffect(() => {
+    if (chatRoomId) {
+      const room = rooms.find(r => r.id === parseInt(chatRoomId));
+      if (room) {
+        setSelectedRoom(room);
+      }
+    }
+  })
 
   const fetchMessages = useCallback(async (roomId) => {
     if (!roomId) return;
