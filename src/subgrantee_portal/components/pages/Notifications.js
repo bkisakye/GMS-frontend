@@ -246,6 +246,7 @@ const Notifications = () => {
                     <span>{notification.uploads.uploads}</span>
                   </div>
                 )}
+                {/* Add more fields as needed */}
                 {isNegotiating && (
                   <div className="mt-4">
                     <div className="d-flex justify-content-end">
