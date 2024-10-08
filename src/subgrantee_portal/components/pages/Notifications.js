@@ -76,6 +76,14 @@ const Notifications = () => {
     }
   };
 
+  const handleUploadClick = (e, uploadPath) => {
+    e.stopPropagation();
+    // Assuming the backend server is running on the same host but different port
+    const backendUrl = `${window.location.protocol}//${window.location.hostname}:8000`;
+    const fullUrl = `${backendUrl}${uploadPath}`;
+    window.open(fullUrl, "_blank");
+  };
+
   const handleNotificationClick = async (notification) => {
     try {
       const response = await fetchWithAuth(
@@ -193,7 +201,8 @@ const Notifications = () => {
       return notification.review.comments;
     } else if (notification.requests?.comments) {
       return notification.requests.comments;
-    } return notification.progress_report?.review_comments || null;
+    }
+    return notification.progress_report?.review_comments || null;
   };
 
   return (
@@ -246,10 +255,20 @@ const Notifications = () => {
                   </div>
                 )}
                 {notification.uploads?.uploads && (
-                  <div className="d-flex align-items-center text-muted mb-3">
+                  <button
+                    className="btn btn-outline-primary btn-sm d-flex align-items-center"
+                    onClick={(e) =>
+                      handleUploadClick(e, notification.uploads.uploads)
+                    }
+                    aria-label={`Download ${notification.uploads.uploads}`}
+                  >
                     <Upload size={16} className="me-2" />
-                    <span>{notification.uploads.uploads}</span>
-                  </div>
+                    <span>
+                      {notification.uploads.uploads.length > 20
+                        ? `${notification.uploads.uploads.slice(0, 17)}...`
+                        : notification.uploads.uploads}
+                    </span>
+                  </button>
                 )}
                 {/* Add more fields as needed */}
                 {isNegotiating && (
