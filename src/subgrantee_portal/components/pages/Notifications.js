@@ -11,11 +11,12 @@ import {
   Clipboard,
   Calendar,
   X,
+  File,
 } from "lucide-react";
 import { fetchWithAuth } from "../../../utils/helpers";
 import "react-toastify/dist/ReactToastify.css";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { FaComment } from "react-icons/fa";
+import { FaComment, FaFile } from "react-icons/fa";
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
@@ -254,21 +255,43 @@ const Notifications = () => {
                     </span>
                   </div>
                 )}
+                {notification.grant?.name && (
+                  <div className="d-flex align-items-center mb-3 text-secondary">
+                    <File
+                      size={20}
+                      className="me-2 text-primary"
+                    />{" "}
+                    <span>
+                      <strong className="me-1">Funding Opportunity:</strong>
+                      <span className="text-dark">
+                        {notification.grant.name}
+                      </span>
+                    </span>
+                  </div>
+                )}
                 {notification.uploads?.uploads && (
-                  <button
-                    className="btn btn-outline-primary btn-sm d-flex align-items-center"
+                  <div
+                    className="d-flex align-items-center text-muted mb-3 p-2 bg-light rounded hover-bg-primary-soft transition-bg"
                     onClick={(e) =>
                       handleUploadClick(e, notification.uploads.uploads)
                     }
+                    style={{ cursor: "pointer" }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        handleUploadClick(e, notification.uploads.uploads);
+                      }
+                    }}
                     aria-label={`Download ${notification.uploads.uploads}`}
                   >
-                    <Upload size={16} className="me-2" />
-                    <span>
-                      {notification.uploads.uploads.length > 20
-                        ? `${notification.uploads.uploads.slice(0, 17)}...`
+                    <Upload size={16} className="me-2 text-primary" />
+                    <span className="text-primary">
+                      {notification.uploads.uploads.length > 30
+                        ? `${notification.uploads.uploads.slice(0, 27)}...`
                         : notification.uploads.uploads}
                     </span>
-                  </button>
+                  </div>
                 )}
                 {/* Add more fields as needed */}
                 {isNegotiating && (
