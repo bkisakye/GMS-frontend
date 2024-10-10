@@ -53,7 +53,7 @@ const SignUpPage = () => {
       if (response.ok) {
         toast.success("Sign-up successful. Please wait for admin approval.");
       } else {
-        // toast.error(data.message || "Sign-up failed");
+        toast.error(data.message || "Sign-up failed");
       }
     });
   };
