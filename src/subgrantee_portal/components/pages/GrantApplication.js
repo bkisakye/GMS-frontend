@@ -41,8 +41,8 @@ const ApplicationPage = () => {
   const { loadingStates, handleLoading } = useLoadingHandler();
   const [isSigned, setIsSigned] = useState(false);
   const [canEdit, setCanEdit] = useState(false);
+  const [applicationStatus, setApplicationStatus] = useState("");
   const [isStatusLoaded, setIsStatusLoaded] = useState(false);
-
 
   const questionRefs = useRef({});
 
@@ -121,10 +121,10 @@ const ApplicationPage = () => {
   };
 
   const handleInputChange = (e, question) => {
-    // if (!canEdit) {
-    //   console.log("Attempted to edit when canEdit is false");
-    //   return;
-    // }
+    if (!canEdit) {
+      console.log("Attempted to edit when canEdit is false");
+      return;
+    }
     handleChange(e, question);
     setInputValues((prev) => ({ ...prev, [question.id]: e.target.value }));
   };
@@ -178,43 +178,39 @@ const ApplicationPage = () => {
           setChoicesData(choicesMap);
         });
       }
-
     };
 
     fetchChoicesData();
   }, [applicationId, userId]);
 
   useEffect(() => {
-    const fetchSignedStatus = async () => {
+    const fetchApplicationStatus = async () => {
       if (applicationId) {
-        await handleLoading("fetchingSignedStatus", async () => {
+        await handleLoading("fetchingApplicationStatus", async () => {
           try {
-            const signedResponse = await fetchWithAuth(
+            console.log("fetchingApplicationStatus", applicationId);
+            const statusResponse = await fetchWithAuth(
               `/api/grants/grant-applications/${applicationId}/specific/`
             );
-            if (!signedResponse.ok) {
-              throw new Error("Failed to fetch signed status");
+            if (!statusResponse.ok) {
+              throw new Error("Failed to fetch application status");
             }
-            const signedData = await signedResponse.json();
-            console.log("Signed Data:", signedData);
-            setIsSigned(signedData.signed);
-            setCanEdit(signedData.negotiate);
+            const statusData = await statusResponse.json();
+             console.log("Application status:", statusData.status);
+            setApplicationStatus(statusData.status);
+            setCanEdit(statusData.status === "negotiate");
             setIsStatusLoaded(true);
-            console.log("Can edit:", signedData.negotiate);
+           
           } catch (error) {
-            console.error("Error fetching signed status:", error);
+            console.error("Error fetching application status:", error);
             toast.error("Failed to fetch application status");
             setIsStatusLoaded(true);
           }
         });
       }
     };
-    fetchSignedStatus();
+    fetchApplicationStatus();
   }, [applicationId]);
-
-  useEffect(() => {
-  console.log("can edit state updated:", canEdit);
-  }, [canEdit]);
 
   useEffect(() => {
     if (applicationId && userId) {
@@ -233,6 +229,10 @@ const ApplicationPage = () => {
   }, [applicationId, userId]);
 
   const handleChange = (e, question, column = null, rowIndex = null) => {
+    if (!canEdit) {
+      console.log("Attempted to edit when canEdit is false");
+      return;
+    }
     const { value, type, checked } = e.target;
     const questionId = question.id;
     const questionType = question.question_type;
@@ -352,11 +352,11 @@ const ApplicationPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // if (!canEdit) {
-    //   console.log("Attempted to submit when canEdit is false");
-    //   toast.error("You can not edit your application at this time.");
-    //   return;
-    // }
+    if (!canEdit) {
+      console.log("Attempted to submit when canEdit is false");
+      toast.error("You can not edit your application at this time.");
+      return;
+    }
 
     const errors = {};
     const missingFields = visibleQuestions.filter((question) => {
@@ -598,11 +598,10 @@ const ApplicationPage = () => {
       <h1 className="mb-4">
         Application for Funding Opportunity: {decodeURIComponent(grantName)}
       </h1>
-      <Alert variant="info">
-        {/* {canEdit
+      <Alert variant={canEdit ? "info" : "warning"}>
+        {canEdit
           ? "You can edit this application."
-          : "This application has been submitted and is currently under review. You cannot edit it at this time."} */}
-          
+          : `This application has been submitted and is currently ${applicationStatus}. You cannot edit it at this time.`}
       </Alert>
       {isLoading && <Loading />}
       <Form onSubmit={handleSubmit}>
@@ -639,7 +638,7 @@ const ApplicationPage = () => {
                                       answer.question_id === question.id
                                   )?.answer || ""
                                 }
-                                // disabled={!canEdit}
+                                disabled={!canEdit}
                                 onChange={(e) => handleInputChange(e, question)}
                                 onFocus={() => handleFocus(question.id)}
                                 onBlur={() => handleBlur(question.id)}

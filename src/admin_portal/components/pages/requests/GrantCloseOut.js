@@ -208,7 +208,7 @@ const GrantCloseOut = () => {
             {request.requirements.requested_by.email || "N/A"}
           </p>
           <p>
-            <strong>Grant:</strong>{" "}
+            <strong>Funding Opportunity:</strong>{" "}
             {request.requirements.grant_account.grant.name || "N/A"}
           </p>
           <p>
@@ -271,7 +271,7 @@ const GrantCloseOut = () => {
             {request.extensions.requested_by.email || "N/A"}
           </p>
           <p>
-            <strong>Grant:</strong>{" "}
+            <strong>Funding Opportunity:</strong>{" "}
             {request.extensions.grant_account.grant.name || "N/A"}
           </p>
           <p>
@@ -280,10 +280,8 @@ const GrantCloseOut = () => {
               "N/A"}
           </p>
           <p>
-            <strong>Reason: </strong>{" "}
-            {request.extensions.reason || "N/A"}
+            <strong>Reason: </strong> {request.extensions.reason || "N/A"}
           </p>
-
         </div>
       );
     }
@@ -393,16 +391,17 @@ const handleReviewSubmit = async () => {
                         <FaRegEye />
                       </Button>{" "}
                       {request.request_type === "grant_closeout" && (
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedRequest(request);
-                          handleShowReportsModal();
-                        }}
-                      >{" "}
-                        <BsClipboard2 />
-                    </Button>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedRequest(request);
+                            handleShowReportsModal();
+                          }}
+                        >
+                          {" "}
+                          <BsClipboard2 />
+                        </Button>
                       )}
                       {request.reviewed === false && (
                         <Button
@@ -447,7 +446,7 @@ const handleReviewSubmit = async () => {
                   {getAccountHolderInfo(selectedRequest) || "N/A"}
                 </p>
                 <p>
-                  <strong>Grant Info:</strong>{" "}
+                  <strong>Funding Opportunity Info:</strong>{" "}
                   {getGrantInfo(selectedRequest)
                     ? getGrantInfo(selectedRequest).name || "N/A"
                     : "N/A"}
@@ -478,9 +477,8 @@ const handleReviewSubmit = async () => {
             selectedRequest.request_type === "requirements" && (
               <div>{getRequirementsDetails(selectedRequest)}</div>
             )}
-          
-          {selectedRequest && 
-            selectedRequest.request_type === "extension" && (
+
+          {selectedRequest && selectedRequest.request_type === "extension" && (
             <div>{getExtensionDetails(selectedRequest)}</div>
           )}
         </Modal.Body>
@@ -524,7 +522,11 @@ const handleReviewSubmit = async () => {
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="primary" onClick={handleReviewSubmit} disabled={loadingStates.handleReviewSubmit}>
+          <Button
+            variant="primary"
+            onClick={handleReviewSubmit}
+            disabled={loadingStates.handleReviewSubmit}
+          >
             {loadingStates.handleReviewSubmit ? (
               <Spinner
                 as="span"
@@ -536,7 +538,6 @@ const handleReviewSubmit = async () => {
             ) : (
               "Submit Review"
             )}
-
           </Button>
         </Modal.Footer>
       </Modal>
@@ -562,7 +563,7 @@ const handleReviewSubmit = async () => {
             {financialReport ? (
               <div>
                 {Object.entries({
-                  "Grant Account": financialReport.grant_account,
+                  "Funding Opportunity Account": financialReport.grant_account,
                   "Report Date": format(
                     new Date(financialReport.report_date),
                     "MMM d, yyyy"
