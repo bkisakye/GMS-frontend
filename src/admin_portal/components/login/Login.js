@@ -48,6 +48,7 @@ const LoginPage = () => {
             name: "Admin User",
             email: email,
             user_id: data.user_id,
+            username: data.organisation_name,
           })
         );
 

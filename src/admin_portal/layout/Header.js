@@ -124,7 +124,7 @@ function Header({ toggleSidebar }) {
             >
               <i className="icon-user"></i>
               <span className="d-none d-md-inline ml-2">
-                {user ? user.email : "Unknown User"}
+                {user ? user.username : "Unknown User"}
               </span>
             </a>
             <div
