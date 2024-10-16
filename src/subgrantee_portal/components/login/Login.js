@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../UserContext.js";
-import { fetchWithAuth, removeTrailingSlash } from "../../../utils/helpers.js";
+import { removeTrailingSlash } from "../../../utils/helpers.js";
 import { toast } from "react-toastify";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false); // Loading state
   const navigate = useNavigate();
   const setUser = useUser();
   const baseUrl = removeTrailingSlash(process.env.REACT_APP_API_BASE_URL);
@@ -19,6 +20,8 @@ const LoginPage = () => {
       return;
     }
 
+    setIsLoading(true); // Set loading to true on form submission
+
     try {
       const response = await fetch(`${baseUrl}/api/authentication/login/`, {
         method: "POST",
@@ -29,6 +32,8 @@ const LoginPage = () => {
       });
 
       const data = await response.json();
+
+      setIsLoading(false); // Set loading to false after fetch
 
       if (response.ok && data.access) {
         localStorage.setItem("isAuthenticated", "true");
@@ -55,6 +60,7 @@ const LoginPage = () => {
     } catch (error) {
       console.error("Login error:", error);
       toast.error("You have not yet been approved. Please wait for approval.");
+      setIsLoading(false); // Ensure loading is set to false in case of error
     }
   };
 
@@ -116,8 +122,24 @@ const LoginPage = () => {
                     required
                   />
                 </div>
-                <button type="submit" className="btn btn-primary w-100 mb-2">
-                  Log In
+                <button
+                  type="submit"
+                  className="btn btn-primary w-100 mb-2"
+                  disabled={isLoading} // Disable button while loading
+                >
+                  {isLoading ? (
+                    <>
+                      <span
+                        className="spinner-border spinner-border-sm"
+                        role="status"
+                        aria-hidden="true"
+                        style={{ marginRight: "5px" }}
+                      ></span>
+                      Loading...
+                    </>
+                  ) : (
+                    "Log In"
+                  )}
                 </button>
                 {/* Sign-Up and Terms Links */}
                 <div className="text-center mt-4">

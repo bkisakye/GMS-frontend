@@ -11,6 +11,7 @@ const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState(null);
+  const [isLoading, setIsLoading] = useState(false); // Loading state
   const navigate = useNavigate();
   const setUser = useUser(); // Uncomment if using UserContext
   const baseUrl = removeTrailingSlash(process.env.REACT_APP_API_BASE_URL);
@@ -22,7 +23,8 @@ const LoginPage = () => {
       setErrorMessage("Please enter both email and password");
       return;
     }
-    console.log(email, password);
+
+    setIsLoading(true); // Set loading to true on form submission
 
     try {
       const response = await fetch(`${baseUrl}/api/authentication/login/`, {
@@ -35,8 +37,9 @@ const LoginPage = () => {
 
       const data = await response.json();
 
+      setIsLoading(false); // Set loading to false after fetch
+
       if (response.ok && data.access) {
-        // Ensure you're checking for access token or appropriate response
         localStorage.setItem("isAuthenticated", "true");
         setTokens(data.access, data.refresh);
         localStorage.setItem(
@@ -60,6 +63,7 @@ const LoginPage = () => {
     } catch (error) {
       console.error("Login error:", error);
       setErrorMessage("An error occurred. Please try again later.");
+      setIsLoading(false); // Ensure loading is set to false in case of error
     }
   };
 
@@ -124,8 +128,20 @@ const LoginPage = () => {
                     required
                   />
                 </div>
-                <button type="submit" className="btn btn-primary w-100 mb-2">
-                  Sign In
+                <button
+                  type="submit"
+                  className="btn btn-primary w-100 mb-2"
+                  disabled={isLoading} // Disable button while loading
+                >
+                  {isLoading ? (
+                    <span
+                      className="spinner-border spinner-border-sm"
+                      role="status"
+                      aria-hidden="true"
+                      style={{ marginRight: "5px" }}
+                    ></span>
+                  ) : null}
+                  {isLoading ? "Loading..." : "Sign In"}
                 </button>
               </form>
             </div>
