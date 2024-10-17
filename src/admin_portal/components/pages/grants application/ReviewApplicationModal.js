@@ -89,6 +89,9 @@ const ReviewApplicationModal = ({
       );
       const data = await response.json();
       setReviewId(data.id);
+      setScore(data.score !== null ? data.score.toString() : "");
+      setStatus(data.status || "");
+      setComments(data.comments || "");
     });
   };
 
@@ -229,13 +232,13 @@ const ReviewApplicationModal = ({
                     name="score"
                     id="score"
                     type="number"
-                    placeholder="Score (0-100)"
+                    placeholder="Score (0-10)"
                     className="form-control"
                     value={score}
                     onChange={(e) => setScore(e.target.value)}
                     required
                     min="0"
-                    max="100"
+                    max="10"
                   />
                 </div>
                 <div className="mb-3">

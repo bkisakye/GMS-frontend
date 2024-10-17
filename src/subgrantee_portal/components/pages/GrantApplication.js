@@ -121,10 +121,10 @@ const ApplicationPage = () => {
   };
 
   const handleInputChange = (e, question) => {
-    if (!canEdit) {
-      console.log("Attempted to edit when canEdit is false");
-      return;
-    }
+    // if (!canEdit) {
+    //   console.log("Attempted to edit when canEdit is false");
+    //   return;
+    // }
     handleChange(e, question);
     setInputValues((prev) => ({ ...prev, [question.id]: e.target.value }));
   };
@@ -229,10 +229,10 @@ const ApplicationPage = () => {
   }, [applicationId, userId]);
 
   const handleChange = (e, question, column = null, rowIndex = null) => {
-    if (!canEdit) {
-      console.log("Attempted to edit when canEdit is false");
-      return;
-    }
+    // if (!canEdit) {
+    //   console.log("Attempted to edit when canEdit is false");
+    //   return;
+    // }
     const { value, type, checked } = e.target;
     const questionId = question.id;
     const questionType = question.question_type;
@@ -352,11 +352,11 @@ const ApplicationPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!canEdit) {
-      console.log("Attempted to submit when canEdit is false");
-      toast.error("You can not edit your application at this time.");
-      return;
-    }
+    // if (!canEdit) {
+    //   console.log("Attempted to submit when canEdit is false");
+    //   toast.error("You can not edit your application at this time.");
+    //   return;
+    // }
 
     const errors = {};
     const missingFields = visibleQuestions.filter((question) => {
@@ -598,11 +598,11 @@ const ApplicationPage = () => {
       <h1 className="mb-4">
         Application for Funding Opportunity: {decodeURIComponent(grantName)}
       </h1>
-      <Alert variant={canEdit ? "info" : "warning"}>
+      {/* <Alert variant={canEdit ? "info" : "warning"}>
         {canEdit
           ? "You can edit this application."
           : `This application has been submitted and is currently ${applicationStatus}. You cannot edit it at this time.`}
-      </Alert>
+      </Alert> */}
       {isLoading && <Loading />}
       <Form onSubmit={handleSubmit}>
         {Object.keys(groupedQuestions).map((section) => (
@@ -638,7 +638,7 @@ const ApplicationPage = () => {
                                       answer.question_id === question.id
                                   )?.answer || ""
                                 }
-                                disabled={!canEdit}
+                                // disabled={!canEdit}
                                 onChange={(e) => handleInputChange(e, question)}
                                 onFocus={() => handleFocus(question.id)}
                                 onBlur={() => handleBlur(question.id)}

@@ -20,7 +20,7 @@ const useLoadingHandler = (initialState = {}) => {
         stopLoading(key);
         return result;
       } catch (error) {
-        console.error("Error in ${key}:", error);
+        console.error(`Error in ${key}:`, error);
         toast.error(errorMessage);
         stopLoading(key);
         throw error;
